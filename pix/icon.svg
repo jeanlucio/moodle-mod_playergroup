@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="#000000">
+  <!-- Gamepad body -->
+  <path d="M2 8.5C2 7.12 3.12 6 4.5 6h15C20.88 6 22 7.12 22 8.5v7c0 1.38-1.12 2.5-2.5 2.5h-2.18l-1.5 2H8.18l-1.5-2H4.5C3.12 18 2 16.88 2 15.5v-7z"/>
+  <!-- Left side: two person figures (white cutout) -->
+  <!-- Person 1: head -->
+  <circle cx="6.3" cy="10.1" r="0.8" fill="#ffffff"/>
+  <!-- Person 1: body -->
+  <path d="M4.8 13.5C4.8 12 5.5 11.2 6.3 11.2C7.1 11.2 7.8 12 7.8 13.5Z" fill="#ffffff"/>
+  <!-- Person 2: head -->
+  <circle cx="8.7" cy="10.1" r="0.8" fill="#ffffff"/>
+  <!-- Person 2: body -->
+  <path d="M7.2 13.5C7.2 12 7.9 11.2 8.7 11.2C9.5 11.2 10.2 12 10.2 13.5Z" fill="#ffffff"/>
+  <!-- Right side: three action buttons (white circles) -->
+  <circle cx="16.5" cy="10.2" r="0.85" fill="#ffffff"/>
+  <circle cx="18.2" cy="11.7" r="0.85" fill="#ffffff"/>
+  <circle cx="14.8" cy="11.7" r="0.85" fill="#ffffff"/>
+  <!-- Center: analog nub -->
+  <circle cx="12" cy="11.5" r="0.7" fill="#ffffff"/>
+</svg>

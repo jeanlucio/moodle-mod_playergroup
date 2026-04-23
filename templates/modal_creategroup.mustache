@@ -1,0 +1,35 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mod_playergroup/modal_creategroup
+    Template for the group creation form inside the modal.
+}}
+<form id="mod_playergroup-creategroup-form">
+    <div class="mb-3">
+        <label for="groupname" class="form-label">{{#str}} name, core {{/str}}</label>
+        <input type="text" class="form-control" id="groupname" required>
+        <div class="invalid-feedback">{{#str}} required, core {{/str}}</div>
+    </div>
+    <div class="mb-3">
+        <label for="groupdesc" class="form-label">{{#str}} description, core {{/str}}</label>
+        <textarea class="form-control" id="groupdesc" rows="3"></textarea>
+    </div>
+    <div class="mb-3">
+        <label for="groupbadge" class="form-label">{{#str}} groupbadge, mod_playergroup {{/str}}</label>
+        <input type="text" class="form-control" id="groupbadge" maxlength="10" placeholder="🛡️">
+    </div>
+</form>

@@ -1,0 +1,20 @@
+# Node dependencies (Grunt)
+node_modules/
+.grunt/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+
+# Local linting configs (avoid conflicts with Moodle CI Grunt)
+.stylelintrc.json
+.eslintrc
+.eslintrc.json
+.eslintignore
+
+.roo
+.claude
