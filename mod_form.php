@@ -36,6 +36,8 @@ class mod_playergroup_mod_form extends moodleform_mod {
      * @return void
      */
     public function definition(): void {
+        global $DB;
+
         $mform = $this->_form;
 
         $mform->addElement('header', 'general', get_string('general', 'form'));
@@ -46,6 +48,38 @@ class mod_playergroup_mod_form extends moodleform_mod {
         $mform->addRule('name', get_string('maximumchars', '', 255), 'maxlength', 255, 'client');
 
         $this->standard_intro_elements();
+
+        // Grouping configuration.
+        $mform->addElement('header', 'groupinghdr', get_string('groupingmode', 'mod_playergroup'));
+
+        $groupingoptions = [
+            'new'      => get_string('groupingmode_new', 'mod_playergroup'),
+            'existing' => get_string('groupingmode_existing', 'mod_playergroup'),
+            'none'     => get_string('groupingmode_none', 'mod_playergroup'),
+        ];
+        $mform->addElement('select', 'groupingmode', get_string('groupingmode', 'mod_playergroup'), $groupingoptions);
+        $mform->setDefault('groupingmode', 'new');
+
+        $mform->addElement('text', 'groupingname', get_string('groupingname', 'mod_playergroup'), ['size' => '64']);
+        $mform->setType('groupingname', PARAM_TEXT);
+        $mform->hideIf('groupingname', 'groupingmode', 'neq', 'new');
+
+        // Build the list of existing groupings for this course.
+        $existinggroupings = [0 => get_string('choosedots')];
+        $courseid = $this->current->course ?? 0;
+        if ($courseid) {
+            $groupings = $DB->get_records('groupings', ['courseid' => $courseid], 'name ASC', 'id, name');
+            foreach ($groupings as $g) {
+                $existinggroupings[$g->id] = format_string($g->name);
+            }
+        }
+        $mform->addElement(
+            'select',
+            'existinggroupingid',
+            get_string('groupingmode_existing', 'mod_playergroup'),
+            $existinggroupings
+        );
+        $mform->hideIf('existinggroupingid', 'groupingmode', 'neq', 'existing');
 
         // Team rules and game mechanics.
         $mform->addElement('header', 'gamerules', get_string('gamerules', 'mod_playergroup'));
@@ -86,13 +120,15 @@ class mod_playergroup_mod_form extends moodleform_mod {
         );
 
         // Standard grading elements (handles the grade field and gradebook integration).
+        // Default to "None" — grading is optional for this activity type.
         $this->standard_grading_coursemodule_elements();
+        $mform->setDefault('grade', 0);
 
         // Standard course module elements (completion, groups, etc).
         $this->standard_coursemodule_elements();
 
         // Remove native group/grouping selectors to prevent conflicts.
-        // Grouping creation is handled automatically in the background.
+        // Grouping creation is handled via the groupinghdr section above.
         if ($mform->elementExists('groupmode')) {
             $mform->removeElement('groupmode');
         }
@@ -101,6 +137,26 @@ class mod_playergroup_mod_form extends moodleform_mod {
         }
 
         $this->add_action_buttons();
+    }
+
+    /**
+     * Pre-processes saved data to populate grouping mode fields when editing.
+     *
+     * @param array $defaultvalues Default values from the database record.
+     * @return void
+     */
+    public function data_preprocessing(array &$defaultvalues): void {
+        parent::data_preprocessing($defaultvalues);
+
+        // When editing an existing instance, map groupingid back to the form fields.
+        if (!empty($defaultvalues['id'])) {
+            if (!empty($defaultvalues['groupingid'])) {
+                $defaultvalues['groupingmode']        = 'existing';
+                $defaultvalues['existinggroupingid']  = $defaultvalues['groupingid'];
+            } else {
+                $defaultvalues['groupingmode'] = 'none';
+            }
+        }
     }
 
     /**

@@ -43,6 +43,30 @@ function playergroup_supports(string $feature): ?bool {
 }
 
 /**
+ * Resolves the grouping ID from the form submission data.
+ *
+ * Handles three modes: create a new grouping, use an existing one, or none.
+ *
+ * @param \stdClass $playergroup The submitted form data (contains groupingmode, groupingname, existinggroupingid).
+ * @return int The resolved grouping ID (0 when none).
+ */
+function playergroup_resolve_groupingid(\stdClass $playergroup): int {
+    $mode = $playergroup->groupingmode ?? 'none';
+
+    if ($mode === 'new') {
+        $customname = trim($playergroup->groupingname ?? '');
+        $manager = new \mod_playergroup\instance_manager();
+        return $manager->process_activity_grouping($playergroup, $customname);
+    }
+
+    if ($mode === 'existing') {
+        return (int) ($playergroup->existinggroupingid ?? 0);
+    }
+
+    return 0;
+}
+
+/**
  * Saves a new instance of the playergroup into the database.
  *
  * @param \stdClass $playergroup The submitted form data.
@@ -55,17 +79,15 @@ function playergroup_add_instance(\stdClass $playergroup, ?\mod_playergroup_mod_
     $playergroup->timemodified = time();
     $playergroup->timeopen     = $playergroup->timeopen ?? 0;
     $playergroup->timeclose    = $playergroup->timeclose ?? 0;
-    $playergroup->groupingid   = 0; // Temporary zero until grouping is created.
+    $playergroup->groupingid   = 0;
 
     // Insert the base record first to get an ID.
     $playergroup->id = $DB->insert_record('playergroup', $playergroup);
 
-    // Create the automated grouping and store its ID.
-    $manager = new \mod_playergroup\instance_manager();
-    $groupingid = $manager->process_activity_grouping($playergroup);
+    $groupingid = playergroup_resolve_groupingid($playergroup);
 
     $updateobj = new \stdClass();
-    $updateobj->id        = $playergroup->id;
+    $updateobj->id         = $playergroup->id;
     $updateobj->groupingid = $groupingid;
     $DB->update_record('playergroup', $updateobj);
 
@@ -88,6 +110,7 @@ function playergroup_update_instance(\stdClass $playergroup, ?\mod_playergroup_m
     $playergroup->timeopen     = $playergroup->timeopen ?? 0;
     $playergroup->timeclose    = $playergroup->timeclose ?? 0;
     $playergroup->id           = $playergroup->instance;
+    $playergroup->groupingid   = playergroup_resolve_groupingid($playergroup);
 
     $result = $DB->update_record('playergroup', $playergroup);
 

@@ -30,22 +30,27 @@ namespace mod_playergroup;
  */
 class instance_manager {
     /**
-     * Creates an automated grouping for the activity instance.
+     * Creates a grouping for the activity instance.
      *
-     * The grouping is always auto-created and named after the activity.
-     * The professor does not need to manage groupings manually.
+     * If a custom name is provided it is used directly; otherwise the grouping
+     * is named automatically as "Groups of {activity name}".
      *
      * @param \stdClass $data The activity data object (requires ->course and ->name).
+     * @param string $customname Optional custom grouping name supplied by the teacher.
      * @return int The ID of the newly created grouping.
      */
-    public function process_activity_grouping(\stdClass $data): int {
+    public function process_activity_grouping(\stdClass $data, string $customname = ''): int {
         global $CFG;
 
         require_once($CFG->dirroot . '/group/lib.php');
 
+        $name = $customname !== ''
+            ? $customname
+            : get_string('defaultgroupingname', 'mod_playergroup') . ' ' . $data->name;
+
         $grouping = new \stdClass();
         $grouping->courseid = $data->course;
-        $grouping->name = get_string('defaultgroupingname', 'mod_playergroup') . ' ' . $data->name;
+        $grouping->name = $name;
         $grouping->description = get_string('groupingdescription', 'mod_playergroup', $data->name);
         $grouping->descriptionformat = FORMAT_HTML;
         $grouping->timecreated = time();
