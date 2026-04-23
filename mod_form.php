@@ -145,7 +145,7 @@ class mod_playergroup_mod_form extends moodleform_mod {
      * @param array $defaultvalues Default values from the database record.
      * @return void
      */
-    public function data_preprocessing(array &$defaultvalues): void {
+    public function data_preprocessing(&$defaultvalues): void {
         parent::data_preprocessing($defaultvalues);
 
         // When editing an existing instance, map groupingid back to the form fields.
