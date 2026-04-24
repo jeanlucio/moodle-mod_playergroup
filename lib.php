@@ -265,6 +265,48 @@ function playergroup_get_coursemodule_info(\stdClass $coursemodule): \cached_cm_
 }
 
 /**
+ * Injects availability information below the activity link on the course page.
+ *
+ * Called by Moodle when rendering the course module list. Displays the opening
+ * date or a "closed" notice when the activity is outside its availability window.
+ *
+ * @param \cm_info $cm The course module info object.
+ * @return void
+ */
+function playergroup_cm_info_view(\cm_info $cm): void {
+    global $DB;
+
+    $playergroup = $DB->get_record(
+        'playergroup',
+        ['id' => $cm->instance],
+        'timeopen, timeclose'
+    );
+    if (!$playergroup) {
+        return;
+    }
+
+    $now       = time();
+    $timeopen  = (int) $playergroup->timeopen;
+    $timeclose = (int) $playergroup->timeclose;
+
+    if ($timeopen > 0 && $now < $timeopen) {
+        $msg = get_string('activityopensfrom', 'mod_playergroup', userdate($timeopen));
+        $cm->set_after_link(\html_writer::tag(
+            'div',
+            \html_writer::tag('small', $msg, ['class' => 'text-muted']),
+            ['class' => 'pg-availability-hint mt-1']
+        ));
+    } else if ($timeclose > 0 && $now > $timeclose) {
+        $msg = get_string('activityclosedmsg', 'mod_playergroup');
+        $cm->set_after_link(\html_writer::tag(
+            'div',
+            \html_writer::tag('small', $msg, ['class' => 'text-muted']),
+            ['class' => 'pg-availability-hint mt-1']
+        ));
+    }
+}
+
+/**
  * Describes the active custom completion rules.
  *
  * @param \stdClass $course The course object.
