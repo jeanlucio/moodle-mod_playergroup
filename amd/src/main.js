@@ -209,17 +209,38 @@ define([
             $(document).on('click', '[data-action="leavegroup"]', function(e) {
                 e.preventDefault();
 
-                Str.get_string('leavegroupconfirm', 'mod_playergroup').then(function(confirmMsg) {
-                    // eslint-disable-next-line no-alert
-                    if (window.confirm(confirmMsg)) {
+                Str.get_strings([
+                    {key: 'leavegroup', component: 'mod_playergroup'},
+                    {key: 'leavegroupconfirm', component: 'mod_playergroup'},
+                    {key: 'confirm', component: 'core'},
+                    {key: 'cancel', component: 'core'}
+                ]).then(function(strings) {
+                    return ModalFactory.create({
+                        type: ModalFactory.types.SAVE_CANCEL,
+                        title: strings[0],
+                        body: strings[1],
+                        buttons: {
+                            save: strings[2],
+                            cancel: strings[3]
+                        }
+                    });
+                }).then(function(modal) {
+                    modal.show();
+
+                    modal.getRoot().on(ModalEvents.save, function() {
                         Ajax.call([{
                             methodname: 'mod_playergroup_leave_group',
                             args: {cmid: cmid}
                         }])[0].done(function() {
                             window.location.reload();
                         }).fail(Notification.exception);
-                    }
-                    return true;
+                    });
+
+                    modal.getRoot().on(ModalEvents.hidden, function() {
+                        modal.destroy();
+                    });
+
+                    return modal;
                 }).catch(Notification.exception);
             });
         }
