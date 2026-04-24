@@ -62,7 +62,7 @@ class group_info {
                   JOIN {playergroup} pg       ON pg.id = pm.playergroupid
                  WHERE gm.userid = :userid
                    AND pg.course = :courseid
-              ORDER BY g.name ASC";
+              ORDER BY gm.timeadded DESC";
 
         $rows = $DB->get_records_sql($sql, ['userid' => $userid, 'courseid' => $courseid], 0, 1);
         $row  = !empty($rows) ? reset($rows) : null;
