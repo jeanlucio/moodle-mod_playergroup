@@ -25,7 +25,8 @@
 require(__DIR__ . '/../../config.php');
 
 // Course module ID.
-$id = required_param('id', PARAM_INT);
+$id  = required_param('id', PARAM_INT);
+$tab = optional_param('tab', 'groups', PARAM_ALPHA);
 
 $cm = get_coursemodule_from_id('playergroup', $id, 0, false, MUST_EXIST);
 $course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);
@@ -82,17 +83,23 @@ $mygroupsql = "SELECT gm.groupid
                 WHERE pm.playergroupid = :playergroupid AND gm.userid = :userid";
 $mygroupid = $DB->get_field_sql($mygroupsql, ['playergroupid' => $playergroup->id, 'userid' => $USER->id]);
 $hasgroup = !empty($mygroupid);
+$isteacher = has_capability('mod/playergroup:manage', $context);
 
 $templatedata = new \stdClass();
-$templatedata->cmid             = $cm->id;
-$templatedata->hasgroup         = $hasgroup;
-$templatedata->activityopen     = $isopen;
-$templatedata->caninvite        = false;
+$templatedata->cmid               = $cm->id;
+$templatedata->hasgroup           = $hasgroup;
+$templatedata->activityopen       = $isopen;
+$templatedata->caninvite          = false;
 $templatedata->hasinviteableusers = false;
-$templatedata->inviteableusers  = [];
-$templatedata->hasinvites       = false;
-$templatedata->receivedinvites  = [];
-$templatedata->groups           = [];
+$templatedata->inviteableusers    = [];
+$templatedata->hasinvites         = false;
+$templatedata->receivedinvites    = [];
+$templatedata->groups             = [];
+$templatedata->isteacher          = $isteacher;
+$templatedata->reporturl          = (new moodle_url(
+    '/mod/playergroup/view.php',
+    ['id' => $cm->id, 'tab' => 'report']
+))->out(false);
 
 if (!$isopen) {
     if ($timeopen > 0 && $now < $timeopen) {
@@ -260,6 +267,66 @@ if ($hasgroup && $isopen && !$usergroupisfull && !empty($mygroupid)) {
 
 /** @var \mod_playergroup\output\renderer $renderer */
 $renderer = $PAGE->get_renderer('mod_playergroup');
+
+// Teacher: activity log report.
+if ($tab === 'report' && $isteacher) {
+    $eventsmap = [
+        '\\mod_playergroup\\event\\group_created'  => get_string('event_group_created', 'mod_playergroup'),
+        '\\mod_playergroup\\event\\member_joined'  => get_string('event_member_joined', 'mod_playergroup'),
+        '\\mod_playergroup\\event\\member_left'    => get_string('event_member_left', 'mod_playergroup'),
+        '\\mod_playergroup\\event\\invite_accepted' => get_string('event_invite_accepted', 'mod_playergroup'),
+    ];
+
+    [$inevents, $ineventsparams] = $DB->get_in_or_equal(
+        array_keys($eventsmap),
+        SQL_PARAMS_NAMED,
+        'evt'
+    );
+
+    $logsql = "SELECT l.id, l.timecreated, l.userid, l.eventname
+                 FROM {logstore_standard_log} l
+                WHERE l.contextid = :contextid
+                  AND l.eventname $inevents
+             ORDER BY l.timecreated DESC";
+
+    $logentries = $DB->get_records_sql(
+        $logsql,
+        array_merge(['contextid' => $context->id], $ineventsparams),
+        0,
+        200
+    );
+
+    $userids = [];
+    foreach ($logentries as $entry) {
+        $userids[(int) $entry->userid] = (int) $entry->userid;
+    }
+
+    $logusers = [];
+    if (!empty($userids)) {
+        $userfields = 'id, firstname, lastname, firstnamephonetic, lastnamephonetic, middlename, alternatename';
+        $logusers = $DB->get_records_list('user', 'id', $userids, '', $userfields);
+    }
+
+    $rows = [];
+    foreach ($logentries as $entry) {
+        $loguser = $logusers[(int) $entry->userid] ?? null;
+        $rows[] = [
+            'date'     => userdate($entry->timecreated),
+            'username' => $loguser ? fullname($loguser) : '?',
+            'action'   => $eventsmap[$entry->eventname] ?? $entry->eventname,
+        ];
+    }
+
+    $reportdata = new \stdClass();
+    $reportdata->rows    = $rows;
+    $reportdata->hasrows = !empty($rows);
+    $reportdata->backurl = (new moodle_url('/mod/playergroup/view.php', ['id' => $cm->id]))->out(false);
+
+    echo $renderer->render_activity_report($reportdata);
+    echo $OUTPUT->footer();
+    exit;
+}
+
 echo $renderer->render_student_view($templatedata);
 
 echo $OUTPUT->footer();

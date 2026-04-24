@@ -30,6 +30,8 @@
         "hasinviteableusers": false,
         "inviteableusers": [],
         "hasinvites": true,
+        "isteacher": false,
+        "reporturl": "/mod/playergroup/view.php?id=1&tab=report",
         "receivedinvites": [
             {
                 "inviteid": 3,
@@ -61,6 +63,15 @@
     }
 }}
 <div class="mod_playergroup-container mt-4">
+
+    {{#isteacher}}
+    <div class="d-flex justify-content-end mb-3">
+        <a href="{{reporturl}}" class="btn btn-outline-secondary btn-sm">
+            <i class="fa fa-list-alt me-1" aria-hidden="true"></i>
+            {{#str}} viewreport, mod_playergroup {{/str}}
+        </a>
+    </div>
+    {{/isteacher}}
 
     {{^activityopen}}
     <div class="alert alert-warning" role="alert">

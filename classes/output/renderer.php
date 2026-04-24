@@ -39,4 +39,14 @@ class renderer extends plugin_renderer_base {
     public function render_student_view(\stdClass $templatedata): string {
         return $this->render_from_template('mod_playergroup/view_student', $templatedata);
     }
+
+    /**
+     * Renders the teacher activity log report.
+     *
+     * @param \stdClass $templatedata Data to pass to the mustache template.
+     * @return string HTML rendered output.
+     */
+    public function render_activity_report(\stdClass $templatedata): string {
+        return $this->render_from_template('mod_playergroup/view_report', $templatedata);
+    }
 }

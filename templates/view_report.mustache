@@ -1,0 +1,82 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mod_playergroup/view_report
+
+    Activity log report visible to teachers only.
+
+    Example context (json):
+    {
+        "backurl": "/mod/playergroup/view.php?id=1",
+        "hasrows": true,
+        "rows": [
+            {
+                "date": "24/04/2026 14:32",
+                "username": "João Silva",
+                "action": "Group created"
+            },
+            {
+                "date": "24/04/2026 14:35",
+                "username": "Maria Santos",
+                "action": "Member joined group"
+            }
+        ]
+    }
+}}
+<div class="mod_playergroup-container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="h5 fw-bold m-0">
+            <i class="fa fa-list-alt me-2" aria-hidden="true"></i>
+            {{#str}} activitylog, mod_playergroup {{/str}}
+        </h3>
+        <a href="{{backurl}}" class="btn btn-outline-secondary btn-sm">
+            <i class="fa fa-arrow-left me-1" aria-hidden="true"></i>
+            {{#str}} backtotavern, mod_playergroup {{/str}}
+        </a>
+    </div>
+
+    {{#hasrows}}
+    <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">{{#str}} report_date, mod_playergroup {{/str}}</th>
+                    <th scope="col">{{#str}} report_user, mod_playergroup {{/str}}</th>
+                    <th scope="col">{{#str}} report_action, mod_playergroup {{/str}}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#rows}}
+                <tr>
+                    <td class="text-nowrap small text-muted">{{date}}</td>
+                    <td>{{username}}</td>
+                    <td>{{action}}</td>
+                </tr>
+                {{/rows}}
+            </tbody>
+        </table>
+    </div>
+    {{/hasrows}}
+
+    {{^hasrows}}
+    <p class="text-muted text-center py-5">
+        {{#str}} activitylog_empty, mod_playergroup {{/str}}
+    </p>
+    {{/hasrows}}
+
+</div>
