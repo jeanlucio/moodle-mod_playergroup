@@ -64,7 +64,8 @@ class group_info {
                    AND pg.course = :courseid
               ORDER BY g.name ASC";
 
-        $row = $DB->get_record_sql($sql, ['userid' => $userid, 'courseid' => $courseid]);
+        $rows = $DB->get_records_sql($sql, ['userid' => $userid, 'courseid' => $courseid], 0, 1);
+        $row  = !empty($rows) ? reset($rows) : null;
 
         if (!$row) {
             return null;
