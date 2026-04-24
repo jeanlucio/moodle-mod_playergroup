@@ -110,7 +110,7 @@ foreach ($grouprecords as $g) {
     $groupid     = (int) $g->id;
     $isfull      = $membercount >= $maxmembers;
 
-    $badge = !empty($g->badge) ? $g->badge : '👥';
+    $badge = !empty($g->badge) ? $g->badge : '🛡️';
     $card = [
         'groupid'            => $groupid,
         'name'               => format_string($g->name),
