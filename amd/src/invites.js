@@ -24,8 +24,9 @@
 define([
     'jquery',
     'core/ajax',
-    'core/notification'
-], function($, Ajax, Notification) {
+    'core/notification',
+    'core/str'
+], function($, Ajax, Notification, Str) {
 
     return {
         /**
@@ -45,7 +46,7 @@ define([
                 $(modal).appendTo('body').modal('show');
             });
 
-            // Send an invite from within the modal.
+            // Send an invite: replace the button with a "sent" badge instead of reloading.
             $(document).on('click', '.pg-btn-sendinvite', function() {
                 var btn = $(this);
                 var receiverid = parseInt(btn.data('receiverid'), 10);
@@ -56,7 +57,14 @@ define([
                     methodname: 'mod_playergroup_send_invite',
                     args: {cmid: cmid, receiverid: receiverid}
                 }])[0].done(function() {
-                    window.location.reload();
+                    Str.get_string('invitesent', 'mod_playergroup').done(function(label) {
+                        btn.replaceWith(
+                            $('<span class="badge bg-success">' +
+                                '<i class="fa fa-check me-1" aria-hidden="true"></i>' +
+                                label +
+                              '</span>')
+                        );
+                    }).fail(Notification.exception);
                 }).fail(function(ex) {
                     btn.prop('disabled', false);
                     Notification.exception(ex);

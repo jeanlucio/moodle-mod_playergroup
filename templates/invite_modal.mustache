@@ -24,8 +24,9 @@
         "cmid": 1,
         "hasinviteableusers": true,
         "inviteableusers": [
-            {"userid": 5, "fullname": "Ana Silva"},
-            {"userid": 7, "fullname": "Carlos Souza"}
+            {"userid": 5, "fullname": "Ana Silva", "caninvite": true, "invitepending": false, "ingroup": false, "groupname": ""},
+            {"userid": 7, "fullname": "Carlos Souza", "caninvite": false, "invitepending": true, "ingroup": false, "groupname": ""},
+            {"userid": 9, "fullname": "Maria Oliveira", "caninvite": false, "invitepending": false, "ingroup": true, "groupname": "Beta Squad"}
         ]
     }
 }}
@@ -50,12 +51,26 @@
                     {{#inviteableusers}}
                     <li class="list-group-item d-flex justify-content-between align-items-center">
                         <span>{{fullname}}</span>
+                        {{#caninvite}}
                         <button type="button" class="btn btn-sm btn-primary pg-btn-sendinvite"
                                 data-receiverid="{{userid}}"
                                 aria-label="{{#str}} sendinvite, mod_playergroup {{/str}} {{fullname}}">
                             <i class="fa fa-envelope me-1" aria-hidden="true"></i>
                             {{#str}} sendinvite, mod_playergroup {{/str}}
                         </button>
+                        {{/caninvite}}
+                        {{#invitepending}}
+                        <span class="badge bg-success">
+                            <i class="fa fa-check me-1" aria-hidden="true"></i>
+                            {{#str}} invitesent, mod_playergroup {{/str}}
+                        </span>
+                        {{/invitepending}}
+                        {{#ingroup}}
+                        <span class="badge bg-secondary">
+                            <i class="fa fa-users me-1" aria-hidden="true"></i>
+                            {{groupname}}
+                        </span>
+                        {{/ingroup}}
                     </li>
                     {{/inviteableusers}}
                 </ul>

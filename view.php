@@ -169,40 +169,54 @@ foreach ($grouprecords as $g) {
 if ($hasgroup && $isopen && !$usergroupisfull && !empty($mygroupid)) {
     $templatedata->caninvite = true;
 
-    $inviteablesql = "SELECT DISTINCT u.id, u.firstname, u.lastname, u.firstnamephonetic,
-                                      u.lastnamephonetic, u.middlename, u.alternatename
+    // List all other enrolled students, including those already in a group
+    // or with a pending invite — marked with status flags for the template.
+    $inviteablesql = "SELECT u.id, u.firstname, u.lastname, u.firstnamephonetic,
+                             u.lastnamephonetic, u.middlename, u.alternatename,
+                             g_their.name AS existinggroupname,
+                             pi_pend.id   AS pendinginviteid
                         FROM {user} u
                         JOIN {user_enrolments} ue ON ue.userid = u.id
-                        JOIN {enrol} e ON e.id = ue.enrolid
-                       WHERE e.courseid = :courseid
-                         AND ue.status = 0
-                         AND u.deleted = 0
+                        JOIN {enrol} e             ON e.id = ue.enrolid
+                   LEFT JOIN (
+                             SELECT gm_s.userid, MIN(g_s.name) AS name
+                               FROM {groups_members} gm_s
+                               JOIN {playergroup_meta} pm_s ON pm_s.groupid = gm_s.groupid
+                               JOIN {groups} g_s            ON g_s.id = gm_s.groupid
+                              WHERE pm_s.playergroupid = :playergroupid2
+                              GROUP BY gm_s.userid
+                             ) g_their ON g_their.userid = u.id
+                   LEFT JOIN (
+                             SELECT pi_s.receiverid, MIN(pi_s.id) AS id
+                               FROM {playergroup_invites} pi_s
+                              WHERE pi_s.groupid = :groupid
+                                AND pi_s.status  = 0
+                              GROUP BY pi_s.receiverid
+                             ) pi_pend ON pi_pend.receiverid = u.id
+                       WHERE e.courseid  = :courseid
+                         AND ue.status   = 0
+                         AND u.deleted   = 0
                          AND u.suspended = 0
-                         AND u.id <> :currentuserid
-                         AND NOT EXISTS (
-                             SELECT 1
-                               FROM {groups_members} gm2
-                               JOIN {playergroup_meta} pm2 ON pm2.groupid = gm2.groupid
-                              WHERE pm2.playergroupid = :playergroupid AND gm2.userid = u.id
-                         )
-                         AND NOT EXISTS (
-                             SELECT 1
-                               FROM {playergroup_invites} pi2
-                              WHERE pi2.groupid = :groupid AND pi2.receiverid = u.id AND pi2.status = 0
-                         )
+                         AND u.id        <> :currentuserid
                     ORDER BY u.firstname ASC, u.lastname ASC";
 
     $inviteablerecords = $DB->get_records_sql($inviteablesql, [
-        'courseid'      => $cm->course,
-        'currentuserid' => $USER->id,
-        'playergroupid' => $playergroup->id,
-        'groupid'       => (int) $mygroupid,
+        'courseid'       => $cm->course,
+        'currentuserid'  => $USER->id,
+        'playergroupid2' => $playergroup->id,
+        'groupid'        => (int) $mygroupid,
     ]);
 
     foreach ($inviteablerecords as $u) {
+        $ingroup       = !empty($u->existinggroupname);
+        $invitepending = !$ingroup && !empty($u->pendinginviteid);
         $templatedata->inviteableusers[] = [
-            'userid'   => (int) $u->id,
-            'fullname' => fullname($u),
+            'userid'        => (int) $u->id,
+            'fullname'      => fullname($u),
+            'ingroup'       => $ingroup,
+            'groupname'     => $ingroup ? format_string($u->existinggroupname) : '',
+            'invitepending' => $invitepending,
+            'caninvite'     => !$ingroup && !$invitepending,
         ];
     }
     $templatedata->hasinviteableusers = !empty($templatedata->inviteableusers);
