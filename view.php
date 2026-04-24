@@ -84,10 +84,15 @@ $mygroupid = $DB->get_field_sql($mygroupsql, ['playergroupid' => $playergroup->i
 $hasgroup = !empty($mygroupid);
 
 $templatedata = new \stdClass();
-$templatedata->cmid         = $cm->id;
-$templatedata->hasgroup     = $hasgroup;
-$templatedata->activityopen = $isopen;
-$templatedata->groups       = [];
+$templatedata->cmid             = $cm->id;
+$templatedata->hasgroup         = $hasgroup;
+$templatedata->activityopen     = $isopen;
+$templatedata->caninvite        = false;
+$templatedata->hasinviteableusers = false;
+$templatedata->inviteableusers  = [];
+$templatedata->hasinvites       = false;
+$templatedata->receivedinvites  = [];
+$templatedata->groups           = [];
 
 if (!$isopen) {
     if ($timeopen > 0 && $now < $timeopen) {
@@ -102,6 +107,7 @@ if (!$isopen) {
 }
 
 $canleaveany = $hasgroup && !empty($playergroup->canleave) && $isopen;
+$usergroupisfull = false;
 
 // Bulk-load creator profiles to avoid per-card queries.
 $creatorids = [];
@@ -149,9 +155,93 @@ foreach ($grouprecords as $g) {
         'ismygroup'          => $ismygroup,
         'leaderbadge'        => $leaderbadge,
         'canjoin'            => $isopen && !$hasgroup && $privacy !== 2 && !$isfull,
+        'caninvite'          => $ismygroup && $isopen && !$isfull,
         'canedit'            => $ismygroup && $isopen && $iscreator,
         'canleave'           => $ismygroup && $canleaveany,
     ];
+
+    if ($ismygroup) {
+        $usergroupisfull = $isfull;
+    }
+}
+
+// Populate invite-related template data after the card loop.
+if ($hasgroup && $isopen && !$usergroupisfull && !empty($mygroupid)) {
+    $templatedata->caninvite = true;
+
+    $inviteablesql = "SELECT DISTINCT u.id, u.firstname, u.lastname, u.firstnamephonetic,
+                                      u.lastnamephonetic, u.middlename, u.alternatename
+                        FROM {user} u
+                        JOIN {user_enrolments} ue ON ue.userid = u.id
+                        JOIN {enrol} e ON e.id = ue.enrolid
+                       WHERE e.courseid = :courseid
+                         AND ue.status = 0
+                         AND u.deleted = 0
+                         AND u.suspended = 0
+                         AND u.id <> :currentuserid
+                         AND NOT EXISTS (
+                             SELECT 1
+                               FROM {groups_members} gm2
+                               JOIN {playergroup_meta} pm2 ON pm2.groupid = gm2.groupid
+                              WHERE pm2.playergroupid = :playergroupid AND gm2.userid = u.id
+                         )
+                         AND NOT EXISTS (
+                             SELECT 1
+                               FROM {playergroup_invites} pi2
+                              WHERE pi2.groupid = :groupid AND pi2.receiverid = u.id AND pi2.status = 0
+                         )
+                    ORDER BY u.firstname ASC, u.lastname ASC";
+
+    $inviteablerecords = $DB->get_records_sql($inviteablesql, [
+        'courseid'      => $cm->course,
+        'currentuserid' => $USER->id,
+        'playergroupid' => $playergroup->id,
+        'groupid'       => (int) $mygroupid,
+    ]);
+
+    foreach ($inviteablerecords as $u) {
+        $templatedata->inviteableusers[] = [
+            'userid'   => (int) $u->id,
+            'fullname' => fullname($u),
+        ];
+    }
+    $templatedata->hasinviteableusers = !empty($templatedata->inviteableusers);
+} else if (!$hasgroup) {
+    $invitessql = "SELECT pi.id, pi.senderid, pi.groupid, pi.timecreated,
+                          g.name AS groupname, pm.badge
+                     FROM {playergroup_invites} pi
+                     JOIN {groups} g ON g.id = pi.groupid
+                     JOIN {playergroup_meta} pm ON pm.groupid = pi.groupid
+                    WHERE pi.receiverid = :receiverid
+                      AND pi.playergroupid = :playergroupid
+                      AND pi.status = 0
+                 ORDER BY pi.timecreated DESC";
+
+    $inviterecords = $DB->get_records_sql($invitessql, [
+        'receiverid'    => $USER->id,
+        'playergroupid' => $playergroup->id,
+    ]);
+
+    if (!empty($inviterecords)) {
+        $senderids = [];
+        foreach ($inviterecords as $inv) {
+            $senderids[(int) $inv->senderid] = (int) $inv->senderid;
+        }
+        $senderfields = 'id, firstname, lastname, firstnamephonetic, lastnamephonetic, middlename, alternatename';
+        $senders = $DB->get_records_list('user', 'id', $senderids, '', $senderfields);
+
+        foreach ($inviterecords as $inv) {
+            $sender = $senders[(int) $inv->senderid] ?? null;
+            $sendername = $sender ? fullname($sender) : '';
+            $templatedata->receivedinvites[] = [
+                'inviteid'  => (int) $inv->id,
+                'groupname' => format_string($inv->groupname),
+                'badge'     => !empty($inv->badge) ? $inv->badge : '🛡️',
+                'sentby'    => get_string('invitedby', 'mod_playergroup', $sendername),
+            ];
+        }
+        $templatedata->hasinvites = true;
+    }
 }
 
 /** @var \mod_playergroup\output\renderer $renderer */

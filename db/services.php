@@ -57,4 +57,28 @@ $functions = [
         'type'        => 'write',
         'ajax'        => true,
     ],
+    'mod_playergroup_send_invite' => [
+        'classname'   => 'mod_playergroup\external\send_invite',
+        'methodname'  => 'execute',
+        'classpath'   => '',
+        'description' => 'Sends a group invitation to a student who does not yet belong to a group.',
+        'type'        => 'write',
+        'ajax'        => true,
+    ],
+    'mod_playergroup_accept_invite' => [
+        'classname'   => 'mod_playergroup\external\accept_invite',
+        'methodname'  => 'execute',
+        'classpath'   => '',
+        'description' => 'Accepts a pending group invitation and adds the student to the group.',
+        'type'        => 'write',
+        'ajax'        => true,
+    ],
+    'mod_playergroup_reject_invite' => [
+        'classname'   => 'mod_playergroup\external\reject_invite',
+        'methodname'  => 'execute',
+        'classpath'   => '',
+        'description' => 'Declines a pending group invitation.',
+        'type'        => 'write',
+        'ajax'        => true,
+    ],
 ];

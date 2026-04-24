@@ -97,6 +97,15 @@
                         </button>
                     {{/canedit}}
 
+                    {{#caninvite}}
+                        <button type="button" class="btn btn-outline-primary btn-sm"
+                                data-action="openinvites"
+                                aria-label="{{#str}} invitecolleagues, mod_playergroup {{/str}}">
+                            <i class="fa fa-envelope me-1" aria-hidden="true"></i>
+                            {{#str}} invitecolleagues, mod_playergroup {{/str}}
+                        </button>
+                    {{/caninvite}}
+
                     {{#canleave}}
                         <button type="button" class="btn btn-outline-danger btn-sm"
                                 data-action="leavegroup"

@@ -24,6 +24,9 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+// phpcs:disable moodle.Files.LineLength
+
+$string['acceptinvite'] = 'Aceitar';
 $string['activityclosed'] = 'Esta atividade não está mais aceitando formação de grupos.';
 $string['activityclosedmsg'] = 'Esta atividade foi encerrada. A formação de grupos não é mais permitida.';
 $string['activitynotopen'] = 'Esta atividade ainda não está aberta para formação de grupos.';
@@ -62,6 +65,14 @@ $string['grouppassword'] = 'Senha do grupo';
 $string['groupprotected'] = 'Protegido (senha)';
 $string['groups_title'] = 'Grupos da Atividade';
 $string['groupupdated'] = 'Seu grupo foi atualizado com sucesso!';
+$string['invitealreadyhandled'] = 'Este convite já foi respondido.';
+$string['invitealreadysent'] = 'Já existe um convite pendente para este estudante.';
+$string['invitecolleagues'] = 'Convidar Colegas';
+$string['invitedby'] = 'Por: {$a}';
+$string['invitemessage'] = 'Você foi convidado(a) para entrar no grupo \'{$a->group}\' por {$a->sender}.';
+$string['invitepending'] = 'Convite para grupo';
+$string['inviterejected'] = 'Convite recusado.';
+$string['invitesent'] = 'Convite enviado!';
 $string['joingroup'] = 'Entrar no Grupo';
 $string['leader'] = 'Líder';
 $string['leadernamed'] = 'Líder: {$a}';
@@ -74,6 +85,7 @@ $string['modulename'] = 'PlayerGroup';
 $string['modulename_help'] = 'O PlayerGroup permite que os alunos criem grupos de forma autônoma e convidem colegas. Ele se integra com ecossistemas de gamificação, facilitando dinâmicas de equipe e colaboração.';
 $string['modulenameplural'] = 'PlayerGroups';
 $string['name'] = 'Nome da atividade';
+$string['nocolleagueswithoutgroup'] = 'Todos os estudantes matriculados já pertencem a um grupo.';
 $string['nogroups'] = 'Nenhum grupo foi criado ainda. Seja o primeiro!';
 $string['nogroupyet'] = 'Você ainda não faz parte de nenhum grupo. Crie um novo grupo ou entre em um existente.';
 $string['notingroup'] = 'Você não é membro de nenhum grupo nesta atividade.';
@@ -86,6 +98,9 @@ $string['playergroup:view'] = 'Visualizar conteúdo do PlayerGroup';
 $string['pluginadministration'] = 'Administração do PlayerGroup';
 $string['pluginname'] = 'PlayerGroup';
 $string['privacy'] = 'Privacidade';
+$string['receivedinvites'] = 'Convites Pendentes';
+$string['rejectinvite'] = 'Recusar';
+$string['sendinvite'] = 'Convidar';
 $string['showonlyavailable'] = 'Mostrar apenas grupos disponíveis';
 $string['tab_groups'] = 'Grupos';
 $string['tab_mygroup'] = 'Meu Grupo';
