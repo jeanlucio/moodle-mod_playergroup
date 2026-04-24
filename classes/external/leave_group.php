@@ -86,6 +86,11 @@ class leave_group extends external_api {
 
         groups_remove_member((int) $mygroupid, $USER->id);
 
+        \mod_playergroup\event\member_left::create([
+            'context'  => $context,
+            'objectid' => (int) $mygroupid,
+        ])->trigger();
+
         return [
             'success' => true,
             'message' => get_string('groupleft', 'mod_playergroup'),

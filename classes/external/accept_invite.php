@@ -111,6 +111,16 @@ class accept_invite extends external_api {
         $DB->set_field_select('playergroup_invites', 'timemodified', $now, $otherselect, $otherparams);
         $DB->set_field_select('playergroup_invites', 'status', 2, $otherselect, $otherparams);
 
+        \mod_playergroup\event\invite_accepted::create([
+            'context'  => $context,
+            'objectid' => (int) $invite->id,
+        ])->trigger();
+
+        \mod_playergroup\event\member_joined::create([
+            'context'  => $context,
+            'objectid' => (int) $invite->groupid,
+        ])->trigger();
+
         $modinfo = get_fast_modinfo($cm->course);
         $cminfo = $modinfo->get_cm($cm->id);
         $completion = new \completion_info($modinfo->get_course());

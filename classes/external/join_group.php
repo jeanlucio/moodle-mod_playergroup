@@ -123,6 +123,11 @@ class join_group extends external_api {
             $completion->update_state($cminfo, COMPLETION_UNKNOWN, $USER->id);
         }
 
+        \mod_playergroup\event\member_joined::create([
+            'context'  => $context,
+            'objectid' => $params['groupid'],
+        ])->trigger();
+
         return [
             'success' => true,
             'message' => get_string('groupjoined', 'mod_playergroup'),
