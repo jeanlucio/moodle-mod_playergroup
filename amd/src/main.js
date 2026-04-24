@@ -136,7 +136,10 @@ define([
         ModalFactory.create({
             type: ModalFactory.types.SAVE_CANCEL,
             title: titlePromise,
-            body: bodyPromise
+            body: bodyPromise,
+            buttons: {
+                save: titlePromise
+            }
         }).then(function(modal) {
             modal.show();
 
