@@ -57,6 +57,8 @@ class create_group extends external_api {
      * @param string $name Group name.
      * @param string $description Group description (raw HTML, will be sanitised).
      * @param string $badge Emoji or badge identifier.
+     * @param int $privacy Privacy level: 0=open, 1=protected (password), 2=closed.
+     * @param string $password Plain-text password for protected groups (stored hashed).
      * @return array Result with success flag, group ID, and feedback message.
      * @throws \moodle_exception
      */

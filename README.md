@@ -2,7 +2,15 @@
 
 [![Moodle Plugin CI](https://github.com/jeanlucio/moodle-mod_playergroup/actions/workflows/ci.yml/badge.svg)](https://github.com/jeanlucio/moodle-mod_playergroup/actions/workflows/ci.yml)
 
-PlayerGroup is a Moodle activity module that turns group formation into a gamified experience — **The Tavern**. Students autonomously create guilds, invite peers, and join teams, while the plugin seamlessly integrates with gamification ecosystems such as [PlayerHUD](https://github.com/jeanlucio/moodle-block_playerhud) and PlayerRaid.
+PlayerGroup lets students autonomously form their own groups directly from the activity page — no teacher intervention needed. It replaces the manual group assignment process with a self-service experience that works for any course format.
+
+**Works for any context:**
+- Project-based courses where students choose their own teams
+- Labs and workshops with limited seats per group
+- Any activity where peer selection matters
+
+**Built for gamification ecosystems:**
+Designed to integrate with [PlayerHUD](https://github.com/jeanlucio/moodle-block_playerhud) and PlayerRaid, PlayerGroup can serve as the team formation layer of a gamified course — complete with emoji badges, group privacy levels, and a foundation reward for group creators.
 
 ## Features
 
@@ -11,7 +19,7 @@ PlayerGroup is a Moodle activity module that turns group formation into a gamifi
 - Group privacy levels: open, protected (password), and closed
 - Peer invite system via Moodle's native notification (bell + email)
 - Automatic grouping creation — no manual setup required for teachers
-- Gradebook integration: foundation reward for group creators
+- Optional gradebook integration: award a grade to the student who creates a group
 - Activity completion rule: student must join or create a group
 - Full Moodle Groups API integration (native groups and groupings)
 
