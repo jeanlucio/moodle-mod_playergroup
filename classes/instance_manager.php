@@ -70,9 +70,22 @@ class instance_manager {
 
         require_once($CFG->dirroot . '/group/lib.php');
 
-        if ($DB->record_exists('groupings', ['id' => $groupingid])) {
-            // Native function handles removing group-grouping assignments safely.
-            groups_delete_grouping($groupingid);
+        if (!$DB->record_exists('groupings', ['id' => $groupingid])) {
+            return;
         }
+
+        // Delete each group that belongs to this grouping before deleting the grouping itself.
+        // groups_delete_grouping() only removes the grouping record, not the groups.
+        $groupids = $DB->get_fieldset_select(
+            'groupings_groups',
+            'groupid',
+            'groupingid = :groupingid',
+            ['groupingid' => $groupingid]
+        );
+        foreach ($groupids as $groupid) {
+            groups_delete_group((int) $groupid);
+        }
+
+        groups_delete_grouping($groupingid);
     }
 }
