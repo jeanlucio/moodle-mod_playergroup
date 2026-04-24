@@ -103,6 +103,17 @@ if (!$isopen) {
 
 $canleaveany = $hasgroup && !empty($playergroup->canleave) && $isopen;
 
+// Bulk-load creator profiles to avoid per-card queries.
+$creatorids = [];
+foreach ($grouprecords as $g) {
+    $creatorids[(int) $g->creatorid] = (int) $g->creatorid;
+}
+$creators = [];
+if (!empty($creatorids)) {
+    $creatorfields = 'id, firstname, lastname, firstnamephonetic, lastnamephonetic, middlename, alternatename';
+    $creators = $DB->get_records_list('user', 'id', $creatorids, '', $creatorfields);
+}
+
 foreach ($grouprecords as $g) {
     $membercount = (int) $g->membercount;
     $maxmembers  = (int) $playergroup->maxmembers;
@@ -110,6 +121,16 @@ foreach ($grouprecords as $g) {
     $groupid     = (int) $g->id;
     $isfull      = $membercount >= $maxmembers;
     $ismygroup   = $hasgroup && $groupid === (int) $mygroupid;
+    $iscreator   = (int) $g->creatorid === (int) $USER->id;
+
+    $creator = $creators[(int) $g->creatorid] ?? null;
+    if ($iscreator) {
+        $leaderbadge = get_string('leader', 'mod_playergroup');
+    } else if ($creator) {
+        $leaderbadge = get_string('leadernamed', 'mod_playergroup', fullname($creator));
+    } else {
+        $leaderbadge = '';
+    }
 
     $templatedata->groups[] = [
         'groupid'            => $groupid,
@@ -126,8 +147,9 @@ foreach ($grouprecords as $g) {
         'isprivacyclosed'    => $privacy === 2,
         'isfull'             => $isfull,
         'ismygroup'          => $ismygroup,
+        'leaderbadge'        => $leaderbadge,
         'canjoin'            => $isopen && !$hasgroup && $privacy !== 2 && !$isfull,
-        'canedit'            => $ismygroup && $isopen && ((int) $g->creatorid === (int) $USER->id),
+        'canedit'            => $ismygroup && $isopen && $iscreator,
         'canleave'           => $ismygroup && $canleaveany,
     ];
 }
