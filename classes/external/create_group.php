@@ -136,6 +136,13 @@ class create_group extends external_api {
         $meta->timemodified  = time();
         $DB->insert_record('playergroup_meta', $meta);
 
+        $modinfo = get_fast_modinfo($cm->course);
+        $cminfo = $modinfo->get_cm($cm->id);
+        $completion = new \completion_info($modinfo->get_course());
+        if ($completion->is_enabled($cminfo)) {
+            $completion->update_state($cminfo, COMPLETION_UNKNOWN, $USER->id);
+        }
+
         return [
             'success' => true,
             'groupid' => $groupid,

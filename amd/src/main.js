@@ -14,7 +14,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Main entry point: handles filter, join, leave and delegates create to creategroup module.
+ * Main entry point: handles filter, join, leave, edit and delegates create to creategroup module.
  *
  * @module     mod_playergroup/main
  * @copyright  2026 Jean Lúcio
@@ -46,6 +46,81 @@ define([
         }])[0].done(function() {
             window.location.reload();
         }).fail(Notification.exception);
+    };
+
+    /**
+     * Opens the edit-group modal pre-populated with current values.
+     *
+     * @param {number} cmid
+     * @param {number} groupid
+     * @param {string} name
+     * @param {string} description
+     * @param {string} badge
+     * @param {number} privacy
+     */
+    var editGroup = function(cmid, groupid, name, description, badge, privacy) {
+        var titlePromise = Str.get_string('editgroup', 'mod_playergroup');
+        var bodyPromise = Templates.render('mod_playergroup/modal_editgroup', {
+            name: name,
+            description: description,
+            badge: badge,
+            privacy: privacy
+        });
+
+        ModalFactory.create({
+            type: ModalFactory.types.SAVE_CANCEL,
+            title: titlePromise,
+            body: bodyPromise
+        }).then(function(modal) {
+            modal.show();
+
+            modal.getRoot().find('#pg-edit-groupprivacy').val(String(privacy));
+            if (privacy === 1) {
+                modal.getRoot().find('#pg-edit-password-field').removeClass('d-none');
+            }
+
+            modal.getRoot().on('change', '#pg-edit-groupprivacy', function() {
+                var passwordField = modal.getRoot().find('#pg-edit-password-field');
+                if ($(this).val() === '1') {
+                    passwordField.removeClass('d-none');
+                } else {
+                    passwordField.addClass('d-none');
+                    modal.getRoot().find('#pg-edit-grouppassword').val('');
+                }
+            });
+
+            modal.getRoot().on(ModalEvents.save, function(saveEvent) {
+                saveEvent.preventDefault();
+
+                var newname = modal.getRoot().find('#pg-edit-groupname').val();
+                if (!newname.trim()) {
+                    modal.getRoot().find('#pg-edit-groupname').addClass('is-invalid');
+                    return;
+                }
+
+                modal.hide();
+                Ajax.call([{
+                    methodname: 'mod_playergroup_edit_group',
+                    args: {
+                        cmid: cmid,
+                        groupid: groupid,
+                        name: newname,
+                        description: modal.getRoot().find('#pg-edit-groupdesc').val(),
+                        badge: modal.getRoot().find('#pg-edit-groupbadge').val(),
+                        privacy: parseInt(modal.getRoot().find('#pg-edit-groupprivacy').val(), 10),
+                        password: modal.getRoot().find('#pg-edit-grouppassword').val()
+                    }
+                }])[0].done(function() {
+                    window.location.reload();
+                }).fail(Notification.exception);
+            });
+
+            modal.getRoot().on(ModalEvents.hidden, function() {
+                modal.destroy();
+            });
+
+            return modal;
+        }).catch(Notification.exception);
     };
 
     /**
@@ -102,6 +177,20 @@ define([
                 } else {
                     $('.pg-group-card').show();
                 }
+            });
+
+            // Edit group button (creator only).
+            $(document).on('click', '[data-action="editgroup"]', function(e) {
+                e.preventDefault();
+                var btn = $(this);
+                editGroup(
+                    cmid,
+                    parseInt(btn.data('groupid'), 10),
+                    btn.data('name'),
+                    btn.data('description'),
+                    btn.data('badge'),
+                    parseInt(btn.data('privacy'), 10)
+                );
             });
 
             // Join group button.

@@ -49,4 +49,12 @@ $functions = [
         'type'        => 'write',
         'ajax'        => true,
     ],
+    'mod_playergroup_edit_group' => [
+        'classname'   => 'mod_playergroup\external\edit_group',
+        'methodname'  => 'execute',
+        'classpath'   => '',
+        'description' => 'Updates the name, description, badge, and privacy of a group.',
+        'type'        => 'write',
+        'ajax'        => true,
+    ],
 ];

@@ -23,7 +23,9 @@
     {
         "groupid": 42,
         "name": "Dragões do Norte",
+        "rawname": "Dragões do Norte",
         "description": "Buscando jogadores de PHP",
+        "rawdescription": "Buscando jogadores de PHP",
         "badge": "🐉",
         "membercount": 3,
         "maxmembers": 5,
@@ -32,7 +34,8 @@
         "isprivacyprotected": false,
         "isprivacyclosed": false,
         "isfull": false,
-        "canjoin": true
+        "canjoin": true,
+        "canedit": false
     }
 }}
 <div class="col-md-6 col-lg-4 pg-group-card" data-full="{{#isfull}}true{{/isfull}}{{^isfull}}false{{/isfull}}">
@@ -69,17 +72,32 @@
                     {{membercount}} / {{maxmembers}}
                 </span>
 
-                {{#canjoin}}
-                    {{^isfull}}
-                        <button type="button" class="btn btn-outline-success btn-sm pg-btn-join"
-                                data-groupid="{{groupid}}" data-privacy="{{privacy}}">
-                            {{#str}} joingroup, mod_playergroup {{/str}}
+                <div class="d-flex gap-2">
+                    {{#canedit}}
+                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                                data-action="editgroup"
+                                data-groupid="{{groupid}}"
+                                data-name="{{rawname}}"
+                                data-description="{{rawdescription}}"
+                                data-badge="{{badge}}"
+                                data-privacy="{{privacy}}"
+                                aria-label="{{#str}} editgroup, mod_playergroup {{/str}}">
+                            <i class="fa fa-pencil" aria-hidden="true"></i>
                         </button>
-                    {{/isfull}}
-                    {{#isfull}}
-                        <span class="badge bg-secondary">{{#str}} groupfull, mod_playergroup {{/str}}</span>
-                    {{/isfull}}
-                {{/canjoin}}
+                    {{/canedit}}
+
+                    {{#canjoin}}
+                        {{^isfull}}
+                            <button type="button" class="btn btn-outline-success btn-sm pg-btn-join"
+                                    data-groupid="{{groupid}}" data-privacy="{{privacy}}">
+                                {{#str}} joingroup, mod_playergroup {{/str}}
+                            </button>
+                        {{/isfull}}
+                        {{#isfull}}
+                            <span class="badge bg-secondary">{{#str}} groupfull, mod_playergroup {{/str}}</span>
+                        {{/isfull}}
+                    {{/canjoin}}
+                </div>
             </div>
         </div>
     </div>

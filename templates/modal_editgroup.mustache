@@ -1,0 +1,70 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mod_playergroup/modal_editgroup
+
+    Form body for the edit-group modal. Pre-populated with the group's current values.
+
+    Example context (json):
+    {
+        "name": "Dragões do Norte",
+        "description": "Buscando jogadores de PHP",
+        "badge": "🐉",
+        "privacy": 0
+    }
+}}
+<div class="mb-3">
+    <label for="pg-edit-groupname" class="form-label">
+        {{#str}} name, mod_playergroup {{/str}}
+    </label>
+    <input type="text" class="form-control" id="pg-edit-groupname"
+           maxlength="255" value="{{name}}">
+</div>
+
+<div class="mb-3">
+    <label for="pg-edit-groupdesc" class="form-label">
+        {{#str}} description, mod_playergroup {{/str}}
+    </label>
+    <textarea class="form-control" id="pg-edit-groupdesc" rows="3">{{description}}</textarea>
+</div>
+
+<div class="mb-3">
+    <label for="pg-edit-groupbadge" class="form-label">
+        {{#str}} groupbadge, mod_playergroup {{/str}}
+    </label>
+    <input type="text" class="form-control" id="pg-edit-groupbadge"
+           maxlength="10" value="{{badge}}">
+</div>
+
+<div class="mb-3">
+    <label for="pg-edit-groupprivacy" class="form-label">
+        {{#str}} privacy, mod_playergroup {{/str}}
+    </label>
+    <select class="form-select" id="pg-edit-groupprivacy">
+        <option value="0">{{#str}} groupopen, mod_playergroup {{/str}}</option>
+        <option value="1">{{#str}} groupprotected, mod_playergroup {{/str}}</option>
+        <option value="2">{{#str}} groupclosed, mod_playergroup {{/str}}</option>
+    </select>
+</div>
+
+<div class="mb-3 d-none" id="pg-edit-password-field">
+    <label for="pg-edit-grouppassword" class="form-label">
+        {{#str}} grouppassword, mod_playergroup {{/str}}
+    </label>
+    <input type="password" class="form-control" id="pg-edit-grouppassword"
+           placeholder="{{#str}} passwordkeepblank, mod_playergroup {{/str}}">
+</div>

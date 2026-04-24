@@ -54,6 +54,20 @@
     </div>
     {{/activityopen}}
 
+    {{^hasgroup}}
+    {{#activityopen}}
+    <div class="mb-4">
+        <button type="button" class="btn btn-primary" data-action="creategroup">
+            <i class="fa fa-plus me-1" aria-hidden="true"></i>
+            {{#str}} creategroup, mod_playergroup {{/str}}
+        </button>
+        <small class="text-muted d-block mt-1">
+            {{#str}} onegrouponly, mod_playergroup {{/str}}
+        </small>
+    </div>
+    {{/activityopen}}
+    {{/hasgroup}}
+
     <ul class="nav nav-tabs mb-4" id="pg-tabs" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="pg-tab-groups-btn"
@@ -118,13 +132,7 @@
 
             {{^hasgroup}}
                 <div class="text-center py-5">
-                    <p class="text-muted mb-3">{{#str}} nogroupyet, mod_playergroup {{/str}}</p>
-                    {{#activityopen}}
-                    <button type="button" class="btn btn-primary" data-action="creategroup">
-                        <i class="fa fa-plus me-1" aria-hidden="true"></i>
-                        {{#str}} creategroup, mod_playergroup {{/str}}
-                    </button>
-                    {{/activityopen}}
+                    <p class="text-muted mb-0">{{#str}} nogroupyet, mod_playergroup {{/str}}</p>
                 </div>
             {{/hasgroup}}
 

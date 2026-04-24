@@ -116,6 +116,13 @@ class join_group extends external_api {
 
         groups_add_member($params['groupid'], $USER->id);
 
+        $modinfo = get_fast_modinfo($cm->course);
+        $cminfo = $modinfo->get_cm($cm->id);
+        $completion = new \completion_info($modinfo->get_course());
+        if ($completion->is_enabled($cminfo)) {
+            $completion->update_state($cminfo, COMPLETION_UNKNOWN, $USER->id);
+        }
+
         return [
             'success' => true,
             'message' => get_string('groupjoined', 'mod_playergroup'),

@@ -65,13 +65,13 @@ $timeclose = (int) ($playergroup->timeclose ?? 0);
 $isopen = ($timeopen === 0 || $now >= $timeopen) && ($timeclose === 0 || $now <= $timeclose);
 
 // Load all groups linked to this activity instance.
-$sql = "SELECT g.id, g.name, g.description, g.descriptionformat, pm.badge, pm.privacy,
+$sql = "SELECT g.id, g.name, g.description, g.descriptionformat, pm.badge, pm.privacy, pm.creatorid,
                COUNT(gm.id) AS membercount
           FROM {playergroup_meta} pm
           JOIN {groups} g ON g.id = pm.groupid
      LEFT JOIN {groups_members} gm ON gm.groupid = g.id
          WHERE pm.playergroupid = :playergroupid
-      GROUP BY g.id, g.name, g.description, g.descriptionformat, pm.badge, pm.privacy
+      GROUP BY g.id, g.name, g.description, g.descriptionformat, pm.badge, pm.privacy, pm.creatorid
       ORDER BY g.name ASC";
 $grouprecords = $DB->get_records_sql($sql, ['playergroupid' => $playergroup->id]);
 
@@ -110,11 +110,14 @@ foreach ($grouprecords as $g) {
     $groupid     = (int) $g->id;
     $isfull      = $membercount >= $maxmembers;
 
+    $badge = !empty($g->badge) ? $g->badge : '👥';
     $card = [
         'groupid'            => $groupid,
         'name'               => format_string($g->name),
+        'rawname'            => s($g->name),
         'description'        => format_text($g->description, (int) $g->descriptionformat, ['context' => $context]),
-        'badge'              => !empty($g->badge) ? $g->badge : '👥',
+        'rawdescription'     => s($g->description ?? ''),
+        'badge'              => $badge,
         'membercount'        => $membercount,
         'maxmembers'         => $maxmembers,
         'privacy'            => $privacy,
@@ -123,12 +126,15 @@ foreach ($grouprecords as $g) {
         'isprivacyclosed'    => $privacy === 2,
         'isfull'             => $isfull,
         'canjoin'            => $isopen && !$hasgroup && $privacy !== 2 && !$isfull,
+        'canedit'            => false,
     ];
 
     $templatedata->groups[] = $card;
 
     if ($hasgroup && $groupid === (int) $mygroupid) {
-        $templatedata->mygroup = $card;
+        $mycard           = $card;
+        $mycard['canedit'] = $isopen && ((int) $g->creatorid === (int) $USER->id);
+        $templatedata->mygroup = $mycard;
     }
 }
 
