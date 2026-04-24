@@ -34,8 +34,10 @@
         "isprivacyprotected": false,
         "isprivacyclosed": false,
         "isfull": false,
+        "ismygroup": false,
         "canjoin": true,
-        "canedit": false
+        "canedit": false,
+        "canleave": false
     }
 }}
 <div class="col-md-6 col-lg-4 pg-group-card" data-full="{{#isfull}}true{{/isfull}}{{^isfull}}false{{/isfull}}">
@@ -45,6 +47,9 @@
                 <span class="fs-1 me-3" aria-hidden="true">{{badge}}</span>
                 <div>
                     <h4 class="card-title h5 mb-1">{{name}}</h4>
+                    {{#ismygroup}}
+                        <span class="badge bg-primary me-1">{{#str}} tab_mygroup, mod_playergroup {{/str}}</span>
+                    {{/ismygroup}}
                     {{#isprivacyopen}}
                         <span class="badge bg-success">{{#str}} groupopen, mod_playergroup {{/str}}</span>
                     {{/isprivacyopen}}
@@ -72,7 +77,7 @@
                     {{membercount}} / {{maxmembers}}
                 </span>
 
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 align-items-center">
                     {{#canedit}}
                         <button type="button" class="btn btn-outline-secondary btn-sm"
                                 data-action="editgroup"
@@ -85,6 +90,14 @@
                             <i class="fa fa-pencil" aria-hidden="true"></i>
                         </button>
                     {{/canedit}}
+
+                    {{#canleave}}
+                        <button type="button" class="btn btn-outline-danger btn-sm"
+                                data-action="leavegroup"
+                                aria-label="{{#str}} leavegroup, mod_playergroup {{/str}}">
+                            <i class="fa fa-sign-out" aria-hidden="true"></i>
+                        </button>
+                    {{/canleave}}
 
                     {{#canjoin}}
                         {{^isfull}}

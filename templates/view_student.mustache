@@ -17,13 +17,13 @@
 {{!
     @template mod_playergroup/view_student
 
-    Template for the student main view with two tabs: groups list and my group.
+    Single-list student view. The student's own group is highlighted with a
+    "My Group" badge and inline edit/leave buttons directly on its card.
 
     Example context (json):
     {
         "cmid": 1,
         "hasgroup": false,
-        "canleave": false,
         "activityopen": true,
         "availabilitymessage": "",
         "groups": [
@@ -39,10 +39,12 @@
                 "isprivacyprotected": false,
                 "isprivacyclosed": false,
                 "isfull": false,
-                "canjoin": true
+                "ismygroup": false,
+                "canjoin": true,
+                "canedit": false,
+                "canleave": false
             }
-        ],
-        "mygroup": null
+        ]
     }
 }}
 <div class="mod_playergroup-container mt-4">
@@ -68,76 +70,24 @@
     {{/activityopen}}
     {{/hasgroup}}
 
-    <ul class="nav nav-tabs mb-4" id="pg-tabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="pg-tab-groups-btn"
-                    data-bs-toggle="tab" data-bs-target="#pg-tab-groups"
-                    type="button" role="tab"
-                    aria-controls="pg-tab-groups" aria-selected="true">
-                {{#str}} tab_groups, mod_playergroup {{/str}}
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="pg-tab-mygroup-btn"
-                    data-bs-toggle="tab" data-bs-target="#pg-tab-mygroup"
-                    type="button" role="tab"
-                    aria-controls="pg-tab-mygroup" aria-selected="false">
-                {{#str}} tab_mygroup, mod_playergroup {{/str}}
-            </button>
-        </li>
-    </ul>
-
-    <div class="tab-content" id="pg-tabs-content">
-
-        {{! Tab A — all groups }}
-        <div class="tab-pane fade show active" id="pg-tab-groups"
-             role="tabpanel" aria-labelledby="pg-tab-groups-btn">
-
-            <div class="form-check mb-3">
-                <input type="checkbox" class="form-check-input" id="pg-filter-full">
-                <label class="form-check-label" for="pg-filter-full">
-                    {{#str}} showonlyavailable, mod_playergroup {{/str}}
-                </label>
-            </div>
-
-            <div class="row g-3" id="pg-groups-list">
-                {{#groups}}
-                    {{> mod_playergroup/group_card}}
-                {{/groups}}
-                {{^groups}}
-                    <div class="col-12 text-center py-5">
-                        <p class="text-muted mb-0">{{#str}} nogroups, mod_playergroup {{/str}}</p>
-                    </div>
-                {{/groups}}
-            </div>
-        </div>
-
-        {{! Tab B — my group / management }}
-        <div class="tab-pane fade" id="pg-tab-mygroup"
-             role="tabpanel" aria-labelledby="pg-tab-mygroup-btn">
-
-            {{#hasgroup}}
-                <div class="row g-3 mb-4">
-                    {{#mygroup}}
-                        {{> mod_playergroup/group_card}}
-                    {{/mygroup}}
-                </div>
-                {{#canleave}}
-                    <button type="button" class="btn btn-outline-danger" data-action="leavegroup">
-                        <i class="fa fa-sign-out me-1" aria-hidden="true"></i>
-                        {{#str}} leavegroup, mod_playergroup {{/str}}
-                    </button>
-                {{/canleave}}
-            {{/hasgroup}}
-
-            {{^hasgroup}}
-                <div class="text-center py-5">
-                    <p class="text-muted mb-0">{{#str}} nogroupyet, mod_playergroup {{/str}}</p>
-                </div>
-            {{/hasgroup}}
-
-        </div>
+    <div class="form-check mb-3">
+        <input type="checkbox" class="form-check-input" id="pg-filter-full">
+        <label class="form-check-label" for="pg-filter-full">
+            {{#str}} showonlyavailable, mod_playergroup {{/str}}
+        </label>
     </div>
+
+    <div class="row g-3" id="pg-groups-list">
+        {{#groups}}
+            {{> mod_playergroup/group_card}}
+        {{/groups}}
+        {{^groups}}
+            <div class="col-12 text-center py-5">
+                <p class="text-muted mb-0">{{#str}} nogroups, mod_playergroup {{/str}}</p>
+            </div>
+        {{/groups}}
+    </div>
+
 </div>
 {{#js}}
 require(['mod_playergroup/main'], function(Main) {

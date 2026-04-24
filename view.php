@@ -84,12 +84,10 @@ $mygroupid = $DB->get_field_sql($mygroupsql, ['playergroupid' => $playergroup->i
 $hasgroup = !empty($mygroupid);
 
 $templatedata = new \stdClass();
-$templatedata->cmid        = $cm->id;
-$templatedata->hasgroup    = $hasgroup;
-$templatedata->canleave    = $hasgroup && !empty($playergroup->canleave) && $isopen;
+$templatedata->cmid         = $cm->id;
+$templatedata->hasgroup     = $hasgroup;
 $templatedata->activityopen = $isopen;
-$templatedata->groups      = [];
-$templatedata->mygroup     = null;
+$templatedata->groups       = [];
 
 if (!$isopen) {
     if ($timeopen > 0 && $now < $timeopen) {
@@ -103,21 +101,23 @@ if (!$isopen) {
     }
 }
 
+$canleaveany = $hasgroup && !empty($playergroup->canleave) && $isopen;
+
 foreach ($grouprecords as $g) {
     $membercount = (int) $g->membercount;
     $maxmembers  = (int) $playergroup->maxmembers;
     $privacy     = (int) ($g->privacy ?? 0);
     $groupid     = (int) $g->id;
     $isfull      = $membercount >= $maxmembers;
+    $ismygroup   = $hasgroup && $groupid === (int) $mygroupid;
 
-    $badge = !empty($g->badge) ? $g->badge : '🛡️';
-    $card = [
+    $templatedata->groups[] = [
         'groupid'            => $groupid,
         'name'               => format_string($g->name),
         'rawname'            => s($g->name),
         'description'        => format_text($g->description, (int) $g->descriptionformat, ['context' => $context]),
         'rawdescription'     => s($g->description ?? ''),
-        'badge'              => $badge,
+        'badge'              => !empty($g->badge) ? $g->badge : '🛡️',
         'membercount'        => $membercount,
         'maxmembers'         => $maxmembers,
         'privacy'            => $privacy,
@@ -125,17 +125,11 @@ foreach ($grouprecords as $g) {
         'isprivacyprotected' => $privacy === 1,
         'isprivacyclosed'    => $privacy === 2,
         'isfull'             => $isfull,
+        'ismygroup'          => $ismygroup,
         'canjoin'            => $isopen && !$hasgroup && $privacy !== 2 && !$isfull,
-        'canedit'            => false,
+        'canedit'            => $ismygroup && $isopen && ((int) $g->creatorid === (int) $USER->id),
+        'canleave'           => $ismygroup && $canleaveany,
     ];
-
-    $templatedata->groups[] = $card;
-
-    if ($hasgroup && $groupid === (int) $mygroupid) {
-        $mycard           = $card;
-        $mycard['canedit'] = $isopen && ((int) $g->creatorid === (int) $USER->id);
-        $templatedata->mygroup = $mycard;
-    }
 }
 
 /** @var \mod_playergroup\output\renderer $renderer */
