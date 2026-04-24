@@ -26,11 +26,27 @@ defined('MOODLE_INTERNAL') || die();
 
 $functions = [
     'mod_playergroup_create_group' => [
-        'classname'     => 'mod_playergroup\external\create_group',
-        'methodname'    => 'execute',
-        'classpath'     => '',
-        'description'   => 'Creates a new group and assigns the creator as the first member.',
-        'type'          => 'write',
-        'ajax'          => true,
+        'classname'   => 'mod_playergroup\external\create_group',
+        'methodname'  => 'execute',
+        'classpath'   => '',
+        'description' => 'Creates a new group and assigns the creator as the first member.',
+        'type'        => 'write',
+        'ajax'        => true,
+    ],
+    'mod_playergroup_join_group' => [
+        'classname'   => 'mod_playergroup\external\join_group',
+        'methodname'  => 'execute',
+        'classpath'   => '',
+        'description' => 'Adds the current student to an existing group.',
+        'type'        => 'write',
+        'ajax'        => true,
+    ],
+    'mod_playergroup_leave_group' => [
+        'classname'   => 'mod_playergroup\external\leave_group',
+        'methodname'  => 'execute',
+        'classpath'   => '',
+        'description' => 'Removes the current student from their group.',
+        'type'        => 'write',
+        'ajax'        => true,
     ],
 ];

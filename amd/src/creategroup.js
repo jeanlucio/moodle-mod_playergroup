@@ -32,7 +32,7 @@ define([
 ], function($, Ajax, Notification, ModalFactory, ModalEvents, Templates, Str) {
     return {
         init: function(cmid) {
-            $('[data-action="creategroup"]').on('click', function(e) {
+            $(document).on('click', '[data-action="creategroup"]', function(e) {
                 e.preventDefault();
 
                 var titlePromise = Str.get_string('creategroup', 'mod_playergroup');
@@ -45,35 +45,47 @@ define([
                 }).then(function(modal) {
                     modal.show();
 
-                    // Handle the save button click.
+                    // Toggle password field visibility based on privacy selection.
+                    modal.getRoot().on('change', '#pg-groupprivacy', function() {
+                        var passwordField = modal.getRoot().find('#pg-password-field');
+                        if ($(this).val() === '1') {
+                            passwordField.removeClass('d-none');
+                        } else {
+                            passwordField.addClass('d-none');
+                            modal.getRoot().find('#pg-grouppassword').val('');
+                        }
+                    });
+
                     modal.getRoot().on(ModalEvents.save, function(saveEvent) {
                         saveEvent.preventDefault();
 
-                        var name = $('#groupname').val();
-                        var desc = $('#groupdesc').val();
-                        var badge = $('#groupbadge').val();
+                        var name = modal.getRoot().find('#pg-groupname').val();
+                        var desc = modal.getRoot().find('#pg-groupdesc').val();
+                        var badge = modal.getRoot().find('#pg-groupbadge').val();
+                        var privacy = parseInt(modal.getRoot().find('#pg-groupprivacy').val(), 10);
+                        var password = modal.getRoot().find('#pg-grouppassword').val();
 
                         if (!name.trim()) {
-                            $('#groupname').addClass('is-invalid');
+                            modal.getRoot().find('#pg-groupname').addClass('is-invalid');
                             return;
                         }
 
-                        // Call the external function.
                         Ajax.call([{
                             methodname: 'mod_playergroup_create_group',
                             args: {
                                 cmid: cmid,
                                 name: name,
                                 description: desc,
-                                badge: badge
+                                badge: badge,
+                                privacy: privacy,
+                                password: password
                             }
                         }])[0].done(function() {
                             modal.hide();
-                            window.location.reload(); // Reloads to show the new group on screen.
+                            window.location.reload();
                         }).fail(Notification.exception);
                     });
 
-                    // Clean up DOM when hidden.
                     modal.getRoot().on(ModalEvents.hidden, function() {
                         modal.destroy();
                     });

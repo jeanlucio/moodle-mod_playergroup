@@ -1,0 +1,86 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mod_playergroup/group_card
+
+    Reusable card for a single group. Used in both the groups tab and the my-group tab.
+
+    Example context (json):
+    {
+        "groupid": 42,
+        "name": "Dragões do Norte",
+        "description": "Buscando jogadores de PHP",
+        "badge": "🐉",
+        "membercount": 3,
+        "maxmembers": 5,
+        "privacy": 0,
+        "isprivacyopen": true,
+        "isprivacyprotected": false,
+        "isprivacyclosed": false,
+        "isfull": false,
+        "canjoin": true
+    }
+}}
+<div class="col-md-6 col-lg-4 pg-group-card" data-full="{{#isfull}}true{{/isfull}}{{^isfull}}false{{/isfull}}">
+    <div class="card h-100 shadow-sm border-0">
+        <div class="card-body d-flex flex-column">
+            <div class="d-flex align-items-center mb-3">
+                <span class="fs-1 me-3" aria-hidden="true">{{badge}}</span>
+                <div>
+                    <h4 class="card-title h5 mb-1">{{name}}</h4>
+                    {{#isprivacyopen}}
+                        <span class="badge bg-success">{{#str}} groupopen, mod_playergroup {{/str}}</span>
+                    {{/isprivacyopen}}
+                    {{#isprivacyprotected}}
+                        <span class="badge bg-warning text-dark">
+                            <i class="fa fa-lock me-1" aria-hidden="true"></i>
+                            {{#str}} groupprotected, mod_playergroup {{/str}}
+                        </span>
+                    {{/isprivacyprotected}}
+                    {{#isprivacyclosed}}
+                        <span class="badge bg-secondary">
+                            <i class="fa fa-lock me-1" aria-hidden="true"></i>
+                            {{#str}} groupclosed, mod_playergroup {{/str}}
+                        </span>
+                    {{/isprivacyclosed}}
+                </div>
+            </div>
+
+            <p class="card-text text-secondary mb-4">{{{description}}}</p>
+
+            <div class="mt-auto d-flex justify-content-between align-items-center">
+                <span class="badge bg-light text-dark border">
+                    <i class="fa fa-users me-1" aria-hidden="true"></i>
+                    <span class="visually-hidden">{{#str}} currentmembers, mod_playergroup {{/str}}</span>
+                    {{membercount}} / {{maxmembers}}
+                </span>
+
+                {{#canjoin}}
+                    {{^isfull}}
+                        <button type="button" class="btn btn-outline-success btn-sm pg-btn-join"
+                                data-groupid="{{groupid}}" data-privacy="{{privacy}}">
+                            {{#str}} joingroup, mod_playergroup {{/str}}
+                        </button>
+                    {{/isfull}}
+                    {{#isfull}}
+                        <span class="badge bg-secondary">{{#str}} groupfull, mod_playergroup {{/str}}</span>
+                    {{/isfull}}
+                {{/canjoin}}
+            </div>
+        </div>
+    </div>
+</div>

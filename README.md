@@ -48,7 +48,7 @@ When adding the activity, teachers can configure:
 Planned phases:
 
 - [x] Phase 1 — Foundation (DB schema, form, grade API, completion, events)
-- [ ] Phase 2 — Student interface (join/leave, tabs, group cards)
+- [x] Phase 2 — Student interface (join/leave, tabs, group cards, privacy)
 - [ ] Phase 3 — Invite system (Message API, accept/reject)
 - [ ] Phase 4 — Ecosystem API + audit events
 - [ ] Phase 5 — Privacy API, backup/restore, PHPUnit tests

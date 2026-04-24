@@ -45,6 +45,8 @@ class create_group extends external_api {
             'name'        => new external_value(PARAM_TEXT, 'Name of the group'),
             'description' => new external_value(PARAM_RAW, 'Group description (may contain HTML)'),
             'badge'       => new external_value(PARAM_TEXT, 'Emoji or badge string'),
+            'privacy'     => new external_value(PARAM_INT, 'Privacy level: 0=open, 1=protected, 2=closed', VALUE_DEFAULT, 0),
+            'password'    => new external_value(PARAM_RAW, 'Plain-text password for protected groups', VALUE_DEFAULT, ''),
         ]);
     }
 
@@ -58,7 +60,14 @@ class create_group extends external_api {
      * @return array Result with success flag, group ID, and feedback message.
      * @throws \moodle_exception
      */
-    public static function execute(int $cmid, string $name, string $description, string $badge): array {
+    public static function execute(
+        int $cmid,
+        string $name,
+        string $description,
+        string $badge,
+        int $privacy = 0,
+        string $password = ''
+    ): array {
         global $CFG, $DB, $USER;
 
         require_once($CFG->dirroot . '/group/lib.php');
@@ -68,6 +77,8 @@ class create_group extends external_api {
             'name'        => $name,
             'description' => $description,
             'badge'       => $badge,
+            'privacy'     => $privacy,
+            'password'    => $password,
         ]);
 
         $context = \context_module::instance($params['cmid']);
@@ -105,14 +116,22 @@ class create_group extends external_api {
         // Add the founding student as the first group member.
         groups_add_member($groupid, $USER->id);
 
-        // Store metadata (badge/emoji and creator) in the plugin's table.
+        $privacylevel = (int) $params['privacy'];
+        $hashedpassword = '';
+        if ($privacylevel === 1 && $params['password'] !== '') {
+            $hashedpassword = password_hash($params['password'], PASSWORD_DEFAULT);
+        }
+
+        // Store metadata (badge, privacy, creator) in the plugin's table.
         $meta = new \stdClass();
-        $meta->groupid      = $groupid;
+        $meta->groupid       = $groupid;
         $meta->playergroupid = $playergroup->id;
-        $meta->creatorid    = $USER->id;
-        $meta->badge        = $params['badge'];
-        $meta->timecreated  = time();
-        $meta->timemodified = time();
+        $meta->creatorid     = $USER->id;
+        $meta->badge         = $params['badge'];
+        $meta->privacy       = $privacylevel;
+        $meta->password      = $hashedpassword;
+        $meta->timecreated   = time();
+        $meta->timemodified  = time();
         $DB->insert_record('playergroup_meta', $meta);
 
         return [
