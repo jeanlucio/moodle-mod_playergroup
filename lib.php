@@ -222,10 +222,7 @@ function playergroup_get_completion_state(\stdClass $course, object $cm, int $us
 
     $playergroup = $DB->get_record('playergroup', ['id' => $cm->instance], '*', MUST_EXIST);
 
-    if (empty($playergroup->groupingid)) {
-        return $type;
-    }
-
+    // Check directly against playergroup_meta — groupingid is not required for this query.
     $sql = "SELECT gm.groupid
               FROM {groups_members} gm
               JOIN {playergroup_meta} pm ON pm.groupid = gm.groupid
@@ -236,6 +233,35 @@ function playergroup_get_completion_state(\stdClass $course, object $cm, int $us
         'playergroupid' => $playergroup->id,
         'userid'        => $userid,
     ]);
+}
+
+/**
+ * Populates the course module info object with custom completion rule data.
+ *
+ * Called by Moodle when building cm_info. Stores the completionjoingroup flag
+ * in customdata so activity_custom_completion::get_available_custom_rules() can
+ * determine which rules are enabled for this instance.
+ *
+ * @param \stdClass $coursemodule The raw course_modules row (id, instance, …).
+ * @return \cached_cm_info|false A populated info object, or false on failure.
+ */
+function playergroup_get_coursemodule_info(\stdClass $coursemodule): \cached_cm_info|false {
+    global $DB;
+
+    $fields = 'id, name, completionjoingroup';
+    $playergroup = $DB->get_record('playergroup', ['id' => $coursemodule->instance], $fields);
+    if (!$playergroup) {
+        return false;
+    }
+
+    $info = new \cached_cm_info();
+    $info->name = $playergroup->name;
+
+    if (!empty($playergroup->completionjoingroup)) {
+        $info->customdata['customcompletionrules']['completionjoingroup'] = 1;
+    }
+
+    return $info;
 }
 
 /**

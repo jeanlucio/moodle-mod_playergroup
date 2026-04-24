@@ -58,37 +58,78 @@ $event->trigger();
 echo $OUTPUT->header();
 echo $OUTPUT->heading(format_string($playergroup->name));
 
+// Determine whether the activity is within the configured availability window.
+$now = time();
+$timeopen  = (int) ($playergroup->timeopen ?? 0);
+$timeclose = (int) ($playergroup->timeclose ?? 0);
+$isopen = ($timeopen === 0 || $now >= $timeopen) && ($timeclose === 0 || $now <= $timeclose);
+
 // Load all groups linked to this activity instance.
-$sql = "SELECT g.id, g.name, g.description, g.descriptionformat, pm.badge, COUNT(gm.id) AS membercount
+$sql = "SELECT g.id, g.name, g.description, g.descriptionformat, pm.badge, pm.privacy,
+               COUNT(gm.id) AS membercount
           FROM {playergroup_meta} pm
           JOIN {groups} g ON g.id = pm.groupid
      LEFT JOIN {groups_members} gm ON gm.groupid = g.id
          WHERE pm.playergroupid = :playergroupid
-      GROUP BY g.id, g.name, g.description, g.descriptionformat, pm.badge
+      GROUP BY g.id, g.name, g.description, g.descriptionformat, pm.badge, pm.privacy
       ORDER BY g.name ASC";
 $grouprecords = $DB->get_records_sql($sql, ['playergroupid' => $playergroup->id]);
 
-// Check if the current user already belongs to a group in this activity.
-$hassql = "SELECT gm.groupid
-             FROM {groups_members} gm
-             JOIN {playergroup_meta} pm ON pm.groupid = gm.groupid
-            WHERE pm.playergroupid = :playergroupid AND gm.userid = :userid";
-$hasgroup = $DB->record_exists_sql($hassql, ['playergroupid' => $playergroup->id, 'userid' => $USER->id]);
+// Retrieve the current user's group ID within this activity (false if none).
+$mygroupsql = "SELECT gm.groupid
+                 FROM {groups_members} gm
+                 JOIN {playergroup_meta} pm ON pm.groupid = gm.groupid
+                WHERE pm.playergroupid = :playergroupid AND gm.userid = :userid";
+$mygroupid = $DB->get_field_sql($mygroupsql, ['playergroupid' => $playergroup->id, 'userid' => $USER->id]);
+$hasgroup = !empty($mygroupid);
 
 $templatedata = new \stdClass();
-$templatedata->cmid     = $cm->id;
-$templatedata->hasgroup = $hasgroup;
-$templatedata->groups   = [];
+$templatedata->cmid        = $cm->id;
+$templatedata->hasgroup    = $hasgroup;
+$templatedata->canleave    = $hasgroup && !empty($playergroup->canleave) && $isopen;
+$templatedata->activityopen = $isopen;
+$templatedata->groups      = [];
+$templatedata->mygroup     = null;
+
+if (!$isopen) {
+    if ($timeopen > 0 && $now < $timeopen) {
+        $templatedata->availabilitymessage = get_string(
+            'activityopensfrom',
+            'mod_playergroup',
+            userdate($timeopen)
+        );
+    } else {
+        $templatedata->availabilitymessage = get_string('activityclosedmsg', 'mod_playergroup');
+    }
+}
 
 foreach ($grouprecords as $g) {
-    $templatedata->groups[] = [
-        'name'        => format_string($g->name),
-        'description' => format_text($g->description, (int) $g->descriptionformat, ['context' => $context]),
-        'badge'       => !empty($g->badge) ? $g->badge : '👥',
-        'membercount' => (int) $g->membercount,
-        'maxmembers'  => (int) $playergroup->maxmembers,
-        'joinbtn'     => get_string('joingroup', 'mod_playergroup'),
+    $membercount = (int) $g->membercount;
+    $maxmembers  = (int) $playergroup->maxmembers;
+    $privacy     = (int) ($g->privacy ?? 0);
+    $groupid     = (int) $g->id;
+    $isfull      = $membercount >= $maxmembers;
+
+    $card = [
+        'groupid'            => $groupid,
+        'name'               => format_string($g->name),
+        'description'        => format_text($g->description, (int) $g->descriptionformat, ['context' => $context]),
+        'badge'              => !empty($g->badge) ? $g->badge : '👥',
+        'membercount'        => $membercount,
+        'maxmembers'         => $maxmembers,
+        'privacy'            => $privacy,
+        'isprivacyopen'      => $privacy === 0,
+        'isprivacyprotected' => $privacy === 1,
+        'isprivacyclosed'    => $privacy === 2,
+        'isfull'             => $isfull,
+        'canjoin'            => $isopen && !$hasgroup && $privacy !== 2 && !$isfull,
     ];
+
+    $templatedata->groups[] = $card;
+
+    if ($hasgroup && $groupid === (int) $mygroupid) {
+        $templatedata->mygroup = $card;
+    }
 }
 
 /** @var \mod_playergroup\output\renderer $renderer */

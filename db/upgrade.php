@@ -15,17 +15,43 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Version details for the PlayerGroup module.
+ * Database upgrade steps for mod_playergroup.
  *
  * @package    mod_playergroup
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+/**
+ * Upgrade the plugin from one version to the next.
+ *
+ * @param int $oldversion The old plugin version.
+ * @return bool True on success.
+ */
+function xmldb_playergroup_upgrade(int $oldversion): bool {
+    global $DB;
 
-$plugin->component = 'mod_playergroup';
-$plugin->version   = 2026042003; // YYYYMMDDXX format.
-$plugin->requires  = 2024100700; // Moodle 4.5.
-$plugin->maturity  = MATURITY_ALPHA;
-$plugin->release   = 'v0.1-alpha';
+    $dbman = $DB->get_manager();
+
+    if ($oldversion < 2026042003) {
+        $table = new xmldb_table('playergroup');
+        $field = new xmldb_field(
+            'completionjoingroup',
+            XMLDB_TYPE_INTEGER,
+            '1',
+            null,
+            XMLDB_NOTNULL,
+            null,
+            '0',
+            'deletegroups'
+        );
+
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        upgrade_mod_savepoint(true, 2026042003, 'playergroup');
+    }
+
+    return true;
+}
