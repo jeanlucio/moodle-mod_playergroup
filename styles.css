@@ -11,10 +11,6 @@
     color: var(--pg-ingroup-text, #fff);
 }
 
-.pg-badge-leader {
-    background-color: var(--pg-leader-bg, #b8860b);
-    color: var(--pg-leader-text, #fff);
-}
 
 #pg-invite-modal .btn-close {
     background: transparent;
