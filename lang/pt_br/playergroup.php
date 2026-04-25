@@ -54,6 +54,7 @@ $string['event_member_joined'] = 'Membro ingressou no grupo';
 $string['event_member_left'] = 'Membro saiu do grupo';
 $string['gamerules'] = 'Regras do Jogo e Equipes';
 $string['grade'] = 'Recompensa de fundação (nota)';
+$string['gradeautonotice'] = 'A avaliação é automática: o aluno recebe os pontos configurados assim que entra ou cria um grupo. A nota é permanente — não é removida se o aluno sair do grupo depois.';
 $string['groupbadge'] = 'Brasão / Emoji';
 $string['groupclosed'] = 'Fechado (somente convite)';
 $string['groupcreated'] = 'Seu grupo foi criado com sucesso!';

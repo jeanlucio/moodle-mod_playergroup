@@ -123,6 +123,15 @@ class mod_playergroup_mod_form extends moodleform_mod {
         // Default to "None" — grading is optional for this activity type.
         $this->standard_grading_coursemodule_elements();
         $mform->setDefault('grade', 0);
+        $mform->addElement(
+            'static',
+            'gradeautonotice',
+            '',
+            \html_writer::div(
+                get_string('gradeautonotice', 'mod_playergroup'),
+                'alert alert-info mb-0'
+            )
+        );
 
         // Standard course module elements (completion, groups, etc).
         $this->standard_coursemodule_elements();

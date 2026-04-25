@@ -54,6 +54,7 @@ $string['event_member_joined'] = 'Member joined group';
 $string['event_member_left'] = 'Member left group';
 $string['gamerules'] = 'Game and Team Rules';
 $string['grade'] = 'Foundation reward (grade)';
+$string['gradeautonotice'] = 'Grading is automatic: the student receives the configured points as soon as they join or create a group. The grade is permanent — it is not removed if the student leaves the group later.';
 $string['groupbadge'] = 'Badge / Emoji';
 $string['groupclosed'] = 'Closed (invite only)';
 $string['groupcreated'] = 'Your group was created successfully!';
