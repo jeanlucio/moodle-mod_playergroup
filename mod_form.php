@@ -132,6 +132,7 @@ class mod_playergroup_mod_form extends moodleform_mod {
                 'alert alert-info mb-0'
             )
         );
+        $mform->hideIf('gradeautonotice', 'grade[modgrade_type]', 'eq', 'none');
 
         // Standard course module elements (completion, groups, etc).
         $this->standard_coursemodule_elements();
