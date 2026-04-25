@@ -58,6 +58,17 @@ $capabilities = [
         ],
     ],
 
+    'mod/playergroup:manage' => [
+        'riskbitmask' => RISK_XSS,
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_MODULE,
+        'archetypes' => [
+            'teacher' => CAP_ALLOW,
+            'editingteacher' => CAP_ALLOW,
+            'manager' => CAP_ALLOW,
+        ],
+    ],
+
     'mod/playergroup:manageinvites' => [
         'riskbitmask' => RISK_SPAM,
         'captype' => 'write',

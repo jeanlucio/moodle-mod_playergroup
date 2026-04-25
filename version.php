@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'mod_playergroup';
-$plugin->version   = 2026042401; // YYYYMMDDXX format.
+$plugin->version   = 2026042501; // YYYYMMDDXX format.
 $plugin->requires  = 2024100700; // Moodle 4.5.
 $plugin->maturity  = MATURITY_ALPHA;
 $plugin->release   = 'v0.1-alpha';

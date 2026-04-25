@@ -6,6 +6,11 @@
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+.pg-badge-ingroup {
+    background-color: var(--pg-ingroup-bg, #2a6496);
+    color: var(--pg-ingroup-text, #fff);
+}
+
 .pg-badge-leader {
     background-color: var(--pg-leader-bg, #b8860b);
     color: var(--pg-leader-text, #fff);
