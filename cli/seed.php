@@ -288,6 +288,7 @@ $now = time();
  * @param string $name Group name.
  * @param string $badge Emoji badge.
  * @param int $privacy 0=open, 1=protected, 2=closed.
+ * @param string $description Optional group description.
  * @param string $rawpassword Plain-text password (only used when privacy=1).
  * @return stdClass Native Moodle group record.
  */
