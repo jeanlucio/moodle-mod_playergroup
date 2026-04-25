@@ -10,17 +10,18 @@ PlayerGroup lets students autonomously form their own groups directly from the a
 - Any activity where peer selection matters
 
 **Built for gamification ecosystems:**
-Designed to integrate with [PlayerHUD](https://github.com/jeanlucio/moodle-block_playerhud) and PlayerRaid, PlayerGroup can serve as the team formation layer of a gamified course — complete with emoji badges, group privacy levels, and a foundation reward for group creators.
+Designed to integrate with [PlayerHUD](https://github.com/jeanlucio/moodle-block_playerhud) and PlayerRaid, PlayerGroup can serve as the team formation layer of a gamified course — complete with emoji badges, group privacy levels, and an automatic grade reward for joining a group.
 
 ## Features
 
 - Students create groups with a name, description, and an emoji badge
 - Configurable min/max members per group
-- Group privacy levels: open, protected (password), and closed
+- Group privacy levels: open, protected (password), and closed (invite only)
 - Peer invite system via Moodle's native notification (bell + email)
 - Automatic grouping creation — no manual setup required for teachers
-- Optional gradebook integration: award a grade to the student who creates a group
+- Gradebook integration: grade awarded automatically when a student joins or creates a group; permanent even if the student later leaves
 - Activity completion rule: student must join or create a group
+- Teacher report showing the activity audit log
 - Full Moodle Groups API integration (native groups and groupings)
 
 ## Requirements
@@ -47,19 +48,7 @@ When adding the activity, teachers can configure:
 - **Minimum / Maximum members** per group
 - **Allow students to leave** their group
 - **Delete groups on activity deletion** — if checked, all groups and the grouping are permanently removed when the activity is deleted
-- **Foundation reward** — grade awarded to the student who creates the group
-
-## Development Status
-
-> **Alpha** — core features under active development. Not recommended for production use.
-
-Planned phases:
-
-- [x] Phase 1 — Foundation (DB schema, form, grade API, completion, events)
-- [x] Phase 2 — Student interface (join/leave, tabs, group cards, privacy)
-- [ ] Phase 3 — Invite system (Message API, accept/reject)
-- [ ] Phase 4 — Ecosystem API + audit events
-- [ ] Phase 5 — Privacy API, backup/restore, PHPUnit tests
+- **Foundation reward** — grade automatically awarded to every student who joins or creates a group
 
 ## License
 
