@@ -25,11 +25,11 @@ define([
     'jquery',
     'core/ajax',
     'core/notification',
-    'core/modal_factory',
+    'core/modal_save_cancel',
     'core/modal_events',
     'core/templates',
     'core/str'
-], function($, Ajax, Notification, ModalFactory, ModalEvents, Templates, Str) {
+], function($, Ajax, Notification, ModalSaveCancel, ModalEvents, Templates, Str) {
     return {
         init: function(cmid) {
             $(document).on('click', '[data-action="creategroup"]', function(e) {
@@ -38,8 +38,7 @@ define([
                 var titlePromise = Str.get_string('creategroup', 'mod_playergroup');
                 var bodyPromise = Templates.render('mod_playergroup/modal_creategroup', {});
 
-                ModalFactory.create({
-                    type: ModalFactory.types.SAVE_CANCEL,
+                ModalSaveCancel.create({
                     title: titlePromise,
                     body: bodyPromise
                 }).then(function(modal) {

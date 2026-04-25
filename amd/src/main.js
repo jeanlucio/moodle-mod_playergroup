@@ -26,11 +26,11 @@ define([
     'core/ajax',
     'core/notification',
     'core/str',
-    'core/modal_factory',
+    'core/modal_save_cancel',
     'core/modal_events',
     'core/templates',
     'mod_playergroup/creategroup'
-], function($, Ajax, Notification, Str, ModalFactory, ModalEvents, Templates, CreateGroup) {
+], function($, Ajax, Notification, Str, ModalSaveCancel, ModalEvents, Templates, CreateGroup) {
 
     /**
      * Calls mod_playergroup_join_group and reloads on success.
@@ -67,8 +67,7 @@ define([
             privacy: privacy
         });
 
-        ModalFactory.create({
-            type: ModalFactory.types.SAVE_CANCEL,
+        ModalSaveCancel.create({
             title: titlePromise,
             body: bodyPromise
         }).then(function(modal) {
@@ -133,13 +132,9 @@ define([
         var titlePromise = Str.get_string('joingroup', 'mod_playergroup');
         var bodyPromise = Templates.render('mod_playergroup/modal_joingroup', {});
 
-        ModalFactory.create({
-            type: ModalFactory.types.SAVE_CANCEL,
+        ModalSaveCancel.create({
             title: titlePromise,
-            body: bodyPromise,
-            buttons: {
-                save: titlePromise
-            }
+            body: bodyPromise
         }).then(function(modal) {
             modal.show();
 
@@ -218,14 +213,9 @@ define([
                     {key: 'confirm', component: 'core'},
                     {key: 'cancel', component: 'core'}
                 ]).then(function(strings) {
-                    return ModalFactory.create({
-                        type: ModalFactory.types.SAVE_CANCEL,
+                    return ModalSaveCancel.create({
                         title: strings[0],
-                        body: strings[1],
-                        buttons: {
-                            save: strings[2],
-                            cancel: strings[3]
-                        }
+                        body: strings[1]
                     });
                 }).then(function(modal) {
                     modal.show();
