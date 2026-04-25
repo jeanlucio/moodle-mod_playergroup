@@ -195,14 +195,52 @@ function playergroup_grade_item_update(\stdClass $playergroup, mixed $grades = n
 }
 
 /**
- * Updates all grades in the gradebook for a playergroup instance.
+ * Updates grades in the gradebook for a playergroup instance.
+ *
+ * Grades are awarded permanently at join/create time. Leaving a group does not
+ * remove a previously earned grade. On bulk recalculation (userid = 0), only
+ * current members receive a grade; former members keep theirs because grade_update
+ * only overwrites entries present in the supplied array.
  *
  * @param \stdClass $playergroup The playergroup instance.
- * @param int $userid Update only this user's grade (0 = all users).
+ * @param int $userid Award grade for this user only (0 = all current members).
  * @return void
  */
 function playergroup_update_grades(\stdClass $playergroup, int $userid = 0): void {
-    playergroup_grade_item_update($playergroup, GRADE_UPDATE_ITEM_ONLY);
+    global $DB;
+
+    if (empty($playergroup->grade) || $playergroup->grade <= 0) {
+        return;
+    }
+
+    if ($userid > 0) {
+        $grade           = new \stdClass();
+        $grade->userid   = $userid;
+        $grade->rawgrade = (float) $playergroup->grade;
+        playergroup_grade_item_update($playergroup, [$userid => $grade]);
+        return;
+    }
+
+    // Bulk: award grade to all students currently in a group in this activity.
+    $sql = "SELECT DISTINCT gm.userid
+              FROM {groups_members} gm
+              JOIN {playergroup_meta} pm ON pm.groupid = gm.groupid
+             WHERE pm.playergroupid = :playergroupid";
+
+    $members = $DB->get_records_sql($sql, ['playergroupid' => $playergroup->id]);
+    if (empty($members)) {
+        playergroup_grade_item_update($playergroup, GRADE_UPDATE_ITEM_ONLY);
+        return;
+    }
+
+    $grades = [];
+    foreach ($members as $member) {
+        $grade           = new \stdClass();
+        $grade->userid   = $member->userid;
+        $grade->rawgrade = (float) $playergroup->grade;
+        $grades[$member->userid] = $grade;
+    }
+    playergroup_grade_item_update($playergroup, $grades);
 }
 
 /**

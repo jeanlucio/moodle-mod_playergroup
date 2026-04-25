@@ -60,6 +60,7 @@ class join_group extends external_api {
         global $CFG, $DB, $USER;
 
         require_once($CFG->dirroot . '/group/lib.php');
+        require_once($CFG->dirroot . '/mod/playergroup/lib.php');
 
         $params = self::validate_parameters(self::execute_parameters(), [
             'cmid'     => $cmid,
@@ -122,6 +123,8 @@ class join_group extends external_api {
         if ($completion->is_enabled($cminfo)) {
             $completion->update_state($cminfo, COMPLETION_UNKNOWN, $USER->id);
         }
+
+        playergroup_update_grades($playergroup, $USER->id);
 
         \mod_playergroup\event\member_joined::create([
             'context'  => $context,
