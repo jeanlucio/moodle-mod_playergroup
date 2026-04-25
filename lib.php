@@ -229,7 +229,6 @@ function playergroup_update_grades(\stdClass $playergroup, int $userid = 0): voi
 
     $members = $DB->get_records_sql($sql, ['playergroupid' => $playergroup->id]);
     if (empty($members)) {
-        playergroup_grade_item_update($playergroup, GRADE_UPDATE_ITEM_ONLY);
         return;
     }
 
