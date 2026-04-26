@@ -16,24 +16,24 @@ Feature: Student creates a group via the modal
       | student1 | C1     | student |
     And the following "activities" exist:
       | activity    | name             | course |
-      | playergroup | Taverna do Curso | C1     |
+      | playergroup | Group Activity | C1     |
 
   Scenario: Student creates an open group and the card appears in the list
-    Given I am on the "Taverna do Curso" "mod_playergroup > view" page logged in as "student1"
+    Given I am on the "Group Activity" "mod_playergroup > view" page logged in as "student1"
     And I should see "Create Group"
     When I click on "Create Group" "button"
     And I wait until ".modal.show" "css_element" exists
-    And I set the field "Name" to "Dragões do Norte"
+    And I set the field "Name" to "Test Group"
     And I click on "Save changes" "button" in the ".modal.show" "css_element"
     And I wait until ".pg-group-card" "css_element" exists
-    Then I should see "Dragões do Norte"
+    Then I should see "Test Group"
     And I should not see "Create Group"
 
   Scenario: Student cannot create a second group once they already belong to one
-    Given I am on the "Taverna do Curso" "mod_playergroup > view" page logged in as "student1"
+    Given I am on the "Group Activity" "mod_playergroup > view" page logged in as "student1"
     When I click on "Create Group" "button"
     And I wait until ".modal.show" "css_element" exists
-    And I set the field "Name" to "Dragões do Norte"
+    And I set the field "Name" to "Test Group"
     And I click on "Save changes" "button" in the ".modal.show" "css_element"
     And I wait until ".pg-group-card" "css_element" exists
     Then "Create Group" "button" should not exist

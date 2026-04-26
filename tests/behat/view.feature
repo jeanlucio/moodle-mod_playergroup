@@ -18,17 +18,17 @@ Feature: Teacher and student can view a PlayerGroup activity
       | student1 | C1     | student        |
     And the following "activities" exist:
       | activity    | name             | course | idnumber |
-      | playergroup | Taverna do Curso | C1     | pg1      |
+      | playergroup | Group Activity | C1     | pg1      |
 
   Scenario: Student sees the Create Group button and the empty groups list
-    Given I am on the "Taverna do Curso" "mod_playergroup > view" page logged in as "student1"
+    Given I am on the "Group Activity" "mod_playergroup > view" page logged in as "student1"
     Then I should see "Create Group"
     And I should see "No groups have been created yet"
 
   Scenario: Student does not see the View Report link
-    Given I am on the "Taverna do Curso" "mod_playergroup > view" page logged in as "student1"
+    Given I am on the "Group Activity" "mod_playergroup > view" page logged in as "student1"
     Then I should not see "View Report"
 
   Scenario: Teacher sees the View Report link
-    Given I am on the "Taverna do Curso" "mod_playergroup > view" page logged in as "teacher1"
+    Given I am on the "Group Activity" "mod_playergroup > view" page logged in as "teacher1"
     Then I should see "View Report"
