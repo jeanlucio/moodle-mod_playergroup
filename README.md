@@ -6,7 +6,6 @@
 ![Status](https://img.shields.io/badge/Status-Stable-green?style=flat-square)
 [![PlayerHUD Ecosystem](https://img.shields.io/badge/PlayerHUD-Ecosystem-6f42c1?style=flat-square&logo=gamepad&logoColor=white)](https://github.com/jeanlucio/moodle-block_playerhud)
 ![Role](https://img.shields.io/badge/Role-Team_Formation-0dcaf0?style=flat-square)
-![GitHub release](https://img.shields.io/github/v/release/jeanlucio/moodle-mod_playergroup?style=flat-square)
 
 [English](#english) | [Português](#português)
 
