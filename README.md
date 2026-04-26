@@ -5,6 +5,7 @@
 ![License](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)
 ![Status](https://img.shields.io/badge/Status-Stable-green?style=flat-square)
 [![PlayerHUD Ecosystem](https://img.shields.io/badge/PlayerHUD-Ecosystem-6f42c1?style=flat-square&logo=gamepad&logoColor=white)](https://github.com/jeanlucio/moodle-block_playerhud)
+![Role](https://img.shields.io/badge/Role-Team_Formation-0dcaf0?style=flat-square)
 ![GitHub release](https://img.shields.io/github/v/release/jeanlucio/moodle-mod_playergroup?style=flat-square)
 
 [English](#english) | [Português](#português)
@@ -79,14 +80,16 @@ git clone git@github.com:jeanlucio/moodle-mod_playergroup.git mod/playergroup
 
 ---
 
-### ⚙️ Configuration
+### 📖 Usage
 
-When adding the activity, teachers can configure:
-
-* **Minimum / Maximum members** per group
-* **Allow students to leave** their group
-* **Delete groups on activity deletion** — if checked, all groups and the grouping are permanently removed when the activity is deleted
-* **Foundation reward** — grade automatically awarded to every student who joins or creates a group
+1. Add a **PlayerGroup** activity to your course.
+2. Configure the activity settings:
+   * **Minimum / Maximum members** per group
+   * **Allow students to leave** their group
+   * **Delete groups on activity deletion** — if checked, all groups and the grouping are permanently removed when the activity is deleted
+   * **Foundation reward** — grade automatically awarded to every student who joins or creates a group
+3. Students access the activity and create or join groups — open, password-protected, or invite-only.
+4. The activity completes and the grade is awarded automatically when a student joins or creates a group.
 
 ---
 
@@ -176,14 +179,16 @@ git clone git@github.com:jeanlucio/moodle-mod_playergroup.git mod/playergroup
 
 ---
 
-### ⚙️ Configuração
+### 📖 Como Usar
 
-Ao adicionar a atividade, o professor pode configurar:
-
-* **Mínimo / Máximo de membros** por grupo
-* **Permitir que alunos saiam** do grupo
-* **Excluir grupos ao deletar a atividade** — se marcado, todos os grupos e o agrupamento são removidos permanentemente ao excluir a atividade
-* **Recompensa de fundação** — nota atribuída automaticamente a todo aluno que entra ou cria um grupo
+1. Adicione uma atividade **PlayerGroup** ao seu curso.
+2. Configure as opções da atividade:
+   * **Mínimo / Máximo de membros** por grupo
+   * **Permitir que alunos saiam** do grupo
+   * **Excluir grupos ao deletar a atividade** — se marcado, todos os grupos e o agrupamento são removidos permanentemente ao excluir a atividade
+   * **Recompensa de fundação** — nota atribuída automaticamente a todo aluno que entra ou cria um grupo
+3. Os alunos acessam a atividade e criam ou entram em grupos — aberto, protegido por senha ou somente por convite.
+4. A atividade é concluída e a nota é atribuída automaticamente quando o aluno entra ou cria um grupo.
 
 ---
 
