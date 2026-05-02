@@ -45,7 +45,7 @@ class backup_playergroup_activity_structure_step extends backup_activity_structu
         // Root element: the playergroup activity instance.
         $playergroup = new backup_nested_element('playergroup', ['id'], [
             'course', 'name', 'intro', 'introformat', 'groupingid',
-            'minmembers', 'maxmembers', 'canleave', 'deletegroups', 'grade',
+            'minmembers', 'maxmembers', 'canleave', 'deletegroups', 'deleteemptygroups', 'grade',
             'completionjoingroup', 'timeopen', 'timeclose', 'timemodified',
         ]);
 
