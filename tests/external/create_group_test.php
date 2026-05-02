@@ -160,4 +160,52 @@ final class create_group_test extends advanced_testcase {
         $this->expectException(\dml_missing_record_exception::class);
         create_group::execute(999999, 'Test', '', '❓', 0, '');
     }
+
+    /**
+     * Test that creating a group with manual completion does not throw an exception.
+     *
+     * Regression: COMPLETION_UNKNOWN (-1) was previously passed to update_state()
+     * when completion mode was manual, causing an err_system exception.
+     */
+    public function test_execute_with_manual_completion_does_not_throw(): void {
+        global $CFG;
+        $CFG->enablecompletion = true;
+
+        $course = $this->getDataGenerator()->create_course(['enablecompletion' => 1]);
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course'     => $course->id,
+            'completion' => COMPLETION_TRACKING_MANUAL,
+        ]);
+        $student = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($student->id, $course->id, 'student');
+        $this->setUser($student);
+
+        $result = create_group::execute($cm->cmid, 'Manual Group', '', '🛡', 0, '');
+        $this->assertTrue($result['success']);
+    }
+
+    /**
+     * Test that creating a group with automatic completion marks the activity as complete.
+     */
+    public function test_execute_with_automatic_completion_marks_complete(): void {
+        global $CFG;
+        $CFG->enablecompletion = true;
+
+        $course = $this->getDataGenerator()->create_course(['enablecompletion' => 1]);
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course'              => $course->id,
+            'completion'          => COMPLETION_TRACKING_AUTOMATIC,
+            'completionjoingroup' => 1,
+        ]);
+        $student = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($student->id, $course->id, 'student');
+        $this->setUser($student);
+
+        create_group::execute($cm->cmid, 'Auto Group', '', '🛡', 0, '');
+
+        $cminfo = get_fast_modinfo($course)->get_cm($cm->cmid);
+        $completion = new \completion_info($course);
+        $data = $completion->get_data($cminfo, false, $student->id);
+        $this->assertEquals(COMPLETION_COMPLETE, (int) $data->completionstate);
+    }
 }

@@ -1,0 +1,164 @@
+<?php
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
+/**
+ * Unit tests for the join_group external function.
+ *
+ * @package    mod_playergroup
+ * @category   test
+ * @copyright  2026 Jean Lúcio
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+namespace mod_playergroup\external;
+
+use advanced_testcase;
+use moodle_exception;
+
+/**
+ * Tests for \mod_playergroup\external\join_group.
+ *
+ * @covers \mod_playergroup\external\join_group
+ */
+final class join_group_test extends advanced_testcase {
+    /** @var \stdClass Course record. */
+    private \stdClass $course;
+
+    /** @var \stdClass Course module record returned by create_module(). */
+    private \stdClass $cm;
+
+    /** @var \stdClass User who created the group. */
+    private \stdClass $creator;
+
+    /** @var \stdClass User who will join the group. */
+    private \stdClass $joiner;
+
+    /** @var int ID of the group created in setUp. */
+    private int $groupid;
+
+    /**
+     * Set up fixtures for each test.
+     */
+    protected function setUp(): void {
+        parent::setUp();
+        $this->resetAfterTest();
+
+        $this->course = $this->getDataGenerator()->create_course();
+        $this->cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $this->course->id,
+        ]);
+
+        $this->creator = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($this->creator->id, $this->course->id, 'student');
+        $this->setUser($this->creator);
+        $result = create_group::execute($this->cm->cmid, 'Test Group', '', '🛡', 0, '');
+        $this->groupid = $result['groupid'];
+
+        $this->joiner = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($this->joiner->id, $this->course->id, 'student');
+        $this->setUser($this->joiner);
+    }
+
+    /**
+     * Test that a student can join an open group successfully.
+     */
+    public function test_execute_joins_group_successfully(): void {
+        $result = join_group::execute($this->cm->cmid, $this->groupid, '');
+
+        $this->assertTrue($result['success']);
+        $this->assertTrue(groups_is_member($this->groupid, $this->joiner->id));
+    }
+
+    /**
+     * Test that joining a group with manual completion does not throw an exception.
+     *
+     * Regression: COMPLETION_UNKNOWN (-1) was previously passed to update_state()
+     * when completion mode was manual, causing an err_system exception.
+     */
+    public function test_execute_with_manual_completion_does_not_throw(): void {
+        global $CFG;
+        $CFG->enablecompletion = true;
+
+        $course = $this->getDataGenerator()->create_course(['enablecompletion' => 1]);
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course'     => $course->id,
+            'completion' => COMPLETION_TRACKING_MANUAL,
+        ]);
+
+        $creator = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($creator->id, $course->id, 'student');
+        $this->setUser($creator);
+        $created = create_group::execute($cm->cmid, 'Leaders', '', '🛡', 0, '');
+
+        $joiner = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($joiner->id, $course->id, 'student');
+        $this->setUser($joiner);
+
+        $result = join_group::execute($cm->cmid, $created['groupid'], '');
+        $this->assertTrue($result['success']);
+    }
+
+    /**
+     * Test that joining a group with automatic completion marks the activity as complete.
+     */
+    public function test_execute_with_automatic_completion_marks_complete(): void {
+        global $CFG;
+        $CFG->enablecompletion = true;
+
+        $course = $this->getDataGenerator()->create_course(['enablecompletion' => 1]);
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course'              => $course->id,
+            'completion'          => COMPLETION_TRACKING_AUTOMATIC,
+            'completionjoingroup' => 1,
+        ]);
+
+        $creator = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($creator->id, $course->id, 'student');
+        $this->setUser($creator);
+        $created = create_group::execute($cm->cmid, 'Founders', '', '🛡', 0, '');
+
+        $joiner = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($joiner->id, $course->id, 'student');
+        $this->setUser($joiner);
+
+        join_group::execute($cm->cmid, $created['groupid'], '');
+
+        $cminfo = get_fast_modinfo($course)->get_cm($cm->cmid);
+        $completion = new \completion_info($course);
+        $data = $completion->get_data($cminfo, false, $joiner->id);
+        $this->assertEquals(COMPLETION_COMPLETE, (int) $data->completionstate);
+    }
+
+    /**
+     * Test that a user already in a group cannot join another.
+     */
+    public function test_execute_rejects_if_already_in_group(): void {
+        $this->setUser($this->creator);
+        $this->expectException(moodle_exception::class);
+        join_group::execute($this->cm->cmid, $this->groupid, '');
+    }
+
+    /**
+     * Test that a closed group (privacy=2) cannot be joined directly.
+     */
+    public function test_execute_rejects_closed_group(): void {
+        global $DB;
+        $DB->set_field('playergroup_meta', 'privacy', 2, ['groupid' => $this->groupid]);
+
+        $this->expectException(moodle_exception::class);
+        join_group::execute($this->cm->cmid, $this->groupid, '');
+    }
+}

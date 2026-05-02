@@ -140,8 +140,8 @@ class create_group extends external_api {
         $modinfo = get_fast_modinfo($cm->course);
         $cminfo = $modinfo->get_cm($cm->id);
         $completion = new \completion_info($modinfo->get_course());
-        if ($completion->is_enabled($cminfo)) {
-            $completion->update_state($cminfo, COMPLETION_UNKNOWN, $USER->id);
+        if ($completion->is_enabled($cminfo) == COMPLETION_TRACKING_AUTOMATIC) {
+            $completion->update_state($cminfo, COMPLETION_COMPLETE, $USER->id);
         }
 
         playergroup_update_grades($playergroup, $USER->id);
