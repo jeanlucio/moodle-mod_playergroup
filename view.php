@@ -137,9 +137,7 @@ foreach ($grouprecords as $g) {
     $iscreator   = (int) $g->creatorid === (int) $USER->id;
 
     $creator = $creators[(int) $g->creatorid] ?? null;
-    if ($iscreator) {
-        $leaderbadge = get_string('leader', 'mod_playergroup');
-    } else if ($creator) {
+    if ($creator) {
         $leaderbadge = get_string('leadernamed', 'mod_playergroup', fullname($creator));
     } else {
         $leaderbadge = '';

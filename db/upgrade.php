@@ -29,5 +29,27 @@
  * @return bool True on success.
  */
 function xmldb_playergroup_upgrade(int $oldversion): bool {
+    global $DB;
+
+    $dbman = $DB->get_manager();
+
+    if ($oldversion < 2026050201) {
+        $table = new xmldb_table('playergroup');
+        $field = new xmldb_field(
+            'deleteemptygroups',
+            XMLDB_TYPE_INTEGER,
+            '1',
+            null,
+            XMLDB_NOTNULL,
+            null,
+            '1',
+            'deletegroups'
+        );
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+        upgrade_mod_savepoint(true, 2026050201, 'playergroup');
+    }
+
     return true;
 }

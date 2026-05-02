@@ -27,6 +27,30 @@
     color: var(--pg-ingroup-text, #fff);
 }
 
+.pg-emoji-badge {
+    font-size: 2.5rem;
+}
+
+.pg-badges-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.pg-card-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.pg-invite-item {
+    gap: 1rem;
+}
+
+.pg-invite-btns {
+    gap: 0.5rem;
+}
+
 
 #pg-invite-modal .btn-close {
     background: transparent;

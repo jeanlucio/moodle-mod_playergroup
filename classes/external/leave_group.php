@@ -84,12 +84,39 @@ class leave_group extends external_api {
             throw new \moodle_exception('notingroup', 'mod_playergroup');
         }
 
+        $meta = $DB->get_record('playergroup_meta', ['groupid' => $mygroupid], '*', MUST_EXIST);
+
+        // Find the oldest remaining member to determine next leader or detect empty group.
+        $nextsql = "SELECT id, userid
+                      FROM {groups_members}
+                     WHERE groupid = :groupid
+                       AND userid != :userid
+                     ORDER BY timeadded ASC";
+        $nextleaders = $DB->get_records_sql($nextsql, ['groupid' => $mygroupid, 'userid' => $USER->id], 0, 1);
+        $nextleader = !empty($nextleaders) ? (int) reset($nextleaders)->userid : null;
+        $willbeempty = ($nextleader === null);
+
         groups_remove_member((int) $mygroupid, $USER->id);
 
         \mod_playergroup\event\member_left::create([
             'context'  => $context,
             'objectid' => (int) $mygroupid,
         ])->trigger();
+
+        if ($willbeempty && !empty($playergroup->deleteemptygroups)) {
+            // Remove plugin data before deleting the native group.
+            $DB->delete_records('playergroup_invites', ['groupid' => $mygroupid]);
+            $DB->delete_records('playergroup_meta', ['groupid' => $mygroupid]);
+            groups_delete_group((int) $mygroupid);
+
+            \mod_playergroup\event\group_deleted::create([
+                'context'  => $context,
+                'objectid' => (int) $mygroupid,
+            ])->trigger();
+        } else if (!$willbeempty && (int) $meta->creatorid === (int) $USER->id) {
+            // Transfer leadership to the oldest remaining member.
+            $DB->set_field('playergroup_meta', 'creatorid', $nextleader, ['groupid' => $mygroupid]);
+        }
 
         return [
             'success' => true,

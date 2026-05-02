@@ -102,13 +102,13 @@
         </h5>
         <div class="list-group">
             {{#receivedinvites}}
-            <div class="list-group-item d-flex justify-content-between align-items-center gap-3 flex-wrap">
+            <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap pg-invite-item">
                 <div>
                     <span class="me-2" aria-hidden="true">{{badge}}</span>
                     <strong>{{groupname}}</strong>
                     <small class="text-muted ms-2">{{sentby}}</small>
                 </div>
-                <div class="d-flex gap-2 flex-shrink-0">
+                <div class="d-flex flex-shrink-0 pg-invite-btns">
                     <button type="button" class="btn btn-success btn-sm pg-btn-acceptinvite"
                             data-inviteid="{{inviteid}}">
                         {{#str}} acceptinvite, mod_playergroup {{/str}}

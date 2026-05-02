@@ -2,6 +2,20 @@
 
 All notable changes to PlayerGroup are documented in this file.
 
+## [1.1.0] - 2026-05-02
+
+### Added
+
+- Automatic leadership transfer: when the group leader leaves, the oldest remaining member becomes the new leader
+- New teacher setting "Automatically delete empty groups": when enabled, a group is deleted (along with its pending invites) when the last member leaves
+- Audit event `group_deleted` logged when an empty group is automatically removed
+
+### Fixed
+
+- Activity completion no longer throws `err_system` when manual completion tracking is enabled; completion state is now updated only when the activity is configured for automatic completion
+- Invite Colleagues modal now opens correctly in Moodle 5.x environments where Bootstrap's jQuery plugin (`$.fn.modal`) is not guaranteed to be registered; replaced with the cross-version AMD `theme_boost/bootstrap/modal` pattern
+- Added missing GPL licence header to `styles.css`
+
 ## [1.0.0] - 2026-04-25
 
 Initial public release.

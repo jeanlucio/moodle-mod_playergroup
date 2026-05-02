@@ -16,6 +16,7 @@
         <FIELD NAME="maxmembers" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="5" COMMENT="Maximum members per group"/>
         <FIELD NAME="canleave" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1" COMMENT="Whether students can leave a group"/>
         <FIELD NAME="deletegroups" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" COMMENT="Delete grouping and groups on activity deletion"/>
+        <FIELD NAME="deleteemptygroups" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1" COMMENT="Auto-delete a group when the last member leaves"/>
         <FIELD NAME="grade" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" COMMENT="Foundation reward grade value (0 = disabled)"/>
         <FIELD NAME="completionjoingroup" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" COMMENT="1 if the student must join or create a group to complete this activity"/>
         <FIELD NAME="timeopen" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>

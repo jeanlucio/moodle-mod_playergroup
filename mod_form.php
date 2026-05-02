@@ -95,6 +95,11 @@ class mod_playergroup_mod_form extends moodleform_mod {
         $mform->addElement('advcheckbox', 'canleave', get_string('canleave', 'mod_playergroup'));
         $mform->setDefault('canleave', 1);
 
+        $mform->addElement('advcheckbox', 'deleteemptygroups', get_string('deleteemptygroups', 'mod_playergroup'));
+        $mform->setDefault('deleteemptygroups', 1);
+        $mform->addHelpButton('deleteemptygroups', 'deleteemptygroups', 'mod_playergroup');
+        $mform->hideIf('deleteemptygroups', 'canleave', 'eq', 0);
+
         $mform->addElement('advcheckbox', 'deletegroups', get_string('deletegroups', 'mod_playergroup'));
         $mform->setDefault('deletegroups', 0);
         $mform->addElement(
