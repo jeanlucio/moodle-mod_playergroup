@@ -43,7 +43,13 @@ define([
                 if (!modal) {
                     return;
                 }
-                $(modal).appendTo('body').modal('show');
+                document.body.appendChild(modal);
+                require(['theme_boost/bootstrap/modal'], function(BootstrapModal) {
+                    new BootstrapModal(modal).show();
+                }, function() {
+                    // Fallback for environments where the AMD module is unavailable.
+                    $(modal).modal('show');
+                });
             });
 
             // Send an invite: replace the button with a "sent" badge instead of reloading.
