@@ -31,10 +31,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {moodle-branch: 'MOODLE_502_STABLE', php: '8.3', database: 'pgsql', runchecks: 'all'}
+          - {moodle-branch: 'MOODLE_502_STABLE', php: '8.4', database: 'pgsql', runchecks: 'all'}
           - {moodle-branch: 'MOODLE_502_STABLE', php: '8.3', database: 'mariadb'}
           - {moodle-branch: 'MOODLE_501_STABLE', php: '8.3', database: 'pgsql'}
-          - {moodle-branch: 'MOODLE_501_STABLE', php: '8.3', database: 'mariadb'}
+          - {moodle-branch: 'MOODLE_501_STABLE', php: '8.2', database: 'mariadb'}
           - {moodle-branch: 'MOODLE_500_STABLE', php: '8.2', database: 'pgsql'}
           - {moodle-branch: 'MOODLE_500_STABLE', php: '8.2', database: 'mariadb'}
           - {moodle-branch: 'MOODLE_405_STABLE', php: '8.2', database: 'pgsql'}
@@ -81,17 +81,17 @@ jobs:
         if: ${{ !cancelled() && matrix.runchecks == 'all' }}
         run: moodle-plugin-ci phpcs --max-warnings 0
 
-      - name: Validate Plugin
+      - name: Moodle PHPDoc Checker
         if: ${{ !cancelled() && matrix.runchecks == 'all' }}
+        run: moodle-plugin-ci phpdoc --max-warnings 0
+
+      - name: Validating
+        if: ${{ !cancelled() }}
         run: moodle-plugin-ci validate
 
-      - name: Upgrade savepoints
+      - name: Check upgrade savepoints
         if: ${{ !cancelled() && matrix.runchecks == 'all' }}
         run: moodle-plugin-ci savepoints
-
-      - name: PHPDoc checks
-        if: ${{ !cancelled() && matrix.runchecks == 'all' }}
-        run: moodle-plugin-ci phpdoc
 
       - name: Mustache Lint
         if: ${{ !cancelled() && matrix.runchecks == 'all' }}
@@ -103,12 +103,12 @@ jobs:
 
       - name: PHPUnit tests
         if: ${{ !cancelled() }}
-        run: moodle-plugin-ci phpunit
+        run: moodle-plugin-ci phpunit --fail-on-warning
 
       - name: Behat tests
         id: behat
         if: ${{ !cancelled() }}
-        run: moodle-plugin-ci behat --profile chrome
+        run: moodle-plugin-ci behat --profile chrome --scss-deprecations
 
       - name: Upload Behat Faildump
         if: ${{ failure() && steps.behat.outcome == 'failure' }}
