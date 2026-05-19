@@ -2,6 +2,23 @@
 
 All notable changes to PlayerGroup are documented in this file.
 
+## [1.1.1] - 2026-05-19
+
+### Security
+
+- CLI seed scripts now require an explicit `--password` flag and abort when `$CFG->wwwroot` does not match a development pattern, preventing accidental creation of known-credential accounts on non-development sites
+
+### Fixed
+
+- Screen reader labels on group action buttons now include the group name (e.g. "Join group Northern Hunters") so assistive technology announces full context instead of a generic label
+- Leave-group confirmation modal now shows "Leave Group" as the confirm button instead of the generic "Save changes"
+- `encode_content_links` return type hint removed to match the parent class signature, eliminating a PHP declaration incompatibility warning
+
+### Added
+
+- `$plugin->supported` declares the tested compatibility range (Moodle 4.5 → 5.2)
+- Automated Moodle Plugin Directory release workflow: pushing a `v*` tag publishes the version automatically
+
 ## [1.1.0] - 2026-05-02
 
 ### Added
