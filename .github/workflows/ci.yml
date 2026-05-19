@@ -85,6 +85,10 @@ jobs:
         if: ${{ !cancelled() && matrix.runchecks == 'all' }}
         run: moodle-plugin-ci validate
 
+      - name: Upgrade savepoints
+        if: ${{ !cancelled() && matrix.runchecks == 'all' }}
+        run: moodle-plugin-ci savepoints
+
       - name: PHPDoc checks
         if: ${{ !cancelled() && matrix.runchecks == 'all' }}
         run: moodle-plugin-ci phpdoc
@@ -92,6 +96,10 @@ jobs:
       - name: Mustache Lint
         if: ${{ !cancelled() && matrix.runchecks == 'all' }}
         run: moodle-plugin-ci mustache
+
+      - name: Style Lint
+        if: ${{ !cancelled() && matrix.runchecks == 'all' }}
+        run: moodle-plugin-ci stylelint
 
       - name: Grunt tasks
         if: ${{ !cancelled() && matrix.runchecks == 'all' }}
