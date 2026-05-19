@@ -79,33 +79,6 @@ git clone git@github.com:jeanlucio/moodle-mod_playergroup.git mod/playergroup
 
 ---
 
-### 🧪 Development & Testing
-
-Two CLI seed scripts are available to populate a demo environment for manual testing:
-
-| Script | Language |
-|--------|----------|
-| `cli/seed.php` | English |
-| `cli/seed_pt_br.php` | Brazilian Portuguese |
-
-Each script creates a demo course with 30 students distributed across 6 groups (open, password-protected, and invite-only), 3 students without a group, and pending invitations.
-
-**Requirements:**
-- Must be run on a development site — `$CFG->wwwroot` must contain `localhost`, `127.0.0.1`, `.local`, or `.test`. The script aborts otherwise.
-- `--password=<value>` is required. There is no default to prevent accidental account creation with a known credential on non-development sites.
-
-```bash
-# First run
-php mod/playergroup/cli/seed.php --password=MyDevPass1!
-
-# Wipe and recreate from scratch
-php mod/playergroup/cli/seed.php --password=MyDevPass1! --reset
-```
-
-The script prints a full summary on completion: course URL, activity URL, teacher credentials, group list, and student passwords.
-
----
-
 ### 📖 Usage
 
 1. Add a **PlayerGroup** activity to your course.
@@ -116,6 +89,79 @@ The script prints a full summary on completion: course URL, activity URL, teache
    * **Foundation reward** — grade automatically awarded to every student who joins or creates a group
 3. Students access the activity and create or join groups — open, password-protected, or invite-only.
 4. The activity completes and the grade is awarded automatically when a student joins or creates a group.
+
+---
+
+### 🌱 Demo Environment (Quick Start)
+
+Two CLI seed scripts create a fully configured demo course in minutes — useful for local development or evaluating the full feature set without manual setup.
+
+| Script | Language |
+|--------|----------|
+| `cli/seed.php` | English |
+| `cli/seed_pt_br.php` | Brazilian Portuguese |
+
+**What is created:**
+
+* 1 demo course with a PlayerGroup activity (open for group formation)
+* 1 teacher + 30 students
+* 6 groups covering all privacy levels: 4 open, 1 password-protected, 1 invite-only
+* 3 students without a group, each with pending invitations from existing groups
+* Audit log events spread over the past 7 days — teacher report is ready to browse immediately
+
+**Usage:**
+
+```bash
+# First run
+php mod/playergroup/cli/seed.php --password=MyDevPass1!
+
+# Wipe and recreate from scratch
+php mod/playergroup/cli/seed.php --password=MyDevPass1! --reset
+```
+
+The `--password` flag is **required** and sets the login password for all seed accounts. The script refuses to run on non-development URLs (`localhost`, `127.0.0.1`, `*.local`, `*.test`).
+
+> Via Docker Compose: `docker compose exec <webserver-service> php mod/playergroup/cli/seed.php --password=MyDevPass1!`
+
+The script prints a full summary on completion: course URL, activity URL, teacher credentials, group list, and student passwords.
+
+---
+
+### 🧪 Automated Tests
+
+PlayerGroup ships with a PHPUnit suite covering all business logic and a Behat suite for browser acceptance. Every CI push runs against the full matrix (Moodle 4.5 → 5.x, PostgreSQL & MariaDB).
+
+#### PHPUnit — Unit & Integration Tests
+
+| Test file | Cases | What is covered |
+|-----------|------:|----------------|
+| `backup/restore_test.php` | 3 | Backup/restore round-trip for content-only and user-data modes; original course unaffected |
+| `external/accept_invite_test.php` | 5 | Accept invite: success, completion tracking (manual/auto), wrong-user and already-handled rejections |
+| `external/create_group_test.php` | 10 | Create group: all privacy levels, password hashing, creator membership, capability enforcement, duplicate and invalid-cmid guards, completion tracking |
+| `external/join_group_test.php` | 5 | Join group: success, completion tracking, already-in-group and closed-group rejections |
+| `external/leave_group_test.php` | 8 | Leave group: success, canleave guard, not-in-group guard, empty-group auto-deletion, leadership transfer, pending invite cancellation |
+| `lib_test.php` | 9 | add/delete_instance lifecycle, completion state (no group / with group), supported features |
+| `playergroup_grade_test.php` | 4 | Grade award on join, bulk award, grade persistence after leaving, no grade when disabled |
+| `privacy/provider_test.php` | 11 | GDPR: metadata declarations, context discovery, data export (creator/receiver), bulk and targeted deletion |
+| **Total** | **55** | |
+
+```bash
+vendor/bin/phpunit --testsuite mod_playergroup
+```
+
+#### Behat — Acceptance Tests
+
+| Feature file | Scenarios | What is covered |
+|--------------|----------:|----------------|
+| `create_group.feature` | 2 | Student creates an open group; creation blocked after already joining one |
+| `join_group.feature` | 2 | Second student joins and sees My Group badge; one-group-per-student enforcement |
+| `view.feature` | 3 | Student sees empty state and Create Group button; report link visibility by role |
+| **Total** | **7** | |
+
+```bash
+php admin/tool/behat/cli/init.php
+vendor/bin/behat --tags=@mod_playergroup --profile=chrome
+```
 
 ---
 
@@ -205,33 +251,6 @@ git clone git@github.com:jeanlucio/moodle-mod_playergroup.git mod/playergroup
 
 ---
 
-### 🧪 Desenvolvimento e Testes
-
-Dois scripts CLI de seed estão disponíveis para popular um ambiente de demonstração para testes manuais:
-
-| Script | Idioma |
-|--------|--------|
-| `cli/seed.php` | Inglês |
-| `cli/seed_pt_br.php` | Português (Brasil) |
-
-Cada script cria um curso demo com 30 alunos distribuídos em 6 grupos (aberto, protegido por senha e somente por convite), 3 alunos sem grupo e convites pendentes.
-
-**Requisitos:**
-- Deve ser executado em um site de desenvolvimento — `$CFG->wwwroot` deve conter `localhost`, `127.0.0.1`, `.local` ou `.test`. O script aborta caso contrário.
-- `--password=<valor>` é obrigatório. Não há valor padrão para evitar a criação acidental de contas com credencial conhecida em ambientes que não sejam de desenvolvimento.
-
-```bash
-# Primeira execução
-php mod/playergroup/cli/seed_pt_br.php --password=MinhaDevSenha1!
-
-# Apagar tudo e recriar do zero
-php mod/playergroup/cli/seed_pt_br.php --password=MinhaDevSenha1! --reset
-```
-
-Ao concluir, o script exibe um resumo completo: URL do curso, URL da atividade, credenciais do professor, lista de grupos e senha dos alunos.
-
----
-
 ### 📖 Como Usar
 
 1. Adicione uma atividade **PlayerGroup** ao seu curso.
@@ -242,6 +261,79 @@ Ao concluir, o script exibe um resumo completo: URL do curso, URL da atividade, 
    * **Recompensa de fundação** — nota atribuída automaticamente a todo aluno que entra ou cria um grupo
 3. Os alunos acessam a atividade e criam ou entram em grupos — aberto, protegido por senha ou somente por convite.
 4. A atividade é concluída e a nota é atribuída automaticamente quando o aluno entra ou cria um grupo.
+
+---
+
+### 🌱 Ambiente de Demonstração (Quick Start)
+
+Dois scripts CLI de seed criam um curso de demonstração completamente configurado em minutos — útil para desenvolvimento local ou para avaliar o conjunto completo de funcionalidades sem configuração manual.
+
+| Script | Idioma |
+|--------|--------|
+| `cli/seed.php` | Inglês |
+| `cli/seed_pt_br.php` | Português (Brasil) |
+
+**O que é criado:**
+
+* 1 curso demo com uma atividade PlayerGroup configurada (aberta para formação de grupos)
+* 1 professor + 30 alunos
+* 6 grupos com todos os níveis de privacidade: 4 abertos, 1 protegido por senha, 1 somente por convite
+* 3 alunos sem grupo, cada um com convites pendentes de grupos existentes
+* Eventos de log de auditoria distribuídos nos últimos 7 dias — o relatório do professor já está pronto para navegar
+
+**Uso:**
+
+```bash
+# Primeira execução
+php mod/playergroup/cli/seed_pt_br.php --password=MinhaDevSenha1!
+
+# Apagar tudo e recriar do zero
+php mod/playergroup/cli/seed_pt_br.php --password=MinhaDevSenha1! --reset
+```
+
+O parâmetro `--password` é **obrigatório** e define a senha de login de todas as contas seed. O script recusa executar em URLs que não sejam de desenvolvimento (`localhost`, `127.0.0.1`, `*.local`, `*.test`).
+
+> Via Docker Compose: `docker compose exec <servico-webserver> php mod/playergroup/cli/seed_pt_br.php --password=MinhaDevSenha1!`
+
+Ao concluir, o script exibe um resumo completo: URL do curso, URL da atividade, credenciais do professor, lista de grupos e senha dos alunos.
+
+---
+
+### 🧪 Testes Automatizados
+
+O PlayerGroup inclui uma suíte PHPUnit que cobre toda a lógica de negócio e uma suíte Behat para aceitação em navegador. Todo push de CI executa a matriz completa (Moodle 4.5 → 5.x, PostgreSQL e MariaDB).
+
+#### PHPUnit — Testes Unitários e de Integração
+
+| Arquivo de teste | Casos | O que é coberto |
+|-----------------|------:|----------------|
+| `backup/restore_test.php` | 3 | Round-trip de backup/restore em modo conteúdo e com dados de usuário; curso original não afetado |
+| `external/accept_invite_test.php` | 5 | Aceitar convite: sucesso, conclusão de atividade (manual/auto), rejeição por usuário errado e convite já respondido |
+| `external/create_group_test.php` | 10 | Criar grupo: todos os níveis de privacidade, hash de senha, criador como membro, capability enforcement, guards contra duplicata e cmid inválido, conclusão de atividade |
+| `external/join_group_test.php` | 5 | Entrar no grupo: sucesso, conclusão de atividade, rejeição por já estar em grupo e por grupo fechado |
+| `external/leave_group_test.php` | 8 | Sair do grupo: sucesso, guard canleave, guard não-é-membro, auto-exclusão de grupo vazio, transferência de liderança, cancelamento de convites pendentes |
+| `lib_test.php` | 9 | Ciclo de vida add/delete_instance, estado de conclusão (sem grupo / com grupo), funcionalidades suportadas |
+| `playergroup_grade_test.php` | 4 | Atribuição de nota ao entrar, atribuição em lote, persistência da nota após sair, sem nota quando desabilitado |
+| `privacy/provider_test.php` | 11 | LGPD: declaração de metadados, descoberta de contextos, exportação de dados (criador/destinatário), exclusão em lote e individual |
+| **Total** | **55** | |
+
+```bash
+vendor/bin/phpunit --testsuite mod_playergroup
+```
+
+#### Behat — Testes de Aceitação
+
+| Arquivo de feature | Cenários | O que é coberto |
+|-------------------|--------:|----------------|
+| `create_group.feature` | 2 | Aluno cria um grupo aberto; criação bloqueada após já pertencer a um grupo |
+| `join_group.feature` | 2 | Segundo aluno entra e vê o badge Meu Grupo; restrição de um grupo por aluno |
+| `view.feature` | 3 | Aluno vê o estado vazio e o botão Criar Grupo; visibilidade do link de relatório por perfil |
+| **Total** | **7** | |
+
+```bash
+php admin/tool/behat/cli/init.php
+vendor/bin/behat --tags=@mod_playergroup --profile=chrome
+```
 
 ---
 
