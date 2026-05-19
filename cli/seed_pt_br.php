@@ -22,8 +22,8 @@
  * Run with --reset to wipe and recreate everything.
  *
  * Usage:
- *   php mod/playergroup/cli/seed_pt_br.php
- *   php mod/playergroup/cli/seed_pt_br.php --reset
+ *   php mod/playergroup/cli/seed_pt_br.php --password=MinhaDevSenha1!
+ *   php mod/playergroup/cli/seed_pt_br.php --password=MinhaDevSenha1! --reset
  *
  * @package    mod_playergroup
  * @copyright  2026 Jean Lúcio
@@ -41,23 +41,43 @@ require_once($CFG->dirroot . '/group/lib.php');
 $CFG->noemailever = true;
 
 [$options, $unrecognised] = cli_get_params(
-    ['reset' => false, 'help' => false],
-    ['h' => 'help', 'r' => 'reset']
+    ['reset' => false, 'help' => false, 'password' => false],
+    ['h' => 'help', 'r' => 'reset', 'p' => 'password']
 );
 
 if ($options['help']) {
     cli_writeln("Seed script for mod_playergroup manual testing.\n");
     cli_writeln("Options:");
-    cli_writeln("  --reset   Wipe the demo course and recreate everything from scratch.");
-    cli_writeln("  --help    Show this message.");
+    cli_writeln("  --password=<value>   Senha para todas as contas seed (obrigatório).");
+    cli_writeln("  --reset              Remove e recria tudo do zero.");
+    cli_writeln("  --help               Exibe esta mensagem.");
     exit(0);
+}
+
+$devpatterns = ['localhost', '127.0.0.1', '.local', '.test'];
+$isdev = false;
+foreach ($devpatterns as $pattern) {
+    if (str_contains($CFG->wwwroot, $pattern)) {
+        $isdev = true;
+        break;
+    }
+}
+if (!$isdev) {
+    cli_error(
+        'Este script deve ser executado apenas em ambientes de desenvolvimento. ' .
+        '$CFG->wwwroot deve conter localhost, 127.0.0.1, .local ou .test.'
+    );
+}
+
+if ($options['password'] === false) {
+    cli_error('--password=<valor> é obrigatório. Exemplo: --password=MinhaDevSenha1!');
 }
 
 /** @var string Shortname of the demo course created by this seed script. */
 const SEED_COURSE_SHORTNAME = 'playergroup-demo-ptbr';
 
-/** @var string Default password for all seed users. */
-const SEED_PASSWORD = 'Demo1234!';
+/** @var string Password for all seed users (set via --password flag). */
+define('SEED_PASSWORD', (string) $options['password']);
 
 /** @var string Password for the protected group "Magos do Cristal". */
 const SEED_GROUP_PASSWORD = 'magico123';
