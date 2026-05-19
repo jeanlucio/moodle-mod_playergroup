@@ -51,7 +51,7 @@ class backup_playergroup_activity_task extends backup_activity_task {
      * @param string $content Content to encode.
      * @return string Encoded content.
      */
-    public static function encode_content_links($content): string {
+    public static function encode_content_links($content) {
         global $CFG;
 
         $base = preg_quote($CFG->wwwroot, '/');
