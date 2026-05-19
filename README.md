@@ -79,6 +79,33 @@ git clone git@github.com:jeanlucio/moodle-mod_playergroup.git mod/playergroup
 
 ---
 
+### 🧪 Development & Testing
+
+Two CLI seed scripts are available to populate a demo environment for manual testing:
+
+| Script | Language |
+|--------|----------|
+| `cli/seed.php` | English |
+| `cli/seed_pt_br.php` | Brazilian Portuguese |
+
+Each script creates a demo course with 30 students distributed across 6 groups (open, password-protected, and invite-only), 3 students without a group, and pending invitations.
+
+**Requirements:**
+- Must be run on a development site — `$CFG->wwwroot` must contain `localhost`, `127.0.0.1`, `.local`, or `.test`. The script aborts otherwise.
+- `--password=<value>` is required. There is no default to prevent accidental account creation with a known credential on non-development sites.
+
+```bash
+# First run
+php mod/playergroup/cli/seed.php --password=MyDevPass1!
+
+# Wipe and recreate from scratch
+php mod/playergroup/cli/seed.php --password=MyDevPass1! --reset
+```
+
+The script prints a full summary on completion: course URL, activity URL, teacher credentials, group list, and student passwords.
+
+---
+
 ### 📖 Usage
 
 1. Add a **PlayerGroup** activity to your course.
@@ -175,6 +202,33 @@ O PlayerGroup faz parte do ecossistema de gamificação PlayerHUD:
 ```bash
 git clone git@github.com:jeanlucio/moodle-mod_playergroup.git mod/playergroup
 ```
+
+---
+
+### 🧪 Desenvolvimento e Testes
+
+Dois scripts CLI de seed estão disponíveis para popular um ambiente de demonstração para testes manuais:
+
+| Script | Idioma |
+|--------|--------|
+| `cli/seed.php` | Inglês |
+| `cli/seed_pt_br.php` | Português (Brasil) |
+
+Cada script cria um curso demo com 30 alunos distribuídos em 6 grupos (aberto, protegido por senha e somente por convite), 3 alunos sem grupo e convites pendentes.
+
+**Requisitos:**
+- Deve ser executado em um site de desenvolvimento — `$CFG->wwwroot` deve conter `localhost`, `127.0.0.1`, `.local` ou `.test`. O script aborta caso contrário.
+- `--password=<valor>` é obrigatório. Não há valor padrão para evitar a criação acidental de contas com credencial conhecida em ambientes que não sejam de desenvolvimento.
+
+```bash
+# Primeira execução
+php mod/playergroup/cli/seed_pt_br.php --password=MinhaDevSenha1!
+
+# Apagar tudo e recriar do zero
+php mod/playergroup/cli/seed_pt_br.php --password=MinhaDevSenha1! --reset
+```
+
+Ao concluir, o script exibe um resumo completo: URL do curso, URL da atividade, credenciais do professor, lista de grupos e senha dos alunos.
 
 ---
 
