@@ -4,7 +4,7 @@
 ![Moodle](https://img.shields.io/badge/Moodle-4.5%2B-orange?style=flat-square&logo=moodle&logoColor=white)
 ![License](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)
 ![Status](https://img.shields.io/badge/Status-Stable-green?style=flat-square)
-[![PlayerHUD Ecosystem](https://img.shields.io/badge/PlayerHUD-Ecosystem-6f42c1?style=flat-square&logo=gamepad&logoColor=white)](https://github.com/jeanlucio/moodle-block_playerhud)
+[![PlayerGames Ecosystem](https://img.shields.io/badge/PlayerGames-Ecosystem-6f42c1?style=flat-square&logo=gamepad&logoColor=white)](https://moodle.org/plugins/browse.php?list=contributor&id=3970322)
 ![Role](https://img.shields.io/badge/Role-Team_Formation-0dcaf0?style=flat-square)
 
 [English](#english) | [Português](#português)
@@ -49,12 +49,18 @@ Suitable for:
 
 ---
 
-### 🔗 PlayerHUD Ecosystem
+### 🕹️ PlayerGames Ecosystem
 
-PlayerGroup is part of the PlayerHUD gamification ecosystem:
+PlayerGroup is part of the **PlayerGames** gamification ecosystem. Together, these plugins transform Moodle into an immersive experience:
 
-* **PlayerHUD Block (Optional):** Displays the student's group as part of their in-game profile. PlayerGroup exposes a public PHP API (`mod_playergroup\api\group_info`) consumed by PlayerHUD.
+* **PlayerHUD Block:** The core gamification component — XP, levels, inventory, ranking, RPG classes, and story engine. Displays the student's group as part of their in-game profile via PlayerGroup's public API.
   👉 https://github.com/jeanlucio/moodle-block_playerhud
+
+* **PlayerHUD Filter:** Enables item drops via shortcodes inside course content.
+  👉 https://github.com/jeanlucio/moodle-filter_playerhud
+
+* **PlayerHUD Availability Restriction:** Restricts access to course activities based on the student's current level or collected items.
+  👉 https://github.com/jeanlucio/moodle-availability_playerhud
 
 ---
 
@@ -221,12 +227,18 @@ Indicado para:
 
 ---
 
-### 🔗 Ecossistema PlayerHUD
+### 🕹️ Ecossistema PlayerGames
 
-O PlayerGroup faz parte do ecossistema de gamificação PlayerHUD:
+O PlayerGroup faz parte do ecossistema de gamificação **PlayerGames**. Juntos, esses plugins transformam o Moodle em uma experiência imersiva:
 
-* **Bloco PlayerHUD (Opcional):** Exibe o grupo do aluno como parte do seu perfil no jogo. O PlayerGroup oferece uma API PHP pública (`mod_playergroup\api\group_info`) consumida pelo PlayerHUD.
+* **Bloco PlayerHUD:** O componente central de gamificação — XP, níveis, inventário, ranking, classes RPG e motor de história. Exibe o grupo do aluno como parte do seu perfil no jogo via a API pública do PlayerGroup.
   👉 https://github.com/jeanlucio/moodle-block_playerhud
+
+* **Filtro PlayerHUD:** Permite inserir drops de itens por meio de shortcodes no conteúdo do curso.
+  👉 https://github.com/jeanlucio/moodle-filter_playerhud
+
+* **Restrição de Acesso PlayerHUD:** Restringe o acesso a atividades com base no nível atual do aluno ou nos itens coletados.
+  👉 https://github.com/jeanlucio/moodle-availability_playerhud
 
 ---
 
