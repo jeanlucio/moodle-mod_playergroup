@@ -209,31 +209,30 @@ define([
 
                 Str.get_strings([
                     {key: 'leavegroup', component: 'mod_playergroup'},
-                    {key: 'leavegroupconfirm', component: 'mod_playergroup'},
-                    {key: 'confirm', component: 'core'},
-                    {key: 'cancel', component: 'core'}
+                    {key: 'leavegroupconfirm', component: 'mod_playergroup'}
                 ]).then(function(strings) {
                     return ModalSaveCancel.create({
                         title: strings[0],
                         body: strings[1]
-                    });
-                }).then(function(modal) {
-                    modal.show();
+                    }).then(function(modal) {
+                        modal.setSaveButtonText(strings[0]);
+                        modal.show();
 
-                    modal.getRoot().on(ModalEvents.save, function() {
-                        Ajax.call([{
-                            methodname: 'mod_playergroup_leave_group',
-                            args: {cmid: cmid}
-                        }])[0].done(function() {
-                            window.location.reload();
-                        }).fail(Notification.exception);
-                    });
+                        modal.getRoot().on(ModalEvents.save, function() {
+                            Ajax.call([{
+                                methodname: 'mod_playergroup_leave_group',
+                                args: {cmid: cmid}
+                            }])[0].done(function() {
+                                window.location.reload();
+                            }).fail(Notification.exception);
+                        });
 
-                    modal.getRoot().on(ModalEvents.hidden, function() {
-                        modal.destroy();
-                    });
+                        modal.getRoot().on(ModalEvents.hidden, function() {
+                            modal.destroy();
+                        });
 
-                    return modal;
+                        return modal;
+                    });
                 }).catch(Notification.exception);
             });
         }

@@ -36,6 +36,9 @@
         "isfull": false,
         "ismygroup": false,
         "leaderbadge": "Líder: Fulano",
+        "joinarialabel": "Join group Dragões do Norte",
+        "editarialabel": "Edit group Dragões do Norte",
+        "leavearialabel": "Leave group Dragões do Norte",
         "canjoin": true,
         "canedit": false,
         "canleave": false
@@ -103,7 +106,7 @@
                                 data-description="{{rawdescription}}"
                                 data-badge="{{badge}}"
                                 data-privacy="{{privacy}}"
-                                aria-label="{{#str}} editgroup, mod_playergroup {{/str}}">
+                                aria-label="{{editarialabel}}">
                             <i class="fa fa-pencil" aria-hidden="true"></i>
                         </button>
                     {{/canedit}}
@@ -111,7 +114,7 @@
                     {{#canleave}}
                         <button type="button" class="btn btn-outline-danger btn-sm"
                                 data-action="leavegroup"
-                                aria-label="{{#str}} leavegroup, mod_playergroup {{/str}}">
+                                aria-label="{{leavearialabel}}">
                             <i class="fa fa-sign-out" aria-hidden="true"></i>
                         </button>
                     {{/canleave}}
@@ -119,7 +122,8 @@
                     {{#canjoin}}
                         {{^isfull}}
                             <button type="button" class="btn btn-outline-success btn-sm pg-btn-join"
-                                    data-groupid="{{groupid}}" data-privacy="{{privacy}}">
+                                    data-groupid="{{groupid}}" data-privacy="{{privacy}}"
+                                    aria-label="{{joinarialabel}}">
                                 {{#str}} joingroup, mod_playergroup {{/str}}
                             </button>
                         {{/isfull}}

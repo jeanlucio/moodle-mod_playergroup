@@ -143,9 +143,10 @@ foreach ($grouprecords as $g) {
         $leaderbadge = '';
     }
 
+    $groupname = format_string($g->name);
     $templatedata->groups[] = [
         'groupid'            => $groupid,
-        'name'               => format_string($g->name),
+        'name'               => $groupname,
         'rawname'            => s($g->name),
         'description'        => format_text($g->description, (int) $g->descriptionformat, ['context' => $context]),
         'rawdescription'     => s($g->description ?? ''),
@@ -159,6 +160,9 @@ foreach ($grouprecords as $g) {
         'isfull'             => $isfull,
         'ismygroup'          => $ismygroup,
         'leaderbadge'        => $leaderbadge,
+        'joinarialabel'      => get_string('joingroup_named', 'mod_playergroup', $groupname),
+        'editarialabel'      => get_string('editgroup_named', 'mod_playergroup', $groupname),
+        'leavearialabel'     => get_string('leavegroup_named', 'mod_playergroup', $groupname),
         'canjoin'            => $isopen && !$hasgroup && $privacy !== 2 && !$isfull,
         'caninvite'          => $ismygroup && $isopen && !$isfull,
         'canedit'            => $ismygroup && $isopen && $iscreator,
