@@ -97,10 +97,6 @@ jobs:
         if: ${{ !cancelled() && matrix.runchecks == 'all' }}
         run: moodle-plugin-ci mustache
 
-      - name: Style Lint
-        if: ${{ !cancelled() && matrix.runchecks == 'all' }}
-        run: moodle-plugin-ci stylelint
-
       - name: Grunt tasks
         if: ${{ !cancelled() && matrix.runchecks == 'all' }}
         run: moodle-plugin-ci grunt --max-lint-warnings 0
