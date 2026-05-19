@@ -207,32 +207,34 @@ define([
             $(document).on('click', '[data-action="leavegroup"]', function(e) {
                 e.preventDefault();
 
+                let leaveLabel = '';
                 Str.get_strings([
                     {key: 'leavegroup', component: 'mod_playergroup'},
                     {key: 'leavegroupconfirm', component: 'mod_playergroup'}
                 ]).then(function(strings) {
+                    leaveLabel = strings[0];
                     return ModalSaveCancel.create({
                         title: strings[0],
                         body: strings[1]
-                    }).then(function(modal) {
-                        modal.setSaveButtonText(strings[0]);
-                        modal.show();
-
-                        modal.getRoot().on(ModalEvents.save, function() {
-                            Ajax.call([{
-                                methodname: 'mod_playergroup_leave_group',
-                                args: {cmid: cmid}
-                            }])[0].done(function() {
-                                window.location.reload();
-                            }).fail(Notification.exception);
-                        });
-
-                        modal.getRoot().on(ModalEvents.hidden, function() {
-                            modal.destroy();
-                        });
-
-                        return modal;
                     });
+                }).then(function(modal) {
+                    modal.setSaveButtonText(leaveLabel);
+                    modal.show();
+
+                    modal.getRoot().on(ModalEvents.save, function() {
+                        Ajax.call([{
+                            methodname: 'mod_playergroup_leave_group',
+                            args: {cmid: cmid}
+                        }])[0].done(function() {
+                            window.location.reload();
+                        }).fail(Notification.exception);
+                    });
+
+                    modal.getRoot().on(ModalEvents.hidden, function() {
+                        modal.destroy();
+                    });
+
+                    return modal;
                 }).catch(Notification.exception);
             });
         }
