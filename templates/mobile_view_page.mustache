@@ -34,7 +34,7 @@
         </ion-card>
 
         <!-- ===== CREATE GROUP PANEL ===== -->
-        <div *ngIf="showCreateForm">
+        <ng-container *ngIf="showCreateForm">
             <ion-list>
                 <ion-list-header>
                     <ion-label>{{ 'plugin.mod_playergroup.mobile_creategroup' | translate }}</ion-label>
@@ -74,10 +74,10 @@
                 <ion-button expand="block" (click)="createGroup()">{{ 'plugin.mod_playergroup.mobile_save' | translate }}</ion-button>
                 <ion-button expand="block" fill="outline" (click)="cancelForm()">{{ 'plugin.mod_playergroup.mobile_cancel' | translate }}</ion-button>
             </div>
-        </div>
+        </ng-container>
 
         <!-- ===== EDIT GROUP PANEL ===== -->
-        <div *ngIf="showEditForm">
+        <ng-container *ngIf="showEditForm">
             <ion-list>
                 <ion-list-header>
                     <ion-label>{{ 'plugin.mod_playergroup.mobile_editgroup' | translate }}</ion-label>
@@ -89,8 +89,8 @@
                 </ion-item>
 
                 <ion-item>
-                    <ion-label position="floating">{{ 'plugin.mod_playergroup.description' | translate }}</ion-label>
-                    <ion-textarea [(ngModel)]="editData.description" rows="2" auto-grow="true"></ion-textarea>
+                    <ion-label position="stacked">{{ 'plugin.mod_playergroup.description' | translate }}</ion-label>
+                    <ion-textarea [(ngModel)]="editData.description" rows="2"></ion-textarea>
                 </ion-item>
 
                 <ion-item>
@@ -119,10 +119,10 @@
                 <ion-button expand="block" (click)="editGroup()">{{ 'plugin.mod_playergroup.mobile_save' | translate }}</ion-button>
                 <ion-button expand="block" fill="outline" (click)="cancelForm()">{{ 'plugin.mod_playergroup.mobile_cancel' | translate }}</ion-button>
             </div>
-        </div>
+        </ng-container>
 
         <!-- ===== INVITE USERS PANEL ===== -->
-        <div *ngIf="showInvitePanel">
+        <ng-container *ngIf="showInvitePanel">
             <ion-list>
                 <ion-list-header>
                     <ion-label>{{ 'plugin.mod_playergroup.mobile_inviteusers' | translate }}</ion-label>
@@ -131,8 +131,8 @@
                 <ion-item *ngFor="let u of inviteableUsers">
                     <ion-label>
                         <h2>{{ u.fullname }}</h2>
-                        <p *ngIf="u.ingroup">{{ u.groupname }}</p>
-                        <p *ngIf="u.invitepending">{{ 'plugin.mod_playergroup.invitepending' | translate }}</p>
+                        <ion-text *ngIf="u.ingroup"><p>{{ u.groupname }}</p></ion-text>
+                        <ion-text *ngIf="u.invitepending"><p>{{ 'plugin.mod_playergroup.invitepending' | translate }}</p></ion-text>
                     </ion-label>
                     <ion-button slot="end" *ngIf="u.caninvite" (click)="sendInvite(u.userid)">
                         {{ 'plugin.mod_playergroup.sendinvite' | translate }}
@@ -147,13 +147,13 @@
                     {{ 'plugin.mod_playergroup.mobile_back' | translate }}
                 </ion-button>
             </div>
-        </div>
+        </ng-container>
 
         <!-- ===== MAIN VIEW (default) ===== -->
-        <div *ngIf="!showCreateForm && !showEditForm && !showInvitePanel">
+        <ng-container *ngIf="!showCreateForm && !showEditForm && !showInvitePanel">
 
             <!-- Received invitations -->
-            <div *ngIf="receivedInvites && receivedInvites.length > 0">
+            <ng-container *ngIf="receivedInvites && receivedInvites.length > 0">
                 <ion-list-header>
                     <ion-label>{{ 'plugin.mod_playergroup.receivedinvites' | translate }}</ion-label>
                 </ion-list-header>
@@ -180,14 +180,14 @@
                         </ion-grid>
                     </ion-card-content>
                 </ion-card>
-            </div>
+            </ng-container>
 
             <!-- Create group button -->
-            <div class="pg-create-btn" *ngIf="!CONTENT_OTHERDATA.hasgroup && CONTENT_OTHERDATA.activityopen">
-                <ion-button expand="block" (click)="showCreate()">
-                    {{ 'plugin.mod_playergroup.mobile_creategroup' | translate }}
-                </ion-button>
-            </div>
+            <ion-button expand="block" class="pg-create-btn"
+                *ngIf="!CONTENT_OTHERDATA.hasgroup && CONTENT_OTHERDATA.activityopen"
+                (click)="showCreate()">
+                {{ 'plugin.mod_playergroup.mobile_creategroup' | translate }}
+            </ion-button>
 
             <!-- Empty state -->
             <ion-card *ngIf="groups && groups.length === 0" class="pg-empty-card">
@@ -201,19 +201,21 @@
                 <ion-card-header>
                     <ion-card-title>{{ group.badge }} {{ group.name }}</ion-card-title>
                     <ion-card-subtitle>
-                        <span class="pg-privacy-badge pg-privacy-open"
-                            *ngIf="group.isprivacyopen">{{ 'plugin.mod_playergroup.mobile_privacyopen' | translate }}</span>
-                        <span class="pg-privacy-badge pg-privacy-protected"
-                            *ngIf="group.isprivacyprotected">{{ 'plugin.mod_playergroup.mobile_privacyprotected' | translate }}</span>
-                        <span class="pg-privacy-badge pg-privacy-closed"
-                            *ngIf="group.isprivacyclosed">{{ 'plugin.mod_playergroup.mobile_privacyclosed' | translate }}</span>
+                        <ion-text class="pg-privacy-badge pg-privacy-open"
+                            *ngIf="group.isprivacyopen">{{ 'plugin.mod_playergroup.mobile_privacyopen' | translate }}</ion-text>
+                        <ion-text class="pg-privacy-badge pg-privacy-protected"
+                            *ngIf="group.isprivacyprotected">{{ 'plugin.mod_playergroup.mobile_privacyprotected' | translate }}</ion-text>
+                        <ion-text class="pg-privacy-badge pg-privacy-closed"
+                            *ngIf="group.isprivacyclosed">{{ 'plugin.mod_playergroup.mobile_privacyclosed' | translate }}</ion-text>
                         &nbsp;{{ group.membercount }}/{{ group.maxmembers }}
-                        <span *ngIf="group.ismygroup"> &bull; {{ group.leaderbadge }}</span>
+                        <ion-text *ngIf="group.ismygroup"> &bull; {{ group.leaderbadge }}</ion-text>
                     </ion-card-subtitle>
                 </ion-card-header>
 
                 <ion-card-content>
-                    <div *ngIf="group.rawdescription" class="pg-group-description" [innerHTML]="group.rawdescription"></div>
+                    <core-format-text *ngIf="group.rawdescription"
+                        class="pg-group-description" [text]="group.rawdescription">
+                    </core-format-text>
 
                     <!-- Action row: buttons for my group -->
                     <ion-grid *ngIf="group.ismygroup">
@@ -248,7 +250,7 @@
                 </ion-card-content>
             </ion-card>
 
-        </div>
+        </ng-container>
 
     </core-loading>
 </div>
