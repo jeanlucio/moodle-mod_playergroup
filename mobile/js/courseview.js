@@ -94,7 +94,7 @@ this.createGroup = () => {
 
     if (!data.name || !data.name.trim()) {
         this.CoreDomUtilsProvider.showErrorModal(
-            'plugin.mod_playergroup.mobile_groupname_required', true
+            this.CONTENT_OTHERDATA.str_groupname_required
         );
         return;
     }
@@ -115,7 +115,7 @@ this.createGroup = () => {
         }).catch((err) => {
             modal.dismiss();
             this.CoreDomUtilsProvider.showErrorModalDefault(
-                err, 'plugin.mod_playergroup.mobile_error', true
+                err, this.CONTENT_OTHERDATA.str_error
             );
         });
     });
@@ -126,7 +126,7 @@ this.editGroup = () => {
 
     if (!data.name || !data.name.trim()) {
         this.CoreDomUtilsProvider.showErrorModal(
-            'plugin.mod_playergroup.mobile_groupname_required', true
+            this.CONTENT_OTHERDATA.str_groupname_required
         );
         return;
     }
@@ -148,7 +148,7 @@ this.editGroup = () => {
         }).catch((err) => {
             modal.dismiss();
             this.CoreDomUtilsProvider.showErrorModalDefault(
-                err, 'plugin.mod_playergroup.mobile_error', true
+                err, this.CONTENT_OTHERDATA.str_error
             );
         });
     });
@@ -164,7 +164,7 @@ this.joinGroup = (group) => {
                 }).catch((err) => {
                     modal.dismiss();
                     this.CoreDomUtilsProvider.showErrorModalDefault(
-                        err, 'plugin.mod_playergroup.mobile_error', true
+                        err, this.CONTENT_OTHERDATA.str_error
                     );
                 });
         });
@@ -172,9 +172,9 @@ this.joinGroup = (group) => {
 
     if (group.isprivacyprotected) {
         this.CoreDomUtilsProvider.showPrompt(
-            'plugin.mod_playergroup.mobile_enterpassword',
-            'plugin.mod_playergroup.mobile_joinprotected',
-            'plugin.mod_playergroup.mobile_joinopen',
+            this.CONTENT_OTHERDATA.str_enterpassword,
+            this.CONTENT_OTHERDATA.str_joinprotected,
+            this.CONTENT_OTHERDATA.str_joinopen,
             'password'
         ).then((password) => {
             if (password !== undefined) {
@@ -188,7 +188,7 @@ this.joinGroup = (group) => {
 
 this.leaveGroup = () => {
     this.CoreDomUtilsProvider.showConfirm(
-        this.TranslateService.instant('plugin.mod_playergroup.mobile_leaveconfirm')
+        this.CONTENT_OTHERDATA.str_leaveconfirm
     ).then(() => {
         this.CoreDomUtilsProvider.showModalLoading().then((modal) => {
             return this.playerGroupProvider.leaveGroup(cmid, null)
@@ -198,7 +198,7 @@ this.leaveGroup = () => {
                 }).catch((err) => {
                     modal.dismiss();
                     this.CoreDomUtilsProvider.showErrorModalDefault(
-                        err, 'plugin.mod_playergroup.mobile_error', true
+                        err, this.CONTENT_OTHERDATA.str_error
                     );
                 });
         });
@@ -220,7 +220,7 @@ this.acceptInvite = (inviteid) => {
             }).catch((err) => {
                 modal.dismiss();
                 this.CoreDomUtilsProvider.showErrorModalDefault(
-                    err, 'plugin.mod_playergroup.mobile_error', true
+                    err, this.CONTENT_OTHERDATA.str_error
                 );
             });
     });
@@ -235,7 +235,7 @@ this.rejectInvite = (inviteid) => {
             }).catch((err) => {
                 modal.dismiss();
                 this.CoreDomUtilsProvider.showErrorModalDefault(
-                    err, 'plugin.mod_playergroup.mobile_error', true
+                    err, this.CONTENT_OTHERDATA.str_error
                 );
             });
     });
@@ -250,7 +250,7 @@ this.sendInvite = (userid) => {
             }).catch((err) => {
                 modal.dismiss();
                 this.CoreDomUtilsProvider.showErrorModalDefault(
-                    err, 'plugin.mod_playergroup.mobile_error', true
+                    err, this.CONTENT_OTHERDATA.str_error
                 );
             });
     });

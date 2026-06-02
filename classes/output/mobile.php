@@ -68,7 +68,7 @@ class mobile {
 
         $data = get_activity_data::execute($cmid);
 
-        $templatecontext = (object) [
+        $templatecontext = [
             'cmid'                => $cmid,
             'activityopen'        => $data['activityopen'],
             'availabilitymessage' => $data['availabilitymessage'],
@@ -76,6 +76,22 @@ class mobile {
             'isteacher'           => $data['isteacher'],
             'mygroupid'           => $data['mygroupid'],
         ];
+
+        // Render all visible labels server-side. The Moodle app does not reliably
+        // resolve remote add-on language strings for languages whose code contains
+        // an underscore (e.g. pt_br), so we inject them as str_* template variables.
+        $stringkeys = [
+            'mobile_creategroup', 'mobile_editgroup', 'mobile_inviteusers', 'mobile_save',
+            'mobile_cancel', 'mobile_back', 'mobile_nogroups', 'mobile_enterpassword',
+            'mobile_passwordkeep', 'mobile_privacyopen', 'mobile_privacyprotected',
+            'mobile_privacyclosed', 'mobile_inviteaccept', 'mobile_invitedecline',
+            'mobile_joinopen', 'mobile_joinprotected', 'groupname', 'description',
+            'groupbadge', 'privacy', 'leavegroup', 'editgroup', 'sendinvite',
+            'invitepending', 'receivedinvites',
+        ];
+        foreach ($stringkeys as $key) {
+            $templatecontext['str_' . $key] = get_string($key, 'mod_playergroup');
+        }
 
         $html = $OUTPUT->render_from_template('mod_playergroup/mobile_view_page', $templatecontext);
 
@@ -101,6 +117,12 @@ class mobile {
                 'groups'              => json_encode($data['groups']),
                 'receivedinvites'     => json_encode($data['receivedinvites']),
                 'inviteableusers'     => json_encode($data['inviteableusers']),
+                'str_groupname_required' => get_string('mobile_groupname_required', 'mod_playergroup'),
+                'str_error'              => get_string('mobile_error', 'mod_playergroup'),
+                'str_leaveconfirm'       => get_string('mobile_leaveconfirm', 'mod_playergroup'),
+                'str_enterpassword'      => get_string('mobile_enterpassword', 'mod_playergroup'),
+                'str_joinprotected'      => get_string('mobile_joinprotected', 'mod_playergroup'),
+                'str_joinopen'           => get_string('mobile_joinopen', 'mod_playergroup'),
             ],
         ];
     }
