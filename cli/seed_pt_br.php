@@ -31,7 +31,10 @@
  */
 
 define('CLI_SCRIPT', true);
-require(__DIR__ . '/../../../../config.php');
+// Resolve config.php across both Moodle layouts: 5.x public root (4 levels up) and 4.x classic root (3 levels up).
+require(file_exists(__DIR__ . '/../../../../config.php')
+    ? __DIR__ . '/../../../../config.php'
+    : __DIR__ . '/../../../config.php');
 require_once($CFG->libdir . '/clilib.php');
 require_once($CFG->dirroot . '/course/lib.php');
 require_once($CFG->dirroot . '/course/modlib.php');
@@ -41,8 +44,8 @@ require_once($CFG->dirroot . '/group/lib.php');
 $CFG->noemailever = true;
 
 [$options, $unrecognised] = cli_get_params(
-    ['reset' => false, 'help' => false, 'password' => false],
-    ['h' => 'help', 'r' => 'reset', 'p' => 'password']
+    ['reset' => false, 'help' => false, 'password' => false, 'force' => false],
+    ['h' => 'help', 'r' => 'reset', 'p' => 'password', 'f' => 'force']
 );
 
 if ($options['help']) {
@@ -50,6 +53,7 @@ if ($options['help']) {
     cli_writeln("Options:");
     cli_writeln("  --password=<value>   Senha para todas as contas seed (obrigatório).");
     cli_writeln("  --reset              Remove e recria tudo do zero.");
+    cli_writeln("  --force              Ignora o guard de ambiente de desenvolvimento.");
     cli_writeln("  --help               Exibe esta mensagem.");
     exit(0);
 }
@@ -62,10 +66,11 @@ foreach ($devpatterns as $pattern) {
         break;
     }
 }
-if (!$isdev) {
+if (!$isdev && !$options['force']) {
     cli_error(
         'Este script deve ser executado apenas em ambientes de desenvolvimento. ' .
-        '$CFG->wwwroot deve conter localhost, 127.0.0.1, .local ou .test.'
+        '$CFG->wwwroot deve conter localhost, 127.0.0.1, .local ou .test. ' .
+        'Use --force para ignorar esta verificação em sites de desenvolvimento com domínio público.'
     );
 }
 
