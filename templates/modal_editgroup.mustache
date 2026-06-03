@@ -24,7 +24,9 @@
         "name": "Dragões do Norte",
         "description": "Buscando jogadores de PHP",
         "badge": "🐉",
-        "privacy": 0
+        "isprivacyopen": true,
+        "isprivacyprotected": false,
+        "isprivacyclosed": false
     }
 }}
 <form id="mod_playergroup-editgroup-form">
@@ -56,13 +58,19 @@
             {{#str}} privacy, mod_playergroup {{/str}}
         </label>
         <select class="form-select" id="pg-edit-groupprivacy">
-            <option value="0">{{#str}} groupopen, mod_playergroup {{/str}}</option>
-            <option value="1">{{#str}} groupprotected, mod_playergroup {{/str}}</option>
-            <option value="2">{{#str}} groupclosed, mod_playergroup {{/str}}</option>
+            <option value="0"{{#isprivacyopen}} selected{{/isprivacyopen}}>
+                {{#str}} groupopen, mod_playergroup {{/str}}
+            </option>
+            <option value="1"{{#isprivacyprotected}} selected{{/isprivacyprotected}}>
+                {{#str}} groupprotected, mod_playergroup {{/str}}
+            </option>
+            <option value="2"{{#isprivacyclosed}} selected{{/isprivacyclosed}}>
+                {{#str}} groupclosed, mod_playergroup {{/str}}
+            </option>
         </select>
     </div>
 
-    <div class="mb-3 d-none" id="pg-edit-password-field">
+    <div class="mb-3{{^isprivacyprotected}} d-none{{/isprivacyprotected}}" id="pg-edit-password-field">
         <label for="pg-edit-grouppassword" class="form-label">
             {{#str}} grouppassword, mod_playergroup {{/str}}
         </label>

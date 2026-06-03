@@ -64,7 +64,9 @@ define([
             name: name,
             description: description,
             badge: badge,
-            privacy: privacy
+            isprivacyopen: privacy === 0,
+            isprivacyprotected: privacy === 1,
+            isprivacyclosed: privacy === 2
         });
 
         ModalSaveCancel.create({
@@ -72,11 +74,6 @@ define([
             body: bodyPromise
         }).then(function(modal) {
             modal.show();
-
-            modal.getRoot().find('#pg-edit-groupprivacy').val(String(privacy));
-            if (privacy === 1) {
-                modal.getRoot().find('#pg-edit-password-field').removeClass('d-none');
-            }
 
             modal.getRoot().on('change', '#pg-edit-groupprivacy', function() {
                 var passwordField = modal.getRoot().find('#pg-edit-password-field');
