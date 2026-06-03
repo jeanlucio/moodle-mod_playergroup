@@ -28,6 +28,7 @@
 * ✅ **Activity Completion:** Custom rule — student must join or create a group.
 * 📊 **Teacher Report:** Audit log view showing the last 200 activity events.
 * 🔗 **Groups API:** Full integration with Moodle's native groups and groupings.
+* 📱 **Mobile App:** Native support in the official Moodle app — create, join, leave, invite, and manage your group on the go.
 
 ---
 
@@ -125,7 +126,7 @@ php mod/playergroup/cli/seed.php --password=MyDevPass1!
 php mod/playergroup/cli/seed.php --password=MyDevPass1! --reset
 ```
 
-The `--password` flag is **required** and sets the login password for all seed accounts. The script refuses to run on non-development URLs (`localhost`, `127.0.0.1`, `*.local`, `*.test`).
+The `--password` flag is **required** and sets the login password for all seed accounts. The script refuses to run on non-development URLs (`localhost`, `127.0.0.1`, `*.local`, `*.test`); pass `--force` to bypass this guard on a development site that uses a public domain. The scripts work on both the classic (4.x) and `public/` (5.x) directory layouts.
 
 > Via Docker Compose: `docker compose exec <webserver-service> php mod/playergroup/cli/seed.php --password=MyDevPass1!`
 
@@ -144,12 +145,13 @@ PlayerGroup ships with a PHPUnit suite covering all business logic and a Behat s
 | `backup/restore_test.php` | 3 | Backup/restore round-trip for content-only and user-data modes; original course unaffected |
 | `external/accept_invite_test.php` | 5 | Accept invite: success, completion tracking (manual/auto), wrong-user and already-handled rejections |
 | `external/create_group_test.php` | 10 | Create group: all privacy levels, password hashing, creator membership, capability enforcement, duplicate and invalid-cmid guards, completion tracking |
-| `external/join_group_test.php` | 5 | Join group: success, completion tracking, already-in-group and closed-group rejections |
+| `external/join_group_test.php` | 9 | Join group: success, completion tracking, already-in-group and closed-group rejections, protected-group joins (correct/wrong password), invited user joining via password, and resolution of pending invites on join |
 | `external/leave_group_test.php` | 8 | Leave group: success, canleave guard, not-in-group guard, empty-group auto-deletion, leadership transfer, pending invite cancellation |
+| `external/send_invite_test.php` | 2 | Send invite: pending invite creation, and re-inviting a student after they join and leave a group |
 | `lib_test.php` | 9 | add/delete_instance lifecycle, completion state (no group / with group), supported features |
 | `playergroup_grade_test.php` | 4 | Grade award on join, bulk award, grade persistence after leaving, no grade when disabled |
 | `privacy/provider_test.php` | 11 | GDPR: metadata declarations, context discovery, data export (creator/receiver), bulk and targeted deletion |
-| **Total** | **55** | |
+| **Total** | **61** | |
 
 ```bash
 vendor/bin/phpunit --testsuite mod_playergroup
@@ -206,6 +208,7 @@ O **PlayerGroup** permite que os alunos formem seus próprios grupos diretamente
 * ✅ **Conclusão de Atividade:** Regra personalizada — o aluno deve entrar ou criar um grupo.
 * 📊 **Relatório do Professor:** Visualização do log de auditoria com os últimos 200 eventos da atividade.
 * 🔗 **API de Grupos:** Integração completa com os grupos e agrupamentos nativos do Moodle.
+* 📱 **App Mobile:** Suporte nativo no app oficial do Moodle — criar, entrar, sair, convidar e gerenciar seu grupo pelo celular.
 
 ---
 
@@ -303,7 +306,7 @@ php mod/playergroup/cli/seed_pt_br.php --password=MinhaDevSenha1!
 php mod/playergroup/cli/seed_pt_br.php --password=MinhaDevSenha1! --reset
 ```
 
-O parâmetro `--password` é **obrigatório** e define a senha de login de todas as contas seed. O script recusa executar em URLs que não sejam de desenvolvimento (`localhost`, `127.0.0.1`, `*.local`, `*.test`).
+O parâmetro `--password` é **obrigatório** e define a senha de login de todas as contas seed. O script recusa executar em URLs que não sejam de desenvolvimento (`localhost`, `127.0.0.1`, `*.local`, `*.test`); use `--force` para ignorar essa verificação em um site de desenvolvimento com domínio público. Os scripts funcionam tanto no layout clássico (4.x) quanto no `public/` (5.x).
 
 > Via Docker Compose: `docker compose exec <servico-webserver> php mod/playergroup/cli/seed_pt_br.php --password=MinhaDevSenha1!`
 
@@ -322,12 +325,13 @@ O PlayerGroup inclui uma suíte PHPUnit que cobre toda a lógica de negócio e u
 | `backup/restore_test.php` | 3 | Round-trip de backup/restore em modo conteúdo e com dados de usuário; curso original não afetado |
 | `external/accept_invite_test.php` | 5 | Aceitar convite: sucesso, conclusão de atividade (manual/auto), rejeição por usuário errado e convite já respondido |
 | `external/create_group_test.php` | 10 | Criar grupo: todos os níveis de privacidade, hash de senha, criador como membro, capability enforcement, guards contra duplicata e cmid inválido, conclusão de atividade |
-| `external/join_group_test.php` | 5 | Entrar no grupo: sucesso, conclusão de atividade, rejeição por já estar em grupo e por grupo fechado |
+| `external/join_group_test.php` | 9 | Entrar no grupo: sucesso, conclusão de atividade, rejeição por já estar em grupo e por grupo fechado, entrada em grupo protegido (senha correta/errada), entrada por senha de um aluno convidado e resolução dos convites pendentes ao entrar |
 | `external/leave_group_test.php` | 8 | Sair do grupo: sucesso, guard canleave, guard não-é-membro, auto-exclusão de grupo vazio, transferência de liderança, cancelamento de convites pendentes |
+| `external/send_invite_test.php` | 2 | Enviar convite: criação de convite pendente e reconvite de um aluno após ele entrar e sair de um grupo |
 | `lib_test.php` | 9 | Ciclo de vida add/delete_instance, estado de conclusão (sem grupo / com grupo), funcionalidades suportadas |
 | `playergroup_grade_test.php` | 4 | Atribuição de nota ao entrar, atribuição em lote, persistência da nota após sair, sem nota quando desabilitado |
 | `privacy/provider_test.php` | 11 | LGPD: declaração de metadados, descoberta de contextos, exportação de dados (criador/destinatário), exclusão em lote e individual |
-| **Total** | **55** | |
+| **Total** | **61** | |
 
 ```bash
 vendor/bin/phpunit --testsuite mod_playergroup
