@@ -29,8 +29,9 @@ define([
     'core/modal_save_cancel',
     'core/modal_events',
     'core/templates',
+    'core/togglesensitive',
     'mod_playergroup/creategroup'
-], function($, Ajax, Notification, Str, ModalSaveCancel, ModalEvents, Templates, CreateGroup) {
+], function($, Ajax, Notification, Str, ModalSaveCancel, ModalEvents, Templates, ToggleSensitive, CreateGroup) {
 
     /**
      * Calls mod_playergroup_join_group and reloads on success.
@@ -74,6 +75,11 @@ define([
             body: bodyPromise
         }).then(function(modal) {
             modal.show();
+
+            modal.getBodyPromise().then(function() {
+                ToggleSensitive.init('pg-edit-grouppassword');
+                return;
+            }).catch(Notification.exception);
 
             modal.getRoot().on('change', '#pg-edit-groupprivacy', function() {
                 var passwordField = modal.getRoot().find('#pg-edit-password-field');
@@ -134,6 +140,11 @@ define([
             body: bodyPromise
         }).then(function(modal) {
             modal.show();
+
+            modal.getBodyPromise().then(function() {
+                ToggleSensitive.init('pg-join-password');
+                return;
+            }).catch(Notification.exception);
 
             modal.getRoot().on(ModalEvents.save, function(saveEvent) {
                 saveEvent.preventDefault();
