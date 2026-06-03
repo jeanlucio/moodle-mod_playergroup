@@ -25,6 +25,15 @@
 defined('MOODLE_INTERNAL') || die();
 
 $functions = [
+    'mod_playergroup_get_activity_data' => [
+        'classname'   => 'mod_playergroup\external\get_activity_data',
+        'methodname'  => 'execute',
+        'classpath'   => '',
+        'description' => 'Returns all data needed to render the activity in the mobile app.',
+        'type'        => 'read',
+        'ajax'        => true,
+        'services'    => [MOODLE_OFFICIAL_MOBILE_SERVICE],
+    ],
     'mod_playergroup_create_group' => [
         'classname'   => 'mod_playergroup\external\create_group',
         'methodname'  => 'execute',
@@ -32,6 +41,7 @@ $functions = [
         'description' => 'Creates a new group and assigns the creator as the first member.',
         'type'        => 'write',
         'ajax'        => true,
+        'services'    => [MOODLE_OFFICIAL_MOBILE_SERVICE],
     ],
     'mod_playergroup_join_group' => [
         'classname'   => 'mod_playergroup\external\join_group',
@@ -40,6 +50,7 @@ $functions = [
         'description' => 'Adds the current student to an existing group.',
         'type'        => 'write',
         'ajax'        => true,
+        'services'    => [MOODLE_OFFICIAL_MOBILE_SERVICE],
     ],
     'mod_playergroup_leave_group' => [
         'classname'   => 'mod_playergroup\external\leave_group',
@@ -48,6 +59,7 @@ $functions = [
         'description' => 'Removes the current student from their group.',
         'type'        => 'write',
         'ajax'        => true,
+        'services'    => [MOODLE_OFFICIAL_MOBILE_SERVICE],
     ],
     'mod_playergroup_edit_group' => [
         'classname'   => 'mod_playergroup\external\edit_group',
@@ -56,6 +68,7 @@ $functions = [
         'description' => 'Updates the name, description, badge, and privacy of a group.',
         'type'        => 'write',
         'ajax'        => true,
+        'services'    => [MOODLE_OFFICIAL_MOBILE_SERVICE],
     ],
     'mod_playergroup_send_invite' => [
         'classname'   => 'mod_playergroup\external\send_invite',
@@ -64,6 +77,7 @@ $functions = [
         'description' => 'Sends a group invitation to a student who does not yet belong to a group.',
         'type'        => 'write',
         'ajax'        => true,
+        'services'    => [MOODLE_OFFICIAL_MOBILE_SERVICE],
     ],
     'mod_playergroup_accept_invite' => [
         'classname'   => 'mod_playergroup\external\accept_invite',
@@ -72,6 +86,7 @@ $functions = [
         'description' => 'Accepts a pending group invitation and adds the student to the group.',
         'type'        => 'write',
         'ajax'        => true,
+        'services'    => [MOODLE_OFFICIAL_MOBILE_SERVICE],
     ],
     'mod_playergroup_reject_invite' => [
         'classname'   => 'mod_playergroup\external\reject_invite',
@@ -80,5 +95,6 @@ $functions = [
         'description' => 'Declines a pending group invitation.',
         'type'        => 'write',
         'ajax'        => true,
+        'services'    => [MOODLE_OFFICIAL_MOBILE_SERVICE],
     ],
 ];

@@ -1,0 +1,286 @@
+{{!
+    @template mod_playergroup/mobile_view_page
+
+    Mobile app view for the PlayerGroup activity.
+
+    All visible labels are rendered server-side via get_string (str_* variables)
+    instead of the app translate pipe, so they are localised regardless of the
+    Moodle app version handling of remote add-on language strings.
+
+    Example context (json):
+    {
+        "cmid": 1,
+        "activityopen": true,
+        "availabilitymessage": "",
+        "hasgroup": false,
+        "isteacher": false,
+        "mygroupid": 0,
+        "str_mobile_creategroup": "Create group",
+        "str_groupname": "Group name",
+        "str_description": "Description",
+        "str_groupbadge": "Badge / Emoji",
+        "str_privacy": "Privacy",
+        "str_mobile_privacyopen": "Open",
+        "str_mobile_privacyprotected": "Protected",
+        "str_mobile_privacyclosed": "Closed",
+        "str_mobile_enterpassword": "Password",
+        "str_mobile_save": "Save",
+        "str_mobile_cancel": "Cancel",
+        "str_mobile_editgroup": "Edit group",
+        "str_mobile_passwordkeep": "Leave blank to keep",
+        "str_mobile_inviteusers": "Invite members",
+        "str_invitepending": "Invitation pending",
+        "str_sendinvite": "Invite",
+        "str_mobile_back": "Back",
+        "str_receivedinvites": "Received invitations",
+        "str_mobile_inviteaccept": "Accept",
+        "str_mobile_invitedecline": "Decline",
+        "str_mobile_nogroups": "No groups yet",
+        "str_leavegroup": "Leave group",
+        "str_editgroup": "Edit group",
+        "str_mobile_joinopen": "Join",
+        "str_mobile_joinprotected": "Join (password)"
+    }
+}}
+{{=<% %>=}}
+<div>
+    <core-loading [hideUntil]="loaded">
+
+        <!-- Activity header / description -->
+        <core-course-module-info
+            [module]="module"
+            [courseId]="courseId"
+            [description]="module.description"
+            [component]="component"
+            [componentId]="module.id">
+        </core-course-module-info>
+
+        <!-- Availability message when the activity is not open -->
+        <ion-card *ngIf="!CONTENT_OTHERDATA.activityopen" color="warning">
+            <ion-card-content>
+                <p>{{ CONTENT_OTHERDATA.availabilitymessage }}</p>
+            </ion-card-content>
+        </ion-card>
+
+        <!-- ===== CREATE GROUP PANEL ===== -->
+        <ng-container *ngIf="showCreateForm">
+            <ion-list>
+                <ion-list-header>
+                    <ion-label><% str_mobile_creategroup %></ion-label>
+                </ion-list-header>
+
+                <ion-item>
+                    <ion-input labelPlacement="stacked" label="<% str_groupname %>"
+                        [(ngModel)]="createData.name" type="text" maxlength="80"></ion-input>
+                </ion-item>
+
+                <ion-item>
+                    <ion-textarea labelPlacement="stacked" label="<% str_description %>"
+                        [(ngModel)]="createData.description" rows="2"></ion-textarea>
+                </ion-item>
+
+                <ion-item>
+                    <ion-input labelPlacement="stacked" label="<% str_groupbadge %>"
+                        [(ngModel)]="createData.badge" type="text" maxlength="10"></ion-input>
+                </ion-item>
+
+                <ion-item>
+                    <ion-select labelPlacement="stacked" label="<% str_privacy %>"
+                        [(ngModel)]="createData.privacy" interface="action-sheet">
+                        <ion-select-option [value]="0"><% str_mobile_privacyopen %></ion-select-option>
+                        <ion-select-option [value]="1"><% str_mobile_privacyprotected %></ion-select-option>
+                        <ion-select-option [value]="2"><% str_mobile_privacyclosed %></ion-select-option>
+                    </ion-select>
+                </ion-item>
+
+                <ion-item *ngIf="createData.privacy === 1">
+                    <ion-input labelPlacement="stacked" label="<% str_mobile_enterpassword %>"
+                        [(ngModel)]="createData.password" type="password"></ion-input>
+                </ion-item>
+            </ion-list>
+
+            <div class="pg-form-buttons">
+                <ion-button expand="block" (click)="createGroup()"><% str_mobile_save %></ion-button>
+                <ion-button expand="block" fill="outline" (click)="cancelForm()"><% str_mobile_cancel %></ion-button>
+            </div>
+        </ng-container>
+
+        <!-- ===== EDIT GROUP PANEL ===== -->
+        <ng-container *ngIf="showEditForm">
+            <ion-list>
+                <ion-list-header>
+                    <ion-label><% str_mobile_editgroup %></ion-label>
+                </ion-list-header>
+
+                <ion-item>
+                    <ion-input labelPlacement="stacked" label="<% str_groupname %>"
+                        [(ngModel)]="editData.name" type="text" maxlength="80"></ion-input>
+                </ion-item>
+
+                <ion-item>
+                    <ion-textarea labelPlacement="stacked" label="<% str_description %>"
+                        [(ngModel)]="editData.description" rows="2"></ion-textarea>
+                </ion-item>
+
+                <ion-item>
+                    <ion-input labelPlacement="stacked" label="<% str_groupbadge %>"
+                        [(ngModel)]="editData.badge" type="text" maxlength="10"></ion-input>
+                </ion-item>
+
+                <ion-item>
+                    <ion-select labelPlacement="stacked" label="<% str_privacy %>"
+                        [(ngModel)]="editData.privacy" interface="action-sheet">
+                        <ion-select-option [value]="0"><% str_mobile_privacyopen %></ion-select-option>
+                        <ion-select-option [value]="1"><% str_mobile_privacyprotected %></ion-select-option>
+                        <ion-select-option [value]="2"><% str_mobile_privacyclosed %></ion-select-option>
+                    </ion-select>
+                </ion-item>
+
+                <ion-item *ngIf="editData.privacy === 1">
+                    <ion-input labelPlacement="stacked" label="<% str_mobile_enterpassword %>"
+                        [(ngModel)]="editData.password" type="password"
+                        placeholder="<% str_mobile_passwordkeep %>">
+                    </ion-input>
+                </ion-item>
+            </ion-list>
+
+            <div class="pg-form-buttons">
+                <ion-button expand="block" (click)="editGroup()"><% str_mobile_save %></ion-button>
+                <ion-button expand="block" fill="outline" (click)="cancelForm()"><% str_mobile_cancel %></ion-button>
+            </div>
+        </ng-container>
+
+        <!-- ===== INVITE USERS PANEL ===== -->
+        <ng-container *ngIf="showInvitePanel">
+            <ion-list>
+                <ion-list-header>
+                    <ion-label><% str_mobile_inviteusers %></ion-label>
+                </ion-list-header>
+
+                <ion-item *ngFor="let u of inviteableUsers">
+                    <ion-label>
+                        <h2>{{ u.fullname }}</h2>
+                        <ion-text *ngIf="u.ingroup"><p>{{ u.groupname }}</p></ion-text>
+                        <ion-text *ngIf="u.invitepending"><p><% str_invitepending %></p></ion-text>
+                    </ion-label>
+                    <ion-button slot="end" *ngIf="u.caninvite" (click)="sendInvite(u.userid)">
+                        <% str_sendinvite %>
+                    </ion-button>
+                    <ion-icon slot="end" name="checkmark-circle" color="success" *ngIf="u.invitepending"></ion-icon>
+                    <ion-icon slot="end" name="people" color="medium" *ngIf="u.ingroup"></ion-icon>
+                </ion-item>
+            </ion-list>
+
+            <div class="pg-form-buttons">
+                <ion-button expand="block" fill="outline" (click)="cancelForm()">
+                    <% str_mobile_back %>
+                </ion-button>
+            </div>
+        </ng-container>
+
+        <!-- ===== MAIN VIEW (default) ===== -->
+        <ng-container *ngIf="!showCreateForm && !showEditForm && !showInvitePanel">
+
+            <!-- Received invitations -->
+            <ng-container *ngIf="receivedInvites && receivedInvites.length > 0">
+                <ion-list-header>
+                    <ion-label><% str_receivedinvites %></ion-label>
+                </ion-list-header>
+                <ion-card *ngFor="let inv of receivedInvites" class="pg-invite-card">
+                    <ion-card-header>
+                        <ion-card-title>{{ inv.badge }} {{ inv.groupname }}</ion-card-title>
+                        <ion-card-subtitle>{{ inv.sentby }}</ion-card-subtitle>
+                    </ion-card-header>
+                    <ion-card-content>
+                        <ion-grid>
+                            <ion-row>
+                                <ion-col>
+                                    <ion-button expand="block" (click)="acceptInvite(inv.inviteid)">
+                                        <% str_mobile_inviteaccept %>
+                                    </ion-button>
+                                </ion-col>
+                                <ion-col>
+                                    <ion-button expand="block" fill="outline" color="danger"
+                                        (click)="rejectInvite(inv.inviteid)">
+                                        <% str_mobile_invitedecline %>
+                                    </ion-button>
+                                </ion-col>
+                            </ion-row>
+                        </ion-grid>
+                    </ion-card-content>
+                </ion-card>
+            </ng-container>
+
+            <!-- Create group button -->
+            <ion-button expand="block" class="pg-create-btn"
+                *ngIf="!CONTENT_OTHERDATA.hasgroup && CONTENT_OTHERDATA.activityopen"
+                (click)="showCreate()">
+                <% str_mobile_creategroup %>
+            </ion-button>
+
+            <!-- Empty state -->
+            <ion-card *ngIf="groups && groups.length === 0" class="pg-empty-card">
+                <ion-card-content>
+                    <p class="pg-empty-text"><% str_mobile_nogroups %></p>
+                </ion-card-content>
+            </ion-card>
+
+            <!-- Groups list -->
+            <ion-card *ngFor="let group of groups" class="pg-group-card">
+                <ion-card-header>
+                    <ion-card-title>{{ group.badge }} {{ group.name }}</ion-card-title>
+                    <ion-card-subtitle>
+                        <ion-text class="pg-privacy-badge pg-privacy-open"
+                            *ngIf="group.isprivacyopen"><% str_mobile_privacyopen %></ion-text>
+                        <ion-text class="pg-privacy-badge pg-privacy-protected"
+                            *ngIf="group.isprivacyprotected"><% str_mobile_privacyprotected %></ion-text>
+                        <ion-text class="pg-privacy-badge pg-privacy-closed"
+                            *ngIf="group.isprivacyclosed"><% str_mobile_privacyclosed %></ion-text>
+                        &nbsp;{{ group.membercount }}/{{ group.maxmembers }}
+                        <ion-text *ngIf="group.ismygroup"> &bull; {{ group.leaderbadge }}</ion-text>
+                    </ion-card-subtitle>
+                </ion-card-header>
+
+                <ion-card-content>
+                    <core-format-text *ngIf="group.rawdescription"
+                        class="pg-group-description" [text]="group.rawdescription">
+                    </core-format-text>
+
+                    <!-- Action row: buttons for my group -->
+                    <ion-grid *ngIf="group.ismygroup">
+                        <ion-row>
+                            <ion-col *ngIf="group.canleave">
+                                <ion-button expand="block" fill="outline" color="danger" (click)="leaveGroup()">
+                                    <% str_leavegroup %>
+                                </ion-button>
+                            </ion-col>
+                            <ion-col *ngIf="group.canedit">
+                                <ion-button expand="block" fill="outline" (click)="showEdit(group)">
+                                    <% str_editgroup %>
+                                </ion-button>
+                            </ion-col>
+                            <ion-col *ngIf="group.caninvite">
+                                <ion-button expand="block" (click)="showInvite()">
+                                    <% str_mobile_inviteusers %>
+                                </ion-button>
+                            </ion-col>
+                        </ion-row>
+                    </ion-grid>
+
+                    <!-- Join button for other groups -->
+                    <ion-button *ngIf="group.canjoin && group.isprivacyopen"
+                        expand="block" (click)="joinGroup(group)">
+                        <% str_mobile_joinopen %>
+                    </ion-button>
+                    <ion-button *ngIf="group.canjoin && group.isprivacyprotected"
+                        expand="block" fill="outline" (click)="joinGroup(group)">
+                        <% str_mobile_joinprotected %>
+                    </ion-button>
+                </ion-card-content>
+            </ion-card>
+
+        </ng-container>
+
+    </core-loading>
+</div>
+<%={{ }}=%>

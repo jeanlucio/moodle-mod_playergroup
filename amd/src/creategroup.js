@@ -28,8 +28,9 @@ define([
     'core/modal_save_cancel',
     'core/modal_events',
     'core/templates',
+    'core/togglesensitive',
     'core/str'
-], function($, Ajax, Notification, ModalSaveCancel, ModalEvents, Templates, Str) {
+], function($, Ajax, Notification, ModalSaveCancel, ModalEvents, Templates, ToggleSensitive, Str) {
     return {
         init: function(cmid) {
             $(document).on('click', '[data-action="creategroup"]', function(e) {
@@ -43,6 +44,11 @@ define([
                     body: bodyPromise
                 }).then(function(modal) {
                     modal.show();
+
+                    modal.getBodyPromise().then(function() {
+                        ToggleSensitive.init('pg-grouppassword');
+                        return;
+                    }).catch(Notification.exception);
 
                     // Toggle password field visibility based on privacy selection.
                     modal.getRoot().on('change', '#pg-groupprivacy', function() {

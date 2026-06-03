@@ -1,0 +1,80 @@
+/**
+ * This file is part of Moodle - https://moodle.org/
+ *
+ * Moodle is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Moodle is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+ */
+/**
+ * Styles for the PlayerGroup mobile addon.
+ *
+ * @package    mod_playergroup
+ * @copyright  2026 Jean Lúcio
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+.pg-group-card {
+    margin: 8px 16px;
+}
+
+.pg-invite-card {
+    margin: 8px 16px;
+    border-left: 4px solid var(--ion-color-primary);
+}
+
+.pg-empty-card {
+    margin: 24px 16px;
+    text-align: center;
+}
+
+.pg-empty-text {
+    color: var(--ion-color-medium);
+    font-style: italic;
+}
+
+.pg-create-btn {
+    margin: 16px;
+}
+
+.pg-form-buttons {
+    margin: 16px;
+}
+
+.pg-group-description {
+    margin-bottom: 8px;
+    font-size: 0.9em;
+    color: var(--ion-color-medium-shade);
+}
+
+.pg-privacy-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.75em;
+    font-weight: 600;
+    margin-right: 4px;
+}
+
+.pg-privacy-open {
+    background-color: var(--ion-color-success-tint);
+    color: var(--ion-color-success-shade);
+}
+
+.pg-privacy-protected {
+    background-color: var(--ion-color-warning-tint);
+    color: var(--ion-color-warning-shade);
+}
+
+.pg-privacy-closed {
+    background-color: var(--ion-color-danger-tint);
+    color: var(--ion-color-danger-shade);
+}

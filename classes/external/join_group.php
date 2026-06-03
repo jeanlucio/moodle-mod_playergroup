@@ -117,6 +117,23 @@ class join_group extends external_api {
 
         groups_add_member($params['groupid'], $USER->id);
 
+        // Resolve pending invites now that the user is in a group, mirroring accept_invite: the invite
+        // for the joined group counts as accepted, any others as declined. This stops a stale pending
+        // invite from reappearing if the user later leaves the group.
+        $inviteparams = [
+            'receiverid'    => $USER->id,
+            'playergroupid' => $playergroup->id,
+            'groupid'       => $params['groupid'],
+        ];
+        $acceptedselect = 'receiverid = :receiverid AND playergroupid = :playergroupid '
+            . 'AND groupid = :groupid AND status = 0';
+        $declinedselect = 'receiverid = :receiverid AND playergroupid = :playergroupid '
+            . 'AND groupid <> :groupid AND status = 0';
+        $DB->set_field_select('playergroup_invites', 'timemodified', $now, $acceptedselect, $inviteparams);
+        $DB->set_field_select('playergroup_invites', 'status', 1, $acceptedselect, $inviteparams);
+        $DB->set_field_select('playergroup_invites', 'timemodified', $now, $declinedselect, $inviteparams);
+        $DB->set_field_select('playergroup_invites', 'status', 2, $declinedselect, $inviteparams);
+
         $modinfo = get_fast_modinfo($cm->course);
         $cminfo = $modinfo->get_cm($cm->id);
         $completion = new \completion_info($modinfo->get_course());

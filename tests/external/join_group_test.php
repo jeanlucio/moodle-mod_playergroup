@@ -161,4 +161,100 @@ final class join_group_test extends advanced_testcase {
         $this->expectException(moodle_exception::class);
         join_group::execute($this->cm->cmid, $this->groupid, '');
     }
+
+    /**
+     * Test that a protected group (privacy=1) can be joined with the correct password.
+     */
+    public function test_execute_protected_group_with_correct_password(): void {
+        $this->make_group_protected('secret123');
+
+        $result = join_group::execute($this->cm->cmid, $this->groupid, 'secret123');
+
+        $this->assertTrue($result['success']);
+        $this->assertTrue(groups_is_member($this->groupid, $this->joiner->id));
+    }
+
+    /**
+     * Test that joining a protected group with the wrong password is rejected.
+     */
+    public function test_execute_protected_group_with_wrong_password(): void {
+        $this->make_group_protected('secret123');
+
+        $this->expectException(moodle_exception::class);
+        join_group::execute($this->cm->cmid, $this->groupid, 'wrongpass');
+    }
+
+    /**
+     * Test that an invited student who joins by password has the invite marked as accepted.
+     *
+     * The user has a pending invite to the group and joins via the password flow instead of
+     * accepting it. The invite must be marked accepted (status 1) so it does not reappear if
+     * the user later leaves the group.
+     */
+    public function test_execute_invited_user_joins_with_password_marks_invite_accepted(): void {
+        global $DB;
+        $this->make_group_protected('secret123');
+        $inviteid = $this->create_invite($this->groupid);
+
+        join_group::execute($this->cm->cmid, $this->groupid, 'secret123');
+
+        $this->assertTrue(groups_is_member($this->groupid, $this->joiner->id));
+        $this->assertEquals(
+            1,
+            (int) $DB->get_field('playergroup_invites', 'status', ['id' => $inviteid])
+        );
+    }
+
+    /**
+     * Test that joining a group declines the user's pending invites to other groups.
+     */
+    public function test_execute_join_declines_other_pending_invites(): void {
+        global $DB;
+
+        $otherleader = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($otherleader->id, $this->course->id, 'student');
+        $this->setUser($otherleader);
+        $other = create_group::execute($this->cm->cmid, 'Other Group', '', '🛡', 0, '');
+        $otherinviteid = $this->create_invite((int) $other['groupid']);
+
+        $this->setUser($this->joiner);
+        join_group::execute($this->cm->cmid, $this->groupid, '');
+
+        $this->assertEquals(
+            2,
+            (int) $DB->get_field('playergroup_invites', 'status', ['id' => $otherinviteid])
+        );
+    }
+
+    /**
+     * Switch the group created in setUp to protected (privacy=1) with the given password.
+     *
+     * @param string $password Plain-text password to set on the group.
+     */
+    private function make_group_protected(string $password): void {
+        global $DB;
+        $DB->set_field('playergroup_meta', 'privacy', 1, ['groupid' => $this->groupid]);
+        $DB->set_field('playergroup_meta', 'password', password_hash($password, PASSWORD_DEFAULT), [
+            'groupid' => $this->groupid,
+        ]);
+    }
+
+    /**
+     * Insert a pending invite addressed to the joiner for the given group.
+     *
+     * @param int $groupid Group the invite points to.
+     * @return int ID of the inserted invite.
+     */
+    private function create_invite(int $groupid): int {
+        global $DB;
+        return (int) $DB->insert_record('playergroup_invites', (object) [
+            'playergroupid' => $this->cm->id,
+            'groupid'       => $groupid,
+            'senderid'      => $this->creator->id,
+            'receiverid'    => $this->joiner->id,
+            'status'        => 0,
+            'timecreated'   => time(),
+            'timemodified'  => time(),
+        ]);
+    }
 }

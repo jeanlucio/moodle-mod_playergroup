@@ -31,7 +31,10 @@
  */
 
 define('CLI_SCRIPT', true);
-require(__DIR__ . '/../../../../config.php');
+// Resolve config.php across both Moodle layouts: 5.x public root (4 levels up) and 4.x classic root (3 levels up).
+require(file_exists(__DIR__ . '/../../../../config.php')
+    ? __DIR__ . '/../../../../config.php'
+    : __DIR__ . '/../../../config.php');
 require_once($CFG->libdir . '/clilib.php');
 require_once($CFG->dirroot . '/course/lib.php');
 require_once($CFG->dirroot . '/course/modlib.php');
@@ -41,8 +44,8 @@ require_once($CFG->dirroot . '/group/lib.php');
 $CFG->noemailever = true;
 
 [$options, $unrecognised] = cli_get_params(
-    ['reset' => false, 'help' => false, 'password' => false],
-    ['h' => 'help', 'r' => 'reset', 'p' => 'password']
+    ['reset' => false, 'help' => false, 'password' => false, 'force' => false],
+    ['h' => 'help', 'r' => 'reset', 'p' => 'password', 'f' => 'force']
 );
 
 if ($options['help']) {
@@ -50,6 +53,7 @@ if ($options['help']) {
     cli_writeln("Options:");
     cli_writeln("  --password=<value>   Password for all seed user accounts (required).");
     cli_writeln("  --reset              Wipe the demo course and recreate everything.");
+    cli_writeln("  --force              Bypass the development-site environment guard.");
     cli_writeln("  --help               Show this message.");
     exit(0);
 }
@@ -62,10 +66,11 @@ foreach ($devpatterns as $pattern) {
         break;
     }
 }
-if (!$isdev) {
+if (!$isdev && !$options['force']) {
     cli_error(
         'This seed script must only be run on development sites. ' .
-        '$CFG->wwwroot must contain localhost, 127.0.0.1, .local, or .test.'
+        '$CFG->wwwroot must contain localhost, 127.0.0.1, .local, or .test. ' .
+        'Use --force to bypass this check on development sites with a public domain.'
     );
 }
 

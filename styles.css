@@ -37,10 +37,23 @@
     gap: 0.25rem;
 }
 
+.path-mod-playergroup .pg-card-footer {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
 .pg-card-actions {
     display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
     gap: 0.5rem;
     align-items: center;
+    margin-inline-start: auto;
+}
+
+.path-mod-playergroup .pg-card-actions .btn {
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .pg-invite-item {
