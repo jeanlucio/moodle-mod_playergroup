@@ -50,6 +50,19 @@ define([
     };
 
     /**
+     * Initialises the show/hide toggle on a password field once the modal body is ready.
+     *
+     * @param {Modal} modal
+     * @param {string} fieldid
+     */
+    var initPasswordToggle = function(modal, fieldid) {
+        modal.getBodyPromise().then(function() {
+            ToggleSensitive.init(fieldid);
+            return;
+        }).catch(Notification.exception);
+    };
+
+    /**
      * Opens the edit-group modal pre-populated with current values.
      *
      * @param {number} cmid
@@ -76,10 +89,7 @@ define([
         }).then(function(modal) {
             modal.show();
 
-            modal.getBodyPromise().then(function() {
-                ToggleSensitive.init('pg-edit-grouppassword');
-                return;
-            }).catch(Notification.exception);
+            initPasswordToggle(modal, 'pg-edit-grouppassword');
 
             modal.getRoot().on('change', '#pg-edit-groupprivacy', function() {
                 var passwordField = modal.getRoot().find('#pg-edit-password-field');
@@ -141,10 +151,7 @@ define([
         }).then(function(modal) {
             modal.show();
 
-            modal.getBodyPromise().then(function() {
-                ToggleSensitive.init('pg-join-password');
-                return;
-            }).catch(Notification.exception);
+            initPasswordToggle(modal, 'pg-join-password');
 
             modal.getRoot().on(ModalEvents.save, function(saveEvent) {
                 saveEvent.preventDefault();

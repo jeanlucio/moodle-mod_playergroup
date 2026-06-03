@@ -31,6 +31,20 @@ define([
     'core/togglesensitive',
     'core/str'
 ], function($, Ajax, Notification, ModalSaveCancel, ModalEvents, Templates, ToggleSensitive, Str) {
+
+    /**
+     * Initialises the show/hide toggle on a password field once the modal body is ready.
+     *
+     * @param {Modal} modal
+     * @param {string} fieldid
+     */
+    var initPasswordToggle = function(modal, fieldid) {
+        modal.getBodyPromise().then(function() {
+            ToggleSensitive.init(fieldid);
+            return;
+        }).catch(Notification.exception);
+    };
+
     return {
         init: function(cmid) {
             $(document).on('click', '[data-action="creategroup"]', function(e) {
@@ -45,10 +59,7 @@ define([
                 }).then(function(modal) {
                     modal.show();
 
-                    modal.getBodyPromise().then(function() {
-                        ToggleSensitive.init('pg-grouppassword');
-                        return;
-                    }).catch(Notification.exception);
+                    initPasswordToggle(modal, 'pg-grouppassword');
 
                     // Toggle password field visibility based on privacy selection.
                     modal.getRoot().on('change', '#pg-groupprivacy', function() {
