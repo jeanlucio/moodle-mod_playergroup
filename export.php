@@ -15,18 +15,28 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Version details for the PlayerGroup module.
+ * Data export entry point for the teacher activity log report.
  *
  * @package    mod_playergroup
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+require(__DIR__ . '/../../config.php');
 
-$plugin->component = 'mod_playergroup';
-$plugin->version   = 2026060300; // YYYYMMDDXX format.
-$plugin->requires  = 2024100700; // Moodle 4.5.
-$plugin->supported = [405, 502];
-$plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = 'v1.2.0';
+$id     = required_param('id', PARAM_INT);
+$format = optional_param('format', 'csv', PARAM_ALPHANUMEXT);
+
+$cm = get_coursemodule_from_id('playergroup', $id, 0, false, MUST_EXIST);
+$course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);
+
+require_course_login($course, true, $cm);
+
+$context = context_module::instance($cm->id);
+require_capability('mod/playergroup:manage', $context);
+
+// Note: require_sesskey() is intentionally omitted here because data export
+// is a read-only GET request and does not modify database state.
+
+$controller = new \mod_playergroup\controller\export();
+$controller->execute($context->id, $format, $course->shortname);

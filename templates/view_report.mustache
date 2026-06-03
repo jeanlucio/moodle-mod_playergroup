@@ -22,6 +22,7 @@
     Example context (json):
     {
         "backurl": "/mod/playergroup/view.php?id=1",
+        "exporturl": "/mod/playergroup/export.php?id=1",
         "hasrows": true,
         "rows": [
             {
@@ -44,10 +45,22 @@
             <i class="fa fa-list-alt me-2" aria-hidden="true"></i>
             {{#str}} activitylog, mod_playergroup {{/str}}
         </h3>
-        <a href="{{backurl}}" class="btn btn-outline-secondary btn-sm">
-            <i class="fa fa-arrow-left me-1" aria-hidden="true"></i>
-            {{#str}} back, mod_playergroup {{/str}}
-        </a>
+        <div class="d-flex">
+            {{#hasrows}}
+            <a href="{{exporturl}}&amp;format=csv" class="btn btn-outline-success btn-sm me-2" title="{{#str}} export_csv, mod_playergroup {{/str}}">
+                <i class="fa fa-download me-1" aria-hidden="true"></i>
+                {{#str}} export_csv, mod_playergroup {{/str}}
+            </a>
+            <a href="{{exporturl}}&amp;format=excel" class="btn btn-outline-success btn-sm me-2" title="{{#str}} export_excel, mod_playergroup {{/str}}">
+                <i class="fa fa-file-excel-o me-1" aria-hidden="true"></i>
+                {{#str}} export_excel, mod_playergroup {{/str}}
+            </a>
+            {{/hasrows}}
+            <a href="{{backurl}}" class="btn btn-outline-secondary btn-sm">
+                <i class="fa fa-arrow-left me-1" aria-hidden="true"></i>
+                {{#str}} back, mod_playergroup {{/str}}
+            </a>
+        </div>
     </div>
 
     {{#hasrows}}

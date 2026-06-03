@@ -26,7 +26,7 @@
 * 🗂️ **Automatic Grouping:** Moodle grouping created automatically — no manual setup required.
 * 🏆 **Gradebook Integration:** Grade awarded automatically when a student joins or creates a group; permanent even if the student later leaves.
 * ✅ **Activity Completion:** Custom rule — student must join or create a group.
-* 📊 **Teacher Report:** Audit log view showing the last 200 activity events.
+* 📊 **Teacher Report:** Audit log view showing the last 200 activity events, with CSV and Excel export of the full log.
 * 🔗 **Groups API:** Full integration with Moodle's native groups and groupings.
 * 📱 **Mobile App:** Native support in the official Moodle app — create, join, leave, invite, and manage your group on the go.
 
@@ -206,7 +206,7 @@ O **PlayerGroup** permite que os alunos formem seus próprios grupos diretamente
 * 🗂️ **Agrupamento Automático:** O agrupamento do Moodle é criado automaticamente — sem configuração manual.
 * 🏆 **Integração com Notas:** Nota atribuída automaticamente quando o aluno entra ou cria um grupo; permanente mesmo que o aluno saia depois.
 * ✅ **Conclusão de Atividade:** Regra personalizada — o aluno deve entrar ou criar um grupo.
-* 📊 **Relatório do Professor:** Visualização do log de auditoria com os últimos 200 eventos da atividade.
+* 📊 **Relatório do Professor:** Visualização do log de auditoria com os últimos 200 eventos da atividade, com exportação do log completo em CSV e Excel.
 * 🔗 **API de Grupos:** Integração completa com os grupos e agrupamentos nativos do Moodle.
 * 📱 **App Mobile:** Suporte nativo no app oficial do Moodle — criar, entrar, sair, convidar e gerenciar seu grupo pelo celular.
 

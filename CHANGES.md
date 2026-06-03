@@ -6,6 +6,7 @@ All notable changes to PlayerGroup are documented in this file.
 
 ### Added
 
+- CSV and Excel export buttons on the teacher activity-log report, downloading the full log (date, user, action) through Moodle's native dataformat API
 - Native Moodle App (mobile) support: the full student experience — create, join and leave groups, privacy levels, send/accept/decline invites, and view "My Group" — is available in the official Moodle mobile app through an Ionic/Angular view
 - `mod_playergroup_get_activity_data` external web service that returns the full activity state (groups, current user's group, received invites, inviteable users, capabilities); it powers the mobile app
 - Show/hide ("eye") toggle on every group password field — create, edit and join — using the core `togglesensitive` component

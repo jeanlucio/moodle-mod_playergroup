@@ -323,6 +323,7 @@ if ($tab === 'report' && $isteacher) {
     $reportdata->rows    = $rows;
     $reportdata->hasrows = !empty($rows);
     $reportdata->backurl = (new moodle_url('/mod/playergroup/view.php', ['id' => $cm->id]))->out(false);
+    $reportdata->exporturl = (new moodle_url('/mod/playergroup/export.php', ['id' => $cm->id]))->out(false);
 
     echo $renderer->render_activity_report($reportdata);
     echo $OUTPUT->footer();
