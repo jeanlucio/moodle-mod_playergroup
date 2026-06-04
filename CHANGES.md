@@ -2,6 +2,12 @@
 
 All notable changes to PlayerGroup are documented in this file.
 
+## [1.2.1] - 2026-06-04
+
+### Changed
+
+- Mobile app files relocated to the standard layout recommended by Moodle HQ (MDL-72048): JS files moved from `mobile/js/` to `js/mobileapp/`, template moved from `templates/` to `templates/mobileapp/`
+
 ## [1.2.0] - 2026-06-03
 
 ### Added

@@ -44,7 +44,7 @@ class mobile {
 
         return [
             'templates'  => [],
-            'javascript' => file_get_contents($CFG->dirroot . '/mod/playergroup/mobile/js/init.js'),
+            'javascript' => file_get_contents($CFG->dirroot . '/mod/playergroup/js/mobileapp/init.js'),
         ];
     }
 
@@ -93,9 +93,9 @@ class mobile {
             $templatecontext['str_' . $key] = get_string($key, 'mod_playergroup');
         }
 
-        $html = $OUTPUT->render_from_template('mod_playergroup/mobile_view_page', $templatecontext);
+        $html = $OUTPUT->render_from_template('mod_playergroup/mobileapp/mobile_view_page', $templatecontext);
 
-        $js = file_get_contents($CFG->dirroot . '/mod/playergroup/mobile/js/courseview.js');
+        $js = file_get_contents($CFG->dirroot . '/mod/playergroup/js/mobileapp/courseview.js');
 
         return [
             'templates' => [
