@@ -107,6 +107,7 @@ class mobile {
             'javascript' => $js,
             'otherdata'  => [
                 'cmid'                => $cmid,
+                'intro'               => $data['intro'],
                 'activityopen'        => (int) $data['activityopen'],
                 'availabilitymessage' => $data['availabilitymessage'],
                 'hasgroup'            => (int) $data['hasgroup'],

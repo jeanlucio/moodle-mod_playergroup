@@ -10,6 +10,7 @@
     Example context (json):
     {
         "cmid": 1,
+        "intro": "<p>Activity description</p>",
         "activityopen": true,
         "availabilitymessage": "",
         "hasgroup": false,
@@ -50,7 +51,7 @@
         <core-course-module-info
             [module]="module"
             [courseId]="courseId"
-            [description]="module.description"
+            [description]="CONTENT_OTHERDATA.intro || module.description"
             [component]="component"
             [componentId]="module.id">
         </core-course-module-info>
