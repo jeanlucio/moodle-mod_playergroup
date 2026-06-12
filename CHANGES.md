@@ -2,6 +2,12 @@
 
 All notable changes to PlayerGroup are documented in this file.
 
+## [1.2.2] - 2026-06-12
+
+### Fixed
+
+- Activity description now appears in the Moodle mobile app: the app only fills `module.description` when "Display description on course page" is enabled, but the web view always shows the intro; the mobile view now renders the activity intro through `core-course-module-info`, matching the site behaviour
+
 ## [1.2.1] - 2026-06-04
 
 ### Changed
