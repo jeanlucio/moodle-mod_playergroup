@@ -132,13 +132,13 @@ class get_activity_data extends external_api {
             $groups[] = [
                 'groupid'            => $groupid,
                 'name'               => format_string($g->name),
-                'rawname'            => s($g->name),
+                'rawname'            => $g->name,
                 'description'        => format_text(
                     $g->description,
                     (int) $g->descriptionformat,
                     ['context' => $context]
                 ),
-                'rawdescription'     => s($g->description ?? ''),
+                'rawdescription'     => $g->description ?? '',
                 'badge'              => !empty($g->badge) ? $g->badge : '🛡️',
                 'membercount'        => $membercount,
                 'maxmembers'         => $maxmembers,
