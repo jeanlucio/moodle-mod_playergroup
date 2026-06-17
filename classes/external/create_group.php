@@ -91,6 +91,14 @@ class create_group extends external_api {
         $cm = get_coursemodule_from_id('playergroup', $params['cmid'], 0, false, MUST_EXIST);
         $playergroup = $DB->get_record('playergroup', ['id' => $cm->instance], '*', MUST_EXIST);
 
+        $now = time();
+        if ($playergroup->timeopen > 0 && $now < $playergroup->timeopen) {
+            throw new \moodle_exception('activitynotopen', 'mod_playergroup');
+        }
+        if ($playergroup->timeclose > 0 && $now > $playergroup->timeclose) {
+            throw new \moodle_exception('activityclosed', 'mod_playergroup');
+        }
+
         // Ensure the student does not already belong to a group in this activity.
         $hassql = "SELECT gm.groupid
                      FROM {groups_members} gm

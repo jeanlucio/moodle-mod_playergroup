@@ -154,5 +154,6 @@ $string['tab_groups'] = 'Groups';
 $string['tab_mygroup'] = 'My Group';
 $string['timeclose'] = 'Open until';
 $string['timeopen'] = 'Open from';
+$string['usernotenrolled'] = 'That user is not enrolled in this course.';
 $string['viewreport'] = 'View Report';
 $string['wrongpassword'] = 'Incorrect password.';

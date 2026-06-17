@@ -69,6 +69,11 @@ class send_invite extends external_api {
         $cm = get_coursemodule_from_id('playergroup', $params['cmid'], 0, false, MUST_EXIST);
         $playergroup = $DB->get_record('playergroup', ['id' => $cm->instance], '*', MUST_EXIST);
 
+        $coursecontext = \context_course::instance($cm->course);
+        if (!is_enrolled($coursecontext, $params['receiverid'], '', true)) {
+            throw new \moodle_exception('usernotenrolled', 'mod_playergroup');
+        }
+
         $hasusergroupsql = "SELECT gm.groupid
                               FROM {groups_members} gm
                               JOIN {playergroup_meta} pm ON pm.groupid = gm.groupid

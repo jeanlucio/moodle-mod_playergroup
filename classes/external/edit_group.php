@@ -103,6 +103,14 @@ class edit_group extends external_api {
         $cm = get_coursemodule_from_id('playergroup', $params['cmid'], 0, false, MUST_EXIST);
         $playergroup = $DB->get_record('playergroup', ['id' => $cm->instance], '*', MUST_EXIST);
 
+        $now = time();
+        if ($playergroup->timeopen > 0 && $now < $playergroup->timeopen) {
+            throw new \moodle_exception('activitynotopen', 'mod_playergroup');
+        }
+        if ($playergroup->timeclose > 0 && $now > $playergroup->timeclose) {
+            throw new \moodle_exception('activityclosed', 'mod_playergroup');
+        }
+
         $meta = $DB->get_record('playergroup_meta', [
             'groupid'       => $params['groupid'],
             'playergroupid' => $playergroup->id,
