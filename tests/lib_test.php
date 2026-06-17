@@ -32,7 +32,6 @@ use advanced_testcase;
  *
  * @covers ::playergroup_add_instance
  * @covers ::playergroup_delete_instance
- * @covers ::playergroup_get_completion_state
  */
 final class lib_test extends advanced_testcase {
     /**
@@ -184,60 +183,6 @@ final class lib_test extends advanced_testcase {
      */
     public function test_delete_instance_returns_false_for_missing_id(): void {
         $this->assertFalse(playergroup_delete_instance(999999));
-    }
-
-    /**
-     * Test completion state returns false when user has no group.
-     */
-    public function test_completion_state_no_group(): void {
-        $course = $this->getDataGenerator()->create_course();
-        $cm = $this->create_activity($course);
-        $user = $this->getDataGenerator()->create_user();
-
-        $cmobj = get_coursemodule_from_id('playergroup', $cm->cmid);
-        $result = playergroup_get_completion_state($course, $cmobj, $user->id, false);
-
-        $this->assertFalse($result);
-    }
-
-    /**
-     * Test completion state returns true when user belongs to a group in this activity.
-     */
-    public function test_completion_state_with_group(): void {
-        global $DB, $CFG;
-
-        require_once($CFG->dirroot . '/group/lib.php');
-
-        $course = $this->getDataGenerator()->create_course();
-        $cm = $this->create_activity($course);
-        $user = $this->getDataGenerator()->create_user();
-
-        // Create a native group and add the user directly (bypasses enrolment checks).
-        $group = $this->getDataGenerator()->create_group(['courseid' => $course->id]);
-        $DB->insert_record('groups_members', (object) [
-            'groupid'   => $group->id,
-            'userid'    => $user->id,
-            'timeadded' => time(),
-            'component' => '',
-            'itemid'    => 0,
-        ]);
-
-        // Register the group in playergroup_meta.
-        $DB->insert_record('playergroup_meta', (object) [
-            'playergroupid' => $cm->id,
-            'groupid'       => $group->id,
-            'creatorid'     => $user->id,
-            'badge'         => '🛡',
-            'privacy'       => 0,
-            'password'      => '',
-            'timecreated'   => time(),
-            'timemodified'  => time(),
-        ]);
-
-        $cmobj = get_coursemodule_from_id('playergroup', $cm->cmid);
-        $result = playergroup_get_completion_state($course, $cmobj, $user->id, false);
-
-        $this->assertTrue($result);
     }
 
     /**

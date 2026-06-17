@@ -243,36 +243,6 @@ function playergroup_update_grades(\stdClass $playergroup, int $userid = 0): voi
 }
 
 /**
- * Determines if a student has met the custom completion rules.
- *
- * Called by Moodle when FEATURE_COMPLETION_HAS_RULES is true. Checks whether
- * the student belongs to any group within this activity's grouping.
- *
- * @param \stdClass $course The course object.
- * @param object $cm The course module info (cm_info or stdClass).
- * @param int $userid The user ID to check.
- * @param bool $type Fallback return value when no rules are applicable.
- * @return bool True if the student belongs to a group, $type otherwise.
- */
-function playergroup_get_completion_state(\stdClass $course, object $cm, int $userid, bool $type): bool {
-    global $DB;
-
-    $playergroup = $DB->get_record('playergroup', ['id' => $cm->instance], '*', MUST_EXIST);
-
-    // Check directly against playergroup_meta — groupingid is not required for this query.
-    $sql = "SELECT gm.groupid
-              FROM {groups_members} gm
-              JOIN {playergroup_meta} pm ON pm.groupid = gm.groupid
-             WHERE pm.playergroupid = :playergroupid
-               AND gm.userid = :userid";
-
-    return $DB->record_exists_sql($sql, [
-        'playergroupid' => $playergroup->id,
-        'userid'        => $userid,
-    ]);
-}
-
-/**
  * Populates the course module info object with custom completion rule data.
  *
  * Called by Moodle when building cm_info. Stores the completionjoingroup flag
