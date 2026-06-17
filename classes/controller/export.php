@@ -45,39 +45,32 @@ class export {
 
         [$inevents, $ineventsparams] = $DB->get_in_or_equal(array_keys($eventsmap), SQL_PARAMS_NAMED, 'evt');
 
-        $logsql = "SELECT l.id, l.timecreated, l.userid, l.eventname
+        // JOIN user fields directly so the export can stream row-by-row without a separate bulk fetch.
+        $logsql = "SELECT l.id, l.timecreated, l.userid, l.eventname,
+                          u.firstname, u.lastname, u.firstnamephonetic,
+                          u.lastnamephonetic, u.middlename, u.alternatename
                      FROM {logstore_standard_log} l
+                LEFT JOIN {user} u ON u.id = l.userid
                     WHERE l.contextid = :contextid
                       AND l.eventname $inevents
                  ORDER BY l.timecreated DESC";
 
-        $logentries = $DB->get_records_sql(
+        $rs = $DB->get_recordset_sql(
             $logsql,
             array_merge(['contextid' => $contextid], $ineventsparams)
         );
 
-        // 2. Bulk load the related users (zero N+1 queries).
-        $userids = [];
-        foreach ($logentries as $entry) {
-            $userids[(int) $entry->userid] = (int) $entry->userid;
-        }
-
-        $logusers = [];
-        if (!empty($userids)) {
-            $userfields = 'id, firstname, lastname, firstnamephonetic, lastnamephonetic, middlename, alternatename';
-            $logusers = $DB->get_records_list('user', 'id', $userids, '', $userfields);
-        }
-
-        // 3. Format the data array for the exporter.
-        $exportdata = [];
-        foreach ($logentries as $entry) {
-            $loguser = $logusers[(int) $entry->userid] ?? null;
-            $exportdata[] = [
-                userdate($entry->timecreated),
-                $loguser ? fullname($loguser) : '?',
-                $eventsmap[$entry->eventname] ?? $entry->eventname,
-            ];
-        }
+        // 2. Stream row-by-row via a generator to avoid loading the full result into memory.
+        $exportdata = (function () use ($rs, $eventsmap): \Generator {
+            foreach ($rs as $entry) {
+                yield [
+                    userdate($entry->timecreated),
+                    empty($entry->firstname) && empty($entry->lastname) ? '?' : fullname($entry),
+                    $eventsmap[$entry->eventname] ?? $entry->eventname,
+                ];
+            }
+            $rs->close();
+        })();
 
         // 4. Define localized headers.
         $columns = [
