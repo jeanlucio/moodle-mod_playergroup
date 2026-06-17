@@ -51,5 +51,23 @@ function xmldb_playergroup_upgrade(int $oldversion): bool {
         upgrade_mod_savepoint(true, 2026050201, 'playergroup');
     }
 
+    if ($oldversion < 2026061701) {
+        $table = new xmldb_table('playergroup_meta');
+        $field = new xmldb_field(
+            'password',
+            XMLDB_TYPE_CHAR,
+            '255',
+            null,
+            null,
+            null,
+            '',
+            'privacy'
+        );
+        if ($dbman->field_exists($table, $field)) {
+            $dbman->change_field_precision($table, $field);
+        }
+        upgrade_mod_savepoint(true, 2026061701, 'playergroup');
+    }
+
     return true;
 }

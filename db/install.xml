@@ -37,7 +37,7 @@
         <FIELD NAME="creatorid" TYPE="int" LENGTH="10" NOTNULL="true" COMMENT="The student who founded the group"/>
         <FIELD NAME="badge" TYPE="char" LENGTH="255" NOTNULL="false" COMMENT="Emoji or path to badge image"/>
         <FIELD NAME="privacy" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" COMMENT="0=open, 1=protected (password), 2=closed (invite only)"/>
-        <FIELD NAME="password" TYPE="char" LENGTH="64" NOTNULL="false" DEFAULT="" COMMENT="Hashed password for protected groups"/>
+        <FIELD NAME="password" TYPE="char" LENGTH="255" NOTNULL="false" DEFAULT="" COMMENT="Hashed password for protected groups"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
         <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
       </FIELDS>
