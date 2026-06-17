@@ -2,6 +2,23 @@
 
 All notable changes to PlayerGroup are documented in this file.
 
+## [1.2.3] - 2026-06-17
+
+### Security
+
+- `send_invite` now verifies the recipient is enrolled in the course before creating the invite and sending the notification, preventing cross-context notification spam
+- Activity open/close window is now enforced in `create_group`, `edit_group`, and `accept_invite` (previously only `join_group` enforced it)
+
+### Fixed
+
+- Group name and description no longer double-encode HTML entities on edit; `rawname`/`rawdescription` now pass the raw database value and let Mustache handle the single HTML-attribute escaping, preventing progressive corruption of names containing `&`, `<`, `>`, `"`, or `'`
+- Export now streams log entries row-by-row via a recordset instead of loading the full result into memory, preventing potential memory spikes on large activity logs
+- Password column (`playergroup_meta.password`) widened from `char(64)` to `char(255)` so future PHP `PASSWORD_DEFAULT` algorithm changes cannot silently truncate stored hashes
+
+### Removed
+
+- Dropped the legacy `playergroup_get_completion_state()` callback (dead code since Moodle no longer invokes it on 4.5+); completion is handled solely by the `custom_completion` class, whose coverage moved to a dedicated test
+
 ## [1.2.2] - 2026-06-12
 
 ### Fixed
