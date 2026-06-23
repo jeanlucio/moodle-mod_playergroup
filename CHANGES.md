@@ -2,6 +2,12 @@
 
 All notable changes to PlayerGroup are documented in this file.
 
+## [1.2.4] - 2026-06-23
+
+### Added
+
+- New public API method `group_info::get_badges_for_groups()` returns the badge of several groups in a single query, letting other plugins (e.g. block_playerhud) display group badges in a list without per-group queries. Groups managed by PlayerGroup but without a configured badge fall back to the default shield emoji, matching `get_player_group_in_course()`
+
 ## [1.2.3] - 2026-06-17
 
 ### Security
