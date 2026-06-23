@@ -90,4 +90,41 @@ class group_info {
 
         return $result;
     }
+
+    /**
+     * Returns the badge of each given group, keyed by group ID.
+     *
+     * Bulk lookup intended for consumers that list several groups at once
+     * (e.g. block_playerhud group ranking), avoiding per-group queries. Groups
+     * managed by PlayerGroup but with no badge configured fall back to the same
+     * default emoji used by get_player_group_in_course(). Groups without a
+     * playergroup_meta row are omitted from the result.
+     *
+     * @param int[] $groupids Core Moodle group IDs.
+     * @return array Map of groupid => badge string.
+     */
+    public static function get_badges_for_groups(array $groupids): array {
+        global $DB;
+
+        if (empty($groupids)) {
+            return [];
+        }
+
+        [$insql, $inparams] = $DB->get_in_or_equal($groupids, SQL_PARAMS_NAMED, 'g');
+        $records = $DB->get_records_select(
+            'playergroup_meta',
+            "groupid $insql",
+            $inparams,
+            '',
+            'groupid, badge'
+        );
+
+        $badges = [];
+        foreach ($records as $record) {
+            $badge = (string) $record->badge;
+            $badges[(int) $record->groupid] = ($badge !== '') ? $badge : '🛡️';
+        }
+
+        return $badges;
+    }
 }
