@@ -2,13 +2,13 @@
 
 All notable changes to PlayerGroup are documented in this file.
 
-## [1.2.4] - 2026-06-23
+## [v1.2.4] — 2026-06-23
 
 ### Added
 
 - New public API method `group_info::get_badges_for_groups()` returns the badge of several groups in a single query, letting other plugins (e.g. block_playerhud) display group badges in a list without per-group queries. Groups managed by PlayerGroup but without a configured badge fall back to the default shield emoji, matching `get_player_group_in_course()`
 
-## [1.2.3] - 2026-06-17
+## [v1.2.3] — 2026-06-17
 
 ### Security
 
@@ -25,19 +25,19 @@ All notable changes to PlayerGroup are documented in this file.
 
 - Dropped the legacy `playergroup_get_completion_state()` callback (dead code since Moodle no longer invokes it on 4.5+); completion is handled solely by the `custom_completion` class, whose coverage moved to a dedicated test
 
-## [1.2.2] - 2026-06-12
+## [v1.2.2] — 2026-06-12
 
 ### Fixed
 
 - Activity description now appears in the Moodle mobile app: the app only fills `module.description` when "Display description on course page" is enabled, but the web view always shows the intro; the mobile view now renders the activity intro through `core-course-module-info`, matching the site behaviour
 
-## [1.2.1] - 2026-06-04
+## [v1.2.1] — 2026-06-04
 
 ### Changed
 
 - Mobile app files relocated to the standard layout recommended by Moodle HQ (MDL-72048): JS files moved from `mobile/js/` to `js/mobileapp/`, template moved from `templates/` to `templates/mobileapp/`
 
-## [1.2.0] - 2026-06-03
+## [v1.2.0] — 2026-06-03
 
 ### Added
 
@@ -62,7 +62,7 @@ All notable changes to PlayerGroup are documented in this file.
 - Group action buttons no longer overflow the card on Bootstrap 4 (Moodle 4.5): labels stay on a single line, the buttons no longer shrink, and the action group wraps below the member count when space is tight
 - Vertical spacing between group cards restored on Bootstrap 4, where the Bootstrap 5-only `g-3` gutter had no effect; cards now use a cross-version margin
 
-## [1.1.1] - 2026-05-19
+## [v1.1.1] — 2026-05-19
 
 ### Security
 
@@ -79,7 +79,7 @@ All notable changes to PlayerGroup are documented in this file.
 - `$plugin->supported` declares the tested compatibility range (Moodle 4.5 → 5.2)
 - Automated Moodle Plugin Directory release workflow: pushing a `v*` tag publishes the version automatically
 
-## [1.1.0] - 2026-05-02
+## [v1.1.0] — 2026-05-02
 
 ### Added
 
@@ -93,7 +93,7 @@ All notable changes to PlayerGroup are documented in this file.
 - Invite Colleagues modal now opens correctly in Moodle 5.x environments where Bootstrap's jQuery plugin (`$.fn.modal`) is not guaranteed to be registered; replaced with the cross-version AMD `theme_boost/bootstrap/modal` pattern
 - Added missing GPL licence header to `styles.css`
 
-## [1.0.0] - 2026-04-25
+## [v1.0.0] — 2026-04-25
 
 Initial public release.
 
