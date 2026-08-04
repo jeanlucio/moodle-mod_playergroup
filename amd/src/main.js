@@ -47,7 +47,9 @@ define([
             args: {cmid: cmid, groupid: groupid, password: password}
         }])[0].done(function() {
             window.location.reload();
-        }).fail(Notification.exception);
+        }).fail(function(error) {
+            Notification.alert(Str.get_string('error', 'core'), error.message);
+        });
     };
 
     /**
@@ -125,7 +127,9 @@ define([
                     }
                 }])[0].done(function() {
                     window.location.reload();
-                }).fail(Notification.exception);
+                }).fail(function(error) {
+                    Notification.alert(Str.get_string('error', 'core'), error.message);
+                });
             });
 
             modal.getRoot().on(ModalEvents.hidden, function() {
@@ -267,7 +271,9 @@ define([
                             args: {cmid: cmid}
                         }])[0].done(function() {
                             window.location.reload();
-                        }).fail(Notification.exception);
+                        }).fail(function(error) {
+                            Notification.alert(Str.get_string('error', 'core'), error.message);
+                        });
                     });
 
                     modal.getRoot().on(ModalEvents.hidden, function() {

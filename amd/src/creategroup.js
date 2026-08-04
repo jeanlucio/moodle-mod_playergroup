@@ -99,7 +99,9 @@ define([
                         }])[0].done(function() {
                             modal.hide();
                             window.location.reload();
-                        }).fail(Notification.exception);
+                        }).fail(function(error) {
+                            Notification.alert(Str.get_string('error', 'core'), error.message);
+                        });
                     });
 
                     modal.getRoot().on(ModalEvents.hidden, function() {

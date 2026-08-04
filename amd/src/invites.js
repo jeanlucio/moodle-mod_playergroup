@@ -71,9 +71,9 @@ define([
                               '</span>')
                         );
                     }).fail(Notification.exception);
-                }).fail(function(ex) {
+                }).fail(function(error) {
                     btn.prop('disabled', false);
-                    Notification.exception(ex);
+                    Notification.alert(Str.get_string('error', 'core'), error.message);
                 });
             });
 
@@ -90,10 +90,10 @@ define([
                     args: {inviteid: inviteid}
                 }])[0].done(function() {
                     window.location.reload();
-                }).fail(function(ex) {
+                }).fail(function(error) {
                     btn.prop('disabled', false);
                     btn.siblings('.pg-btn-rejectinvite').prop('disabled', false);
-                    Notification.exception(ex);
+                    Notification.alert(Str.get_string('error', 'core'), error.message);
                 });
             });
 
@@ -110,10 +110,10 @@ define([
                     args: {inviteid: inviteid}
                 }])[0].done(function() {
                     window.location.reload();
-                }).fail(function(ex) {
+                }).fail(function(error) {
                     btn.prop('disabled', false);
                     btn.siblings('.pg-btn-acceptinvite').prop('disabled', false);
-                    Notification.exception(ex);
+                    Notification.alert(Str.get_string('error', 'core'), error.message);
                 });
             });
         }
