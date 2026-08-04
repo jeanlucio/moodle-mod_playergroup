@@ -70,6 +70,12 @@ class send_invite extends external_api {
         $playergroup = $DB->get_record('playergroup', ['id' => $cm->instance], '*', MUST_EXIST);
 
         $coursecontext = \context_course::instance($cm->course);
+
+        // Mirrors the check both UIs already apply before offering the invite picker: a
+        // professor who hid the participant list from students has already decided students
+        // should not browse course-mates by name, and this endpoint must honour that too.
+        require_capability('moodle/course:viewparticipants', $coursecontext);
+
         if (!is_enrolled($coursecontext, $params['receiverid'], '', true)) {
             throw new \moodle_exception('usernotenrolled', 'mod_playergroup');
         }

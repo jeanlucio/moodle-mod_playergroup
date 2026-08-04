@@ -26,6 +26,7 @@
 namespace mod_playergroup\external;
 
 use advanced_testcase;
+use context_course;
 
 /**
  * Tests for \mod_playergroup\external\send_invite.
@@ -121,5 +122,24 @@ final class send_invite_test extends advanced_testcase {
             'receiverid' => $this->receiver->id,
             'status'     => 0,
         ]));
+    }
+
+    /**
+     * Test that a sender without moodle/course:viewparticipants cannot send an invite.
+     *
+     * Mirrors the guard both UIs already apply before offering the invite picker: a professor
+     * who hid the participant list from students has decided students should not browse
+     * course-mates by name, and this endpoint must honour that too.
+     */
+    public function test_execute_requires_viewparticipants_capability(): void {
+        $coursecontext = context_course::instance($this->course->id);
+        $prohibitedrole = $this->getDataGenerator()->create_role();
+        assign_capability('moodle/course:viewparticipants', CAP_PROHIBIT, $prohibitedrole, $coursecontext);
+        role_assign($prohibitedrole, $this->leader->id, $coursecontext);
+        accesslib_clear_all_caches_for_unit_testing();
+
+        $this->setUser($this->leader);
+        $this->expectException(\required_capability_exception::class);
+        send_invite::execute($this->cm->cmid, $this->receiver->id);
     }
 }
