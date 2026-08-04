@@ -5,7 +5,6 @@ Thumbs.db
 # Editor/IDE-specific settings and workspace files.
 .vscode/
 .idea/
-playerhud.code-workspace
 
 # Local ESLint configs are intentionally excluded from version control. This
 # plugin is linted through the shared Moodle core config, run via
