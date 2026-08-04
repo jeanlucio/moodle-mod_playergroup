@@ -60,12 +60,21 @@ class instance_manager {
     }
 
     /**
-     * Deletes the automated grouping and all its group associations.
+     * Deletes the groups this activity instance created, and the grouping itself if
+     * nothing else is left in it.
+     *
+     * The grouping may be one the plugin auto-created ("new" mode) or a pre-existing one
+     * the teacher pointed the activity at ("existing" mode) that other activities or
+     * restrictions may already depend on. Only groups registered in playergroup_meta for
+     * this instance are ever deleted; the grouping record itself is removed only when doing
+     * so leaves it empty, so a grouping still holding groups this instance did not create is
+     * left untouched.
      *
      * @param int $groupingid The grouping ID to delete.
+     * @param int $playergroupid The activity instance ID that owns the groups to delete.
      * @return void
      */
-    public function delete_activity_grouping(int $groupingid): void {
+    public function delete_activity_grouping(int $groupingid, int $playergroupid): void {
         global $CFG, $DB;
 
         require_once($CFG->dirroot . '/group/lib.php');
@@ -74,18 +83,19 @@ class instance_manager {
             return;
         }
 
-        // Delete each group that belongs to this grouping before deleting the grouping itself.
-        // groups_delete_grouping() only removes the grouping record, not the groups.
-        $groupids = $DB->get_fieldset_select(
-            'groupings_groups',
+        $ownedgroupids = $DB->get_fieldset_select(
+            'playergroup_meta',
             'groupid',
-            'groupingid = :groupingid',
-            ['groupingid' => $groupingid]
+            'playergroupid = :playergroupid',
+            ['playergroupid' => $playergroupid]
         );
-        foreach ($groupids as $groupid) {
+        foreach ($ownedgroupids as $groupid) {
             groups_delete_group((int) $groupid);
         }
 
-        groups_delete_grouping($groupingid);
+        $remaining = $DB->count_records('groupings_groups', ['groupingid' => $groupingid]);
+        if ($remaining === 0) {
+            groups_delete_grouping($groupingid);
+        }
     }
 }

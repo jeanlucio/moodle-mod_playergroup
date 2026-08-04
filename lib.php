@@ -134,10 +134,11 @@ function playergroup_delete_instance(int $id): bool {
         return false;
     }
 
-    // Conditionally delete the grouping and all its groups based on professor's preference.
+    // Conditionally delete the grouping and this instance's own groups, based on professor's
+    // preference. delete_activity_grouping() never touches groups it did not register.
     if (!empty($playergroup->groupingid) && !empty($playergroup->deletegroups)) {
         $manager = new \mod_playergroup\instance_manager();
-        $manager->delete_activity_grouping($playergroup->groupingid);
+        $manager->delete_activity_grouping($playergroup->groupingid, $id);
     }
 
     // Remove the grade item from the gradebook.

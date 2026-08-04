@@ -32,6 +32,7 @@ use advanced_testcase;
  *
  * @covers ::playergroup_add_instance
  * @covers ::playergroup_delete_instance
+ * @covers \mod_playergroup\instance_manager
  */
 final class lib_test extends advanced_testcase {
     /**
@@ -183,6 +184,97 @@ final class lib_test extends advanced_testcase {
      */
     public function test_delete_instance_returns_false_for_missing_id(): void {
         $this->assertFalse(playergroup_delete_instance(999999));
+    }
+
+    /**
+     * Test that deleting an activity pointed at a pre-existing grouping ("existing" mode)
+     * only removes the groups this instance registered, leaving a foreign group (and the
+     * grouping itself, since it is not left empty) untouched.
+     */
+    public function test_delete_instance_preserves_foreign_groups_in_existing_grouping(): void {
+        global $DB, $CFG;
+
+        require_once($CFG->dirroot . '/group/lib.php');
+
+        $course = $this->getDataGenerator()->create_course();
+        $grouping = $this->getDataGenerator()->create_grouping(['courseid' => $course->id]);
+
+        // A group the teacher already had in this grouping for another purpose.
+        $foreigngroup = $this->getDataGenerator()->create_group(['courseid' => $course->id]);
+        $this->getDataGenerator()->create_grouping_group([
+            'groupingid' => $grouping->id,
+            'groupid'    => $foreigngroup->id,
+        ]);
+
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course'             => $course->id,
+            'groupingmode'       => 'existing',
+            'existinggroupingid' => $grouping->id,
+            'deletegroups'       => 1,
+        ]);
+
+        // A group the plugin itself created and registered for this instance.
+        $ownedgroup = $this->getDataGenerator()->create_group(['courseid' => $course->id]);
+        $this->getDataGenerator()->create_grouping_group([
+            'groupingid' => $grouping->id,
+            'groupid'    => $ownedgroup->id,
+        ]);
+        $DB->insert_record('playergroup_meta', (object) [
+            'playergroupid' => $cm->id,
+            'groupid'       => $ownedgroup->id,
+            'creatorid'     => 2,
+            'badge'         => '⚔',
+            'privacy'       => 0,
+            'password'      => '',
+            'timecreated'   => time(),
+            'timemodified'  => time(),
+        ]);
+
+        playergroup_delete_instance($cm->id);
+
+        $this->assertFalse($DB->record_exists('groups', ['id' => $ownedgroup->id]));
+        $this->assertTrue($DB->record_exists('groups', ['id' => $foreigngroup->id]));
+        $this->assertTrue($DB->record_exists('groupings', ['id' => $grouping->id]));
+    }
+
+    /**
+     * Test that deleting an activity that auto-created its own grouping ("new" mode) still
+     * removes the now-empty grouping, preserving the pre-existing behaviour for that mode.
+     */
+    public function test_delete_instance_removes_emptied_grouping(): void {
+        global $DB;
+
+        $course = $this->getDataGenerator()->create_course();
+
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course'       => $course->id,
+            'groupingmode' => 'new',
+            'deletegroups' => 1,
+        ]);
+        $playergroup = $DB->get_record('playergroup', ['id' => $cm->id], '*', MUST_EXIST);
+        $groupingid = (int) $playergroup->groupingid;
+        $this->assertGreaterThan(0, $groupingid);
+
+        $ownedgroup = $this->getDataGenerator()->create_group(['courseid' => $course->id]);
+        $this->getDataGenerator()->create_grouping_group([
+            'groupingid' => $groupingid,
+            'groupid'    => $ownedgroup->id,
+        ]);
+        $DB->insert_record('playergroup_meta', (object) [
+            'playergroupid' => $cm->id,
+            'groupid'       => $ownedgroup->id,
+            'creatorid'     => 2,
+            'badge'         => '⚔',
+            'privacy'       => 0,
+            'password'      => '',
+            'timecreated'   => time(),
+            'timemodified'  => time(),
+        ]);
+
+        playergroup_delete_instance($cm->id);
+
+        $this->assertFalse($DB->record_exists('groups', ['id' => $ownedgroup->id]));
+        $this->assertFalse($DB->record_exists('groupings', ['id' => $groupingid]));
     }
 
     /**
