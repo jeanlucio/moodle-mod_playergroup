@@ -129,6 +129,22 @@ if (!empty($creatorids)) {
     $creators = $DB->get_records_list('user', 'id', $creatorids, '', $creatorfields);
 }
 
+// Bulk-load all group members (for the "view members" modal) to avoid per-card queries.
+$membersbygroup = [];
+$displayedgroupids = array_map(fn($g): int => (int) $g->id, $grouprecords);
+if (!empty($displayedgroupids)) {
+    [$groupidsinsql, $groupidsinparams] = $DB->get_in_or_equal($displayedgroupids, SQL_PARAMS_NAMED, 'grp');
+    $membersql = "SELECT gm.id, gm.groupid, u.id AS userid, u.firstname, u.lastname, u.firstnamephonetic,
+                         u.lastnamephonetic, u.middlename, u.alternatename
+                    FROM {groups_members} gm
+                    JOIN {user} u ON u.id = gm.userid
+                   WHERE gm.groupid $groupidsinsql
+                ORDER BY gm.groupid ASC, gm.timeadded ASC";
+    foreach ($DB->get_records_sql($membersql, $groupidsinparams) as $member) {
+        $membersbygroup[(int) $member->groupid][] = $member;
+    }
+}
+
 foreach ($grouprecords as $g) {
     $membercount = (int) $g->membercount;
     $maxmembers  = (int) $playergroup->maxmembers;
@@ -145,30 +161,41 @@ foreach ($grouprecords as $g) {
         $leaderbadge = '';
     }
 
+    $groupmembers = [];
+    foreach ($membersbygroup[$groupid] ?? [] as $member) {
+        $groupmembers[] = [
+            'fullname' => fullname($member),
+            'isleader' => (int) $member->userid === (int) $g->creatorid,
+        ];
+    }
+    $membersjson = json_encode($groupmembers, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+
     $groupname = format_string($g->name);
     $templatedata->groups[] = [
-        'groupid'            => $groupid,
-        'name'               => $groupname,
-        'rawname'            => $g->name,
-        'description'        => format_text($g->description, (int) $g->descriptionformat, ['context' => $context]),
-        'rawdescription'     => $g->description ?? '',
-        'badge'              => !empty($g->badge) ? $g->badge : '🛡️',
-        'membercount'        => $membercount,
-        'maxmembers'         => $maxmembers,
-        'privacy'            => $privacy,
-        'isprivacyopen'      => $privacy === 0,
-        'isprivacyprotected' => $privacy === 1,
-        'isprivacyclosed'    => $privacy === 2,
-        'isfull'             => $isfull,
-        'ismygroup'          => $ismygroup,
-        'leaderbadge'        => $leaderbadge,
-        'joinarialabel'      => get_string('joingroup_named', 'mod_playergroup', $groupname),
-        'editarialabel'      => get_string('editgroup_named', 'mod_playergroup', $groupname),
-        'leavearialabel'     => get_string('leavegroup_named', 'mod_playergroup', $groupname),
-        'canjoin'            => $isopen && !$hasgroup && $privacy !== 2 && !$isfull,
-        'caninvite'          => $ismygroup && $isopen && !$isfull && $caninviteusers,
-        'canedit'            => $ismygroup && $isopen && $iscreator,
-        'canleave'           => $ismygroup && $canleaveany,
+        'groupid'             => $groupid,
+        'name'                => $groupname,
+        'rawname'             => $g->name,
+        'description'         => format_text($g->description, (int) $g->descriptionformat, ['context' => $context]),
+        'rawdescription'      => $g->description ?? '',
+        'badge'               => !empty($g->badge) ? $g->badge : '🛡️',
+        'membercount'         => $membercount,
+        'maxmembers'          => $maxmembers,
+        'membersjson'         => $membersjson,
+        'privacy'             => $privacy,
+        'isprivacyopen'       => $privacy === 0,
+        'isprivacyprotected'  => $privacy === 1,
+        'isprivacyclosed'     => $privacy === 2,
+        'isfull'              => $isfull,
+        'ismygroup'           => $ismygroup,
+        'leaderbadge'         => $leaderbadge,
+        'joinarialabel'       => get_string('joingroup_named', 'mod_playergroup', $groupname),
+        'editarialabel'       => get_string('editgroup_named', 'mod_playergroup', $groupname),
+        'leavearialabel'      => get_string('leavegroup_named', 'mod_playergroup', $groupname),
+        'viewmembersarialabel' => get_string('viewmembers_named', 'mod_playergroup', $groupname),
+        'canjoin'             => $isopen && !$hasgroup && $privacy !== 2 && !$isfull,
+        'caninvite'           => $ismygroup && $isopen && !$isfull && $caninviteusers,
+        'canedit'             => $ismygroup && $isopen && $iscreator,
+        'canleave'            => $ismygroup && $canleaveany,
     ];
 
     if ($ismygroup) {

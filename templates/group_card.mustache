@@ -39,6 +39,8 @@
         "joinarialabel": "Join group Dragões do Norte",
         "editarialabel": "Edit group Dragões do Norte",
         "leavearialabel": "Leave group Dragões do Norte",
+        "viewmembersarialabel": "View members of Dragões do Norte",
+        "membersjson": "[{&quot;fullname&quot;:&quot;Ana Silva&quot;,&quot;isleader&quot;:true}]",
         "canjoin": true,
         "canedit": false,
         "canleave": false
@@ -82,11 +84,14 @@
             <p class="card-text mb-4">{{{description}}}</p>
 
             <div class="mt-auto d-flex justify-content-between align-items-center pg-card-footer">
-                <span class="badge bg-light text-dark border">
+                <button type="button" class="btn btn-outline-secondary btn-sm pg-btn-viewmembers"
+                        data-action="viewmembers"
+                        data-groupname="{{rawname}}"
+                        data-members="{{membersjson}}"
+                        aria-label="{{viewmembersarialabel}}">
                     <i class="fa fa-users me-1" aria-hidden="true"></i>
-                    <span class="visually-hidden">{{#str}} currentmembers, mod_playergroup {{/str}}</span>
                     {{membercount}} / {{maxmembers}}
-                </span>
+                </button>
 
                 <div class="pg-card-actions">
                     {{#caninvite}}

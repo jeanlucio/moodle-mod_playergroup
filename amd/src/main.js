@@ -26,12 +26,13 @@ define([
     'core/ajax',
     'core/notification',
     'core/str',
+    'core/modal',
     'core/modal_save_cancel',
     'core/modal_events',
     'core/templates',
     'core/togglesensitive',
     'mod_playergroup/creategroup'
-], function($, Ajax, Notification, Str, ModalSaveCancel, ModalEvents, Templates, ToggleSensitive, CreateGroup) {
+], function($, Ajax, Notification, Str, Modal, ModalSaveCancel, ModalEvents, Templates, ToggleSensitive, CreateGroup) {
 
     /**
      * Calls mod_playergroup_join_group and reloads on success.
@@ -136,6 +137,24 @@ define([
     };
 
     /**
+     * Opens a read-only modal listing a group's members.
+     *
+     * @param {string} groupname
+     * @param {Object[]} members Array of {fullname, isleader}.
+     */
+    var viewMembers = function(groupname, members) {
+        var titlePromise = Str.get_string('groupmembers_named', 'mod_playergroup', groupname);
+        var bodyPromise = Templates.render('mod_playergroup/members_list', {members: members});
+
+        Modal.create({
+            title: titlePromise,
+            body: bodyPromise,
+            show: true,
+            removeOnClose: true
+        }).catch(Notification.exception);
+    };
+
+    /**
      * Shows a password modal then calls joinGroup.
      *
      * @param {number} cmid
@@ -204,6 +223,12 @@ define([
                     btn.data('badge'),
                     parseInt(btn.data('privacy'), 10)
                 );
+            });
+
+            // View members button.
+            $(document).on('click', '[data-action="viewmembers"]', function() {
+                var btn = $(this);
+                viewMembers(btn.data('groupname'), btn.data('members') || []);
             });
 
             // Join group button.
