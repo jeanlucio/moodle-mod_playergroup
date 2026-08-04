@@ -243,6 +243,51 @@ final class join_group_test extends advanced_testcase {
     }
 
     /**
+     * Test that join_group throws instead of silently succeeding when the user cannot
+     * actually be added to the group.
+     *
+     * groups_add_member() returns false (not an exception) when the caller is not enrolled in
+     * the group's course. A site admin passes require_login()/require_capability() everywhere
+     * regardless of enrolment, but is_enrolled() (checked inside groups_add_member()) still
+     * returns false for them if they hold no enrolment in this course; without checking the
+     * return value, join_group went on to award a grade and fire member_joined for a
+     * membership that never happened.
+     */
+    public function test_execute_throws_when_add_member_fails(): void {
+        global $DB, $USER;
+
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $course->id,
+            'grade'  => 10.0,
+        ]);
+
+        $creator = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($creator->id, $course->id, 'student');
+        $this->setUser($creator);
+        $created = create_group::execute($cm->cmid, 'Founders', '', '🛡', 0, '');
+
+        $this->setAdminUser();
+        try {
+            join_group::execute($cm->cmid, $created['groupid'], '');
+            $this->fail('Expected a moodle_exception because the admin is not enrolled.');
+        } catch (moodle_exception $e) {
+            $this->assertEquals('joinfailed', $e->errorcode);
+        }
+
+        $this->assertFalse(groups_is_member($created['groupid'], $USER->id));
+        $gradeexists = $DB->record_exists_sql(
+            "SELECT gg.id
+               FROM {grade_grades} gg
+               JOIN {grade_items} gi ON gi.id = gg.itemid
+              WHERE gi.itemtype = 'mod' AND gi.itemmodule = 'playergroup'
+                AND gi.iteminstance = :instanceid AND gg.userid = :userid",
+            ['instanceid' => $cm->id, 'userid' => $USER->id]
+        );
+        $this->assertFalse($gradeexists);
+    }
+
+    /**
      * Test that join_group is blocked while another request holds the per-instance lock.
      *
      * Simulates a genuinely concurrent request (a second, independent database connection)

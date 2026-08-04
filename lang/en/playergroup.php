@@ -91,6 +91,7 @@ $string['invitemessage'] = 'You have been invited to join the group \'{$a->group
 $string['invitepending'] = 'Group invitation';
 $string['inviterejected'] = 'Invitation declined.';
 $string['invitesent'] = 'Invitation sent!';
+$string['joinfailed'] = 'Could not join the group. You may not be enrolled in this course.';
 $string['joingroup'] = 'Join Group';
 $string['joingroup_named'] = 'Join group {$a}';
 $string['leader'] = 'Leader';

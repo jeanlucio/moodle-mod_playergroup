@@ -107,7 +107,9 @@ class accept_invite extends external_api {
                 throw new \moodle_exception('groupisfull', 'mod_playergroup');
             }
 
-            groups_add_member((int) $invite->groupid, $USER->id);
+            if (!groups_add_member((int) $invite->groupid, $USER->id)) {
+                throw new \moodle_exception('joinfailed', 'mod_playergroup');
+            }
         } finally {
             $lock->release();
         }
