@@ -46,3 +46,6 @@ if ($type === 'groups') {
     $controller = new \mod_playergroup\controller\export();
     $controller->execute($context->id, $format, $course->shortname);
 }
+
+// The controller only streams the file; this entry point owns ending the request.
+exit;

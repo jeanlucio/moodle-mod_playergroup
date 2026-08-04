@@ -45,12 +45,15 @@ final class get_activity_data_test extends advanced_testcase {
         $course = $this->getDataGenerator()->create_course();
         $cm = $this->getDataGenerator()->create_module('playergroup', ['course' => $course->id]);
 
-        $creator = $this->getDataGenerator()->create_user();
+        // Explicit, distinct names: the generator's own random pool is small enough that two
+        // auto-named users could otherwise collide on fullname(), which the assertions below
+        // key on.
+        $creator = $this->getDataGenerator()->create_user(['firstname' => 'Creator', 'lastname' => 'One']);
         $this->getDataGenerator()->enrol_user($creator->id, $course->id, 'student');
         $this->setUser($creator);
         $created = create_group::execute($cm->cmid, 'Test Group', '', '🛡', 0, '');
 
-        $joiner = $this->getDataGenerator()->create_user();
+        $joiner = $this->getDataGenerator()->create_user(['firstname' => 'Joiner', 'lastname' => 'Two']);
         $this->getDataGenerator()->enrol_user($joiner->id, $course->id, 'student');
         $this->setUser($joiner);
         join_group::execute($cm->cmid, $created['groupid'], '');

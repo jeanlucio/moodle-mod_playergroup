@@ -102,6 +102,5 @@ class export_groups {
 
         // 5. Trigger download using the Moodle native API.
         \core\dataformat::download_data($filename, $format, $columns, $exportdata);
-        die();
     }
 }
