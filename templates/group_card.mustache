@@ -112,7 +112,8 @@
                                 data-badge="{{badge}}"
                                 data-privacy="{{privacy}}"
                                 aria-label="{{editarialabel}}">
-                            <i class="fa fa-pencil" aria-hidden="true"></i>
+                            <i class="fa fa-pencil me-1" aria-hidden="true"></i>
+                            {{#str}} editgroup, mod_playergroup {{/str}}
                         </button>
                     {{/canedit}}
 
@@ -120,7 +121,8 @@
                         <button type="button" class="btn btn-outline-danger btn-sm"
                                 data-action="leavegroup"
                                 aria-label="{{leavearialabel}}">
-                            <i class="fa fa-sign-out" aria-hidden="true"></i>
+                            <i class="fa fa-sign-out me-1" aria-hidden="true"></i>
+                            {{#str}} leavegroup, mod_playergroup {{/str}}
                         </button>
                     {{/canleave}}
 
