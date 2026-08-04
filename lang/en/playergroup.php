@@ -74,6 +74,7 @@ $string['groupingname'] = 'Grouping name';
 $string['groupisfull'] = 'This group is already full.';
 $string['groupjoined'] = 'You joined the group successfully!';
 $string['groupleft'] = 'You have left the group.';
+$string['grouplockbusy'] = 'Another request for this group is already being processed. Please try again in a moment.';
 $string['groupname'] = 'Group name';
 $string['groupopen'] = 'Open';
 $string['grouppassword'] = 'Group password';

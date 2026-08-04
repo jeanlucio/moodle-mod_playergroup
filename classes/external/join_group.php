@@ -83,39 +83,44 @@ class join_group extends external_api {
             throw new \moodle_exception('activityclosed', 'mod_playergroup');
         }
 
-        $hassql = "SELECT gm.groupid
-                     FROM {groups_members} gm
-                     JOIN {playergroup_meta} pm ON pm.groupid = gm.groupid
-                    WHERE pm.playergroupid = :playergroupid
-                      AND gm.userid = :userid";
+        $lock = \mod_playergroup\local\group_lock::acquire($playergroup->id);
+        try {
+            $hassql = "SELECT gm.groupid
+                         FROM {groups_members} gm
+                         JOIN {playergroup_meta} pm ON pm.groupid = gm.groupid
+                        WHERE pm.playergroupid = :playergroupid
+                          AND gm.userid = :userid";
 
-        if ($DB->record_exists_sql($hassql, ['playergroupid' => $playergroup->id, 'userid' => $USER->id])) {
-            throw new \moodle_exception('alreadyingroup', 'mod_playergroup');
-        }
-
-        $meta = $DB->get_record(
-            'playergroup_meta',
-            ['groupid' => $params['groupid'], 'playergroupid' => $playergroup->id],
-            '*',
-            MUST_EXIST
-        );
-
-        if ((int) $meta->privacy === 2) {
-            throw new \moodle_exception('groupclosed', 'mod_playergroup');
-        }
-
-        if ((int) $meta->privacy === 1) {
-            if (empty($meta->password) || !password_verify($params['password'], $meta->password)) {
-                throw new \moodle_exception('wrongpassword', 'mod_playergroup');
+            if ($DB->record_exists_sql($hassql, ['playergroupid' => $playergroup->id, 'userid' => $USER->id])) {
+                throw new \moodle_exception('alreadyingroup', 'mod_playergroup');
             }
-        }
 
-        $membercount = $DB->count_records('groups_members', ['groupid' => $params['groupid']]);
-        if ($membercount >= (int) $playergroup->maxmembers) {
-            throw new \moodle_exception('groupisfull', 'mod_playergroup');
-        }
+            $meta = $DB->get_record(
+                'playergroup_meta',
+                ['groupid' => $params['groupid'], 'playergroupid' => $playergroup->id],
+                '*',
+                MUST_EXIST
+            );
 
-        groups_add_member($params['groupid'], $USER->id);
+            if ((int) $meta->privacy === 2) {
+                throw new \moodle_exception('groupclosed', 'mod_playergroup');
+            }
+
+            if ((int) $meta->privacy === 1) {
+                if (empty($meta->password) || !password_verify($params['password'], $meta->password)) {
+                    throw new \moodle_exception('wrongpassword', 'mod_playergroup');
+                }
+            }
+
+            $membercount = $DB->count_records('groups_members', ['groupid' => $params['groupid']]);
+            if ($membercount >= (int) $playergroup->maxmembers) {
+                throw new \moodle_exception('groupisfull', 'mod_playergroup');
+            }
+
+            groups_add_member($params['groupid'], $USER->id);
+        } finally {
+            $lock->release();
+        }
 
         // Resolve pending invites now that the user is in a group, mirroring accept_invite: the invite
         // for the joined group counts as accepted, any others as declined. This stops a stale pending

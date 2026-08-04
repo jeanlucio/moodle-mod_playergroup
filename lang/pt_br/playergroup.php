@@ -74,6 +74,7 @@ $string['groupingname'] = 'Nome do agrupamento';
 $string['groupisfull'] = 'Este grupo já atingiu o máximo de membros.';
 $string['groupjoined'] = 'Você entrou no grupo com sucesso!';
 $string['groupleft'] = 'Você saiu do grupo.';
+$string['grouplockbusy'] = 'Outra solicitação para este grupo já está sendo processada. Tente novamente em instantes.';
 $string['groupname'] = 'Nome do grupo';
 $string['groupopen'] = 'Aberto';
 $string['grouppassword'] = 'Senha do grupo';

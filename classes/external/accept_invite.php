@@ -90,21 +90,27 @@ class accept_invite extends external_api {
             throw new \moodle_exception('activityclosed', 'mod_playergroup');
         }
 
-        $hasusergroupsql = "SELECT gm.groupid
-                              FROM {groups_members} gm
-                              JOIN {playergroup_meta} pm ON pm.groupid = gm.groupid
-                             WHERE pm.playergroupid = :playergroupid AND gm.userid = :userid";
+        $lock = \mod_playergroup\local\group_lock::acquire($playergroup->id);
+        try {
+            $hasusergroupsql = "SELECT gm.groupid
+                                  FROM {groups_members} gm
+                                  JOIN {playergroup_meta} pm ON pm.groupid = gm.groupid
+                                 WHERE pm.playergroupid = :playergroupid AND gm.userid = :userid";
 
-        if ($DB->record_exists_sql($hasusergroupsql, ['playergroupid' => $playergroup->id, 'userid' => $USER->id])) {
-            throw new \moodle_exception('alreadyingroup', 'mod_playergroup');
+            $hasgroupparams = ['playergroupid' => $playergroup->id, 'userid' => $USER->id];
+            if ($DB->record_exists_sql($hasusergroupsql, $hasgroupparams)) {
+                throw new \moodle_exception('alreadyingroup', 'mod_playergroup');
+            }
+
+            $membercount = $DB->count_records('groups_members', ['groupid' => (int) $invite->groupid]);
+            if ($membercount >= (int) $playergroup->maxmembers) {
+                throw new \moodle_exception('groupisfull', 'mod_playergroup');
+            }
+
+            groups_add_member((int) $invite->groupid, $USER->id);
+        } finally {
+            $lock->release();
         }
-
-        $membercount = $DB->count_records('groups_members', ['groupid' => (int) $invite->groupid]);
-        if ($membercount >= (int) $playergroup->maxmembers) {
-            throw new \moodle_exception('groupisfull', 'mod_playergroup');
-        }
-
-        groups_add_member((int) $invite->groupid, $USER->id);
 
         $now = time();
         $DB->set_field('playergroup_invites', 'status', 1, ['id' => $invite->id]);

@@ -26,12 +26,14 @@
 namespace mod_playergroup\external;
 
 use advanced_testcase;
+use moodle_database;
 use moodle_exception;
 
 /**
  * Tests for \mod_playergroup\external\join_group.
  *
  * @covers \mod_playergroup\external\join_group
+ * @covers \mod_playergroup\local\group_lock
  */
 final class join_group_test extends advanced_testcase {
     /** @var \stdClass Course record. */
@@ -48,6 +50,9 @@ final class join_group_test extends advanced_testcase {
 
     /** @var int ID of the group created in setUp. */
     private int $groupid;
+
+    /** @var ?moodle_database Second, independent connection used to simulate a concurrent request. */
+    private ?moodle_database $seconddb = null;
 
     /**
      * Set up fixtures for each test.
@@ -70,6 +75,17 @@ final class join_group_test extends advanced_testcase {
         $this->joiner = $this->getDataGenerator()->create_user();
         $this->getDataGenerator()->enrol_user($this->joiner->id, $this->course->id, 'student');
         $this->setUser($this->joiner);
+    }
+
+    /**
+     * Dispose of the second connection, if one was opened.
+     */
+    protected function tearDown(): void {
+        if ($this->seconddb !== null) {
+            $this->seconddb->dispose();
+            $this->seconddb = null;
+        }
+        parent::tearDown();
     }
 
     /**
@@ -224,6 +240,60 @@ final class join_group_test extends advanced_testcase {
             2,
             (int) $DB->get_field('playergroup_invites', 'status', ['id' => $otherinviteid])
         );
+    }
+
+    /**
+     * Test that join_group is blocked while another request holds the per-instance lock.
+     *
+     * Simulates a genuinely concurrent request (a second, independent database connection)
+     * already inside the check-then-act section for this activity instance. A same-connection
+     * lock would be reentrant and not prove anything; a second connection is required to show
+     * join_group::execute() actually goes through \mod_playergroup\local\group_lock.
+     */
+    public function test_execute_blocked_by_concurrent_lock(): void {
+        $otherlock = $this->acquire_on_second_connection('group_' . $this->cm->id);
+
+        try {
+            $this->expectException(moodle_exception::class);
+            join_group::execute($this->cm->cmid, $this->groupid, '');
+        } finally {
+            $otherlock->release();
+        }
+    }
+
+    /**
+     * Acquires the mod_playergroup lock factory's lock for the given resource key from a
+     * second, independently-connected database session, so contention against it reflects a
+     * genuinely different session rather than this test's own (self-reentrant) connection.
+     *
+     * @param string $resourcekey The bare resource key (without the factory's type prefix).
+     * @return \core\lock\lock The lock, held on the second connection; the caller must release it.
+     */
+    private function acquire_on_second_connection(string $resourcekey): \core\lock\lock {
+        global $DB;
+
+        $cfg = $DB->export_dbconfig();
+        if (!isset($cfg->dboptions)) {
+            $cfg->dboptions = [];
+        }
+
+        $this->seconddb = moodle_database::get_driver_instance($cfg->dbtype, $cfg->dblibrary);
+        $this->seconddb->connect($cfg->dbhost, $cfg->dbuser, $cfg->dbpass, $cfg->dbname, $cfg->prefix, $cfg->dboptions);
+
+        $original = $GLOBALS['DB'];
+        $GLOBALS['DB'] = $this->seconddb;
+        try {
+            $factory = \core\lock\lock_config::get_lock_factory('mod_playergroup');
+            $lock = $factory->get_lock($resourcekey, 1);
+        } finally {
+            $GLOBALS['DB'] = $original;
+        }
+
+        if (!$lock) {
+            $this->fail('Precondition: the second connection must be able to acquire the lock.');
+        }
+
+        return $lock;
     }
 
     /**

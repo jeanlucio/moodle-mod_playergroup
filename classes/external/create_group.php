@@ -99,51 +99,57 @@ class create_group extends external_api {
             throw new \moodle_exception('activityclosed', 'mod_playergroup');
         }
 
-        // Ensure the student does not already belong to a group in this activity.
-        $hassql = "SELECT gm.groupid
-                     FROM {groups_members} gm
-                     JOIN {playergroup_meta} pm ON pm.groupid = gm.groupid
-                    WHERE pm.playergroupid = :playergroupid
-                      AND gm.userid = :userid";
+        $lock = \mod_playergroup\local\group_lock::acquire($playergroup->id);
+        try {
+            // Ensure the student does not already belong to a group in this activity.
+            $hassql = "SELECT gm.groupid
+                         FROM {groups_members} gm
+                         JOIN {playergroup_meta} pm ON pm.groupid = gm.groupid
+                        WHERE pm.playergroupid = :playergroupid
+                          AND gm.userid = :userid";
 
-        if ($DB->record_exists_sql($hassql, ['playergroupid' => $playergroup->id, 'userid' => $USER->id])) {
-            throw new \moodle_exception('alreadyingroup', 'mod_playergroup');
+            $hassqlparams = ['playergroupid' => $playergroup->id, 'userid' => $USER->id];
+            if ($DB->record_exists_sql($hassql, $hassqlparams)) {
+                throw new \moodle_exception('alreadyingroup', 'mod_playergroup');
+            }
+
+            // Create the native Moodle group.
+            $newgroup = new \stdClass();
+            $newgroup->courseid = $cm->course;
+            $newgroup->name = $params['name'];
+            $newgroup->description = clean_text($params['description'], FORMAT_HTML);
+            $newgroup->descriptionformat = FORMAT_HTML;
+            $newgroup->timecreated = time();
+            $groupid = groups_create_group($newgroup);
+
+            // Assign the new group to this activity's grouping.
+            if ($playergroup->groupingid > 0) {
+                groups_assign_grouping($playergroup->groupingid, $groupid);
+            }
+
+            // Add the founding student as the first group member.
+            groups_add_member($groupid, $USER->id);
+
+            $privacylevel = (int) $params['privacy'];
+            $hashedpassword = '';
+            if ($privacylevel === 1 && $params['password'] !== '') {
+                $hashedpassword = password_hash($params['password'], PASSWORD_DEFAULT);
+            }
+
+            // Store metadata (badge, privacy, creator) in the plugin's table.
+            $meta = new \stdClass();
+            $meta->groupid       = $groupid;
+            $meta->playergroupid = $playergroup->id;
+            $meta->creatorid     = $USER->id;
+            $meta->badge         = $params['badge'];
+            $meta->privacy       = $privacylevel;
+            $meta->password      = $hashedpassword;
+            $meta->timecreated   = time();
+            $meta->timemodified  = time();
+            $DB->insert_record('playergroup_meta', $meta);
+        } finally {
+            $lock->release();
         }
-
-        // Create the native Moodle group.
-        $newgroup = new \stdClass();
-        $newgroup->courseid = $cm->course;
-        $newgroup->name = $params['name'];
-        $newgroup->description = clean_text($params['description'], FORMAT_HTML);
-        $newgroup->descriptionformat = FORMAT_HTML;
-        $newgroup->timecreated = time();
-        $groupid = groups_create_group($newgroup);
-
-        // Assign the new group to this activity's grouping.
-        if ($playergroup->groupingid > 0) {
-            groups_assign_grouping($playergroup->groupingid, $groupid);
-        }
-
-        // Add the founding student as the first group member.
-        groups_add_member($groupid, $USER->id);
-
-        $privacylevel = (int) $params['privacy'];
-        $hashedpassword = '';
-        if ($privacylevel === 1 && $params['password'] !== '') {
-            $hashedpassword = password_hash($params['password'], PASSWORD_DEFAULT);
-        }
-
-        // Store metadata (badge, privacy, creator) in the plugin's table.
-        $meta = new \stdClass();
-        $meta->groupid       = $groupid;
-        $meta->playergroupid = $playergroup->id;
-        $meta->creatorid     = $USER->id;
-        $meta->badge         = $params['badge'];
-        $meta->privacy       = $privacylevel;
-        $meta->password      = $hashedpassword;
-        $meta->timecreated   = time();
-        $meta->timemodified  = time();
-        $DB->insert_record('playergroup_meta', $meta);
 
         $modinfo = get_fast_modinfo($cm->course);
         $cminfo = $modinfo->get_cm($cm->id);
