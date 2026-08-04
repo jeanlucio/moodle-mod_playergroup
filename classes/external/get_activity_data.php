@@ -115,6 +115,22 @@ class get_activity_data extends external_api {
             $creators = $DB->get_records_list('user', 'id', $creatorids, '', $creatorfields);
         }
 
+        // Bulk-load all group members (for the "view members" panel) to avoid per-card queries.
+        $membersbygroup = [];
+        $displayedgroupids = array_map(fn($g): int => (int) $g->id, $grouprecords);
+        if (!empty($displayedgroupids)) {
+            [$groupidsinsql, $groupidsinparams] = $DB->get_in_or_equal($displayedgroupids, SQL_PARAMS_NAMED, 'grp');
+            $membersql = "SELECT gm.id, gm.groupid, u.id AS userid, u.firstname, u.lastname, u.firstnamephonetic,
+                                 u.lastnamephonetic, u.middlename, u.alternatename
+                            FROM {groups_members} gm
+                            JOIN {user} u ON u.id = gm.userid
+                           WHERE gm.groupid $groupidsinsql
+                        ORDER BY gm.groupid ASC, gm.timeadded ASC";
+            foreach ($DB->get_records_sql($membersql, $groupidsinparams) as $member) {
+                $membersbygroup[(int) $member->groupid][] = $member;
+            }
+        }
+
         $canleaveany = $hasgroup && !empty($playergroup->canleave) && $isopen;
         $usergroupisfull = false;
         $groups = [];
@@ -131,9 +147,18 @@ class get_activity_data extends external_api {
             $creator = $creators[(int) $g->creatorid] ?? null;
             $leaderbadge = $creator ? get_string('leadernamed', 'mod_playergroup', fullname($creator)) : '';
 
+            $groupname = format_string($g->name);
+            $groupmembers = [];
+            foreach ($membersbygroup[$groupid] ?? [] as $member) {
+                $groupmembers[] = [
+                    'fullname' => fullname($member),
+                    'isleader' => (int) $member->userid === (int) $g->creatorid,
+                ];
+            }
+
             $groups[] = [
                 'groupid'            => $groupid,
-                'name'               => format_string($g->name),
+                'name'               => $groupname,
                 'rawname'            => $g->name,
                 'description'        => format_text(
                     $g->description,
@@ -144,6 +169,8 @@ class get_activity_data extends external_api {
                 'badge'              => !empty($g->badge) ? $g->badge : '🛡️',
                 'membercount'        => $membercount,
                 'maxmembers'         => $maxmembers,
+                'members'            => $groupmembers,
+                'membersheading'     => get_string('groupmembers_named', 'mod_playergroup', $groupname),
                 'privacy'            => $privacy,
                 'isprivacyopen'      => $privacy === 0,
                 'isprivacyprotected' => $privacy === 1,
@@ -279,6 +306,11 @@ class get_activity_data extends external_api {
      * @return external_single_structure
      */
     public static function execute_returns(): external_single_structure {
+        $memberstructure = new external_single_structure([
+            'fullname' => new external_value(PARAM_TEXT, 'Member full name'),
+            'isleader' => new external_value(PARAM_BOOL, 'True if this member created the group'),
+        ]);
+
         $groupstructure = new external_single_structure([
             'groupid'            => new external_value(PARAM_INT, 'Group ID'),
             'name'               => new external_value(PARAM_TEXT, 'Group name (formatted)'),
@@ -288,6 +320,8 @@ class get_activity_data extends external_api {
             'badge'              => new external_value(PARAM_TEXT, 'Group badge (emoji or text)'),
             'membercount'        => new external_value(PARAM_INT, 'Current number of members'),
             'maxmembers'         => new external_value(PARAM_INT, 'Maximum allowed members'),
+            'members'            => new external_multiple_structure($memberstructure, 'List of group members'),
+            'membersheading'     => new external_value(PARAM_TEXT, 'Title for the members list ("Members of X")'),
             'privacy'            => new external_value(PARAM_INT, 'Privacy level: 0=open, 1=protected, 2=closed'),
             'isprivacyopen'      => new external_value(PARAM_BOOL, 'True if privacy is open'),
             'isprivacyprotected' => new external_value(PARAM_BOOL, 'True if privacy is password-protected'),

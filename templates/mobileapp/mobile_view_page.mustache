@@ -40,7 +40,8 @@
         "str_leavegroup": "Leave group",
         "str_editgroup": "Edit group",
         "str_mobile_joinopen": "Join",
-        "str_mobile_joinprotected": "Join (password)"
+        "str_mobile_joinprotected": "Join (password)",
+        "str_leader": "Leader"
     }
 }}
 {{=<% %>=}}
@@ -179,8 +180,29 @@
             </div>
         </ng-container>
 
+        <!-- ===== GROUP MEMBERS PANEL ===== -->
+        <ng-container *ngIf="showMembersPanel">
+            <ion-list>
+                <ion-list-header>
+                    <ion-label>{{ selectedGroup?.membersheading }}</ion-label>
+                </ion-list-header>
+
+                <ion-item *ngFor="let member of selectedGroup?.members">
+                    <ion-icon slot="start" name="star" color="warning" *ngIf="member.isleader"></ion-icon>
+                    <ion-label>{{ member.fullname }}</ion-label>
+                    <ion-text slot="end" *ngIf="member.isleader"><% str_leader %></ion-text>
+                </ion-item>
+            </ion-list>
+
+            <div class="pg-form-buttons">
+                <ion-button expand="block" fill="outline" (click)="cancelForm()">
+                    <% str_mobile_back %>
+                </ion-button>
+            </div>
+        </ng-container>
+
         <!-- ===== MAIN VIEW (default) ===== -->
-        <ng-container *ngIf="!showCreateForm && !showEditForm && !showInvitePanel">
+        <ng-container *ngIf="!showCreateForm && !showEditForm && !showInvitePanel && !showMembersPanel">
 
             <!-- Received invitations -->
             <ng-container *ngIf="receivedInvites && receivedInvites.length > 0">
@@ -237,7 +259,10 @@
                             *ngIf="group.isprivacyprotected"><% str_mobile_privacyprotected %></ion-text>
                         <ion-text class="pg-privacy-badge pg-privacy-closed"
                             *ngIf="group.isprivacyclosed"><% str_mobile_privacyclosed %></ion-text>
-                        &nbsp;{{ group.membercount }}/{{ group.maxmembers }}
+                        &nbsp;<ion-button fill="clear" size="small" class="pg-members-btn"
+                            (click)="showMembers(group)">
+                            {{ group.membercount }}/{{ group.maxmembers }}
+                        </ion-button>
                         <ion-text *ngIf="group.ismygroup"> &bull; {{ group.leaderbadge }}</ion-text>
                     </ion-card-subtitle>
                 </ion-card-header>

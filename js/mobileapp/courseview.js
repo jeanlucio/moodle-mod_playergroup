@@ -41,6 +41,8 @@ this.inviteableUsers = this.CONTENT_OTHERDATA.inviteableusers || [];
 this.showCreateForm = false;
 this.showEditForm = false;
 this.showInvitePanel = false;
+this.showMembersPanel = false;
+this.selectedGroup = null;
 
 this.createData = {name: '', description: '', badge: '🛡️', privacy: 0, password: ''};
 this.editData = {groupid: 0, name: '', description: '', badge: '', privacy: 0, password: ''};
@@ -57,6 +59,7 @@ this.showCreate = () => {
     this.showCreateForm = true;
     this.showEditForm = false;
     this.showInvitePanel = false;
+    this.showMembersPanel = false;
 };
 
 this.showEdit = (group) => {
@@ -71,18 +74,29 @@ this.showEdit = (group) => {
     this.showEditForm = true;
     this.showCreateForm = false;
     this.showInvitePanel = false;
+    this.showMembersPanel = false;
 };
 
 this.showInvite = () => {
     this.showInvitePanel = true;
     this.showCreateForm = false;
     this.showEditForm = false;
+    this.showMembersPanel = false;
+};
+
+this.showMembers = (group) => {
+    this.selectedGroup = group;
+    this.showMembersPanel = true;
+    this.showCreateForm = false;
+    this.showEditForm = false;
+    this.showInvitePanel = false;
 };
 
 this.cancelForm = () => {
     this.showCreateForm = false;
     this.showEditForm = false;
     this.showInvitePanel = false;
+    this.showMembersPanel = false;
 };
 
 // ---------------------------------------------------------------------------

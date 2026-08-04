@@ -87,7 +87,7 @@ class mobile {
             'mobile_privacyclosed', 'mobile_inviteaccept', 'mobile_invitedecline',
             'mobile_joinopen', 'mobile_joinprotected', 'groupname', 'description',
             'groupbadge', 'privacy', 'leavegroup', 'editgroup', 'sendinvite',
-            'invitepending', 'receivedinvites',
+            'invitepending', 'receivedinvites', 'leader',
         ];
         foreach ($stringkeys as $key) {
             $templatecontext['str_' . $key] = get_string($key, 'mod_playergroup');
