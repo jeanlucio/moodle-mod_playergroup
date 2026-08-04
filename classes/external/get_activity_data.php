@@ -83,6 +83,8 @@ class get_activity_data extends external_api {
         }
 
         $isteacher = has_capability('mod/playergroup:manage', $context);
+        $coursecontext = $context->get_course_context();
+        $caninviteusers = has_capability('moodle/course:viewparticipants', $coursecontext);
 
         $mygroupsql = "SELECT gm.groupid
                          FROM {groups_members} gm
@@ -150,7 +152,7 @@ class get_activity_data extends external_api {
                 'ismygroup'          => $ismygroup,
                 'leaderbadge'        => $leaderbadge,
                 'canjoin'            => $isopen && !$hasgroup && $privacy !== 2 && !$isfull,
-                'caninvite'          => $ismygroup && $isopen && !$isfull,
+                'caninvite'          => $ismygroup && $isopen && !$isfull && $caninviteusers,
                 'canedit'            => $ismygroup && $isopen && $iscreator,
                 'canleave'           => $ismygroup && $canleaveany,
             ];
@@ -163,14 +165,17 @@ class get_activity_data extends external_api {
         $receivedinvites = [];
         $inviteableusers = [];
 
-        if ($hasgroup && $isopen && !$usergroupisfull && !empty($mygroupid)) {
+        // Restricted to users who can see the course participant list: a professor that
+        // hides participants from students has already decided students should not browse
+        // course-mates by name, and this picker must honour that choice.
+        if ($hasgroup && $isopen && !$usergroupisfull && !empty($mygroupid) && $caninviteusers) {
+            [$enrolledsql, $enrolledparams] = get_enrolled_sql($coursecontext, '', 0, true);
+
             $inviteablesql = "SELECT u.id, u.firstname, u.lastname, u.firstnamephonetic,
                                      u.lastnamephonetic, u.middlename, u.alternatename,
                                      g_their.name AS existinggroupname,
                                      pi_pend.id   AS pendinginviteid
                                 FROM {user} u
-                                JOIN {user_enrolments} ue ON ue.userid = u.id
-                                JOIN {enrol} e             ON e.id = ue.enrolid
                            LEFT JOIN (
                                      SELECT gm_s.userid, MIN(g_s.name) AS name
                                        FROM {groups_members} gm_s
@@ -186,19 +191,18 @@ class get_activity_data extends external_api {
                                         AND pi_s.status  = 0
                                       GROUP BY pi_s.receiverid
                                      ) pi_pend ON pi_pend.receiverid = u.id
-                               WHERE e.courseid  = :courseid
-                                 AND ue.status   = 0
+                               WHERE u.id IN ($enrolledsql)
                                  AND u.deleted   = 0
                                  AND u.suspended = 0
                                  AND u.id        <> :currentuserid
                             ORDER BY u.firstname ASC, u.lastname ASC";
 
-            $inviteablerecords = $DB->get_records_sql($inviteablesql, [
-                'courseid'       => $cm->course,
+            $inviteableparams = array_merge($enrolledparams, [
                 'currentuserid'  => $USER->id,
                 'playergroupid2' => $playergroup->id,
                 'groupid'        => (int) $mygroupid,
             ]);
+            $inviteablerecords = $DB->get_records_sql($inviteablesql, $inviteableparams);
 
             foreach ($inviteablerecords as $u) {
                 $ingroup       = !empty($u->existinggroupname);
