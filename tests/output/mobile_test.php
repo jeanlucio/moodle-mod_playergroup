@@ -96,6 +96,38 @@ final class mobile_test extends advanced_testcase {
     }
 
     /**
+     * Test that the rendered mobile page binds the group card's description to the sanitised
+     * field, not the raw one.
+     *
+     * get_activity_data::execute() returns both 'description' (through format_text(), safe to
+     * render as HTML) and 'rawdescription' (the raw DB value, kept only so courseview.js can
+     * prefill the plain-text edit form). The mobile_view_page template must bind
+     * core-format-text's [text] to 'description' — binding it to 'rawdescription' would render
+     * whatever HTML a group's description holds directly in the app webview.
+     */
+    public function test_mobile_course_view_binds_sanitised_description(): void {
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module('playergroup', ['course' => $course->id]);
+
+        $creator = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($creator->id, $course->id, 'student');
+        $this->setUser($creator);
+        create_group::execute($cm->cmid, 'Mobile Group', '', '🛡', 0, '');
+
+        $result = mobile::mobile_course_view([
+            'cmid'            => $cm->cmid,
+            'courseid'        => $course->id,
+            'appversioncode'  => 40100,
+        ]);
+
+        $html = $result['templates'][0]['html'];
+        $this->assertStringContainsString('[text]="group.description"', $html);
+        $this->assertStringNotContainsString('[text]="group.rawdescription"', $html);
+    }
+
+    /**
      * Test that a user without mod/playergroup:view cannot fetch the mobile page data.
      *
      * Prohibiting the activity's own view capability makes the module inaccessible to
