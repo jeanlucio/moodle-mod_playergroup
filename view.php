@@ -102,6 +102,10 @@ $templatedata->reporturl          = (new moodle_url(
     '/mod/playergroup/view.php',
     ['id' => $cm->id, 'tab' => 'report']
 ))->out(false);
+$templatedata->groupsreporturl    = (new moodle_url(
+    '/mod/playergroup/view.php',
+    ['id' => $cm->id, 'tab' => 'groupsreport']
+))->out(false);
 
 if (!$isopen) {
     if ($timeopen > 0 && $now < $timeopen) {
@@ -357,6 +361,52 @@ if ($tab === 'report' && $isteacher) {
     $reportdata->exporturl = (new moodle_url('/mod/playergroup/export.php', ['id' => $cm->id]))->out(false);
 
     echo $renderer->render_activity_report($reportdata);
+    echo $OUTPUT->footer();
+    exit;
+}
+
+// Teacher: groups-and-members composition report. Reuses the group/member data already
+// bulk-loaded above for the cards, rather than querying it again.
+if ($tab === 'groupsreport' && $isteacher) {
+    $groupsreportrows = [];
+    foreach ($grouprecords as $g) {
+        $groupid = (int) $g->id;
+        $privacy = (int) ($g->privacy ?? 0);
+
+        if ($privacy === 1) {
+            $privacylabel = get_string('groupprotected', 'mod_playergroup');
+        } else if ($privacy === 2) {
+            $privacylabel = get_string('groupclosed', 'mod_playergroup');
+        } else {
+            $privacylabel = get_string('groupopen', 'mod_playergroup');
+        }
+
+        foreach ($membersbygroup[$groupid] ?? [] as $member) {
+            if ((int) $member->userid === (int) $g->creatorid) {
+                $role = get_string('leader', 'mod_playergroup');
+            } else {
+                $role = get_string('member', 'mod_playergroup');
+            }
+
+            $groupsreportrows[] = [
+                'groupname'  => format_string($g->name),
+                'privacy'    => $privacylabel,
+                'role'       => $role,
+                'membername' => fullname($member),
+            ];
+        }
+    }
+
+    $groupsreportdata = new \stdClass();
+    $groupsreportdata->rows      = $groupsreportrows;
+    $groupsreportdata->hasrows   = !empty($groupsreportrows);
+    $groupsreportdata->backurl   = (new moodle_url('/mod/playergroup/view.php', ['id' => $cm->id]))->out(false);
+    $groupsreportdata->exporturl = (new moodle_url(
+        '/mod/playergroup/export.php',
+        ['id' => $cm->id, 'type' => 'groups']
+    ))->out(false);
+
+    echo $renderer->render_groups_report($groupsreportdata);
     echo $OUTPUT->footer();
     exit;
 }

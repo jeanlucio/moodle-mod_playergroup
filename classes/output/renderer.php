@@ -49,4 +49,14 @@ class renderer extends plugin_renderer_base {
     public function render_activity_report(\stdClass $templatedata): string {
         return $this->render_from_template('mod_playergroup/view_report', $templatedata);
     }
+
+    /**
+     * Renders the teacher groups-and-members composition report.
+     *
+     * @param \stdClass $templatedata Data to pass to the mustache template.
+     * @return string HTML rendered output.
+     */
+    public function render_groups_report(\stdClass $templatedata): string {
+        return $this->render_from_template('mod_playergroup/view_groups_report', $templatedata);
+    }
 }

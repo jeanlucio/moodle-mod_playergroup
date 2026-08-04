@@ -26,6 +26,7 @@ require(__DIR__ . '/../../config.php');
 
 $id     = required_param('id', PARAM_INT);
 $format = optional_param('format', 'csv', PARAM_ALPHANUMEXT);
+$type   = optional_param('type', 'log', PARAM_ALPHA);
 
 $cm = get_coursemodule_from_id('playergroup', $id, 0, false, MUST_EXIST);
 $course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);
@@ -38,5 +39,10 @@ require_capability('mod/playergroup:manage', $context);
 // Note: require_sesskey() is intentionally omitted here because data export
 // is a read-only GET request and does not modify database state.
 
-$controller = new \mod_playergroup\controller\export();
-$controller->execute($context->id, $format, $course->shortname);
+if ($type === 'groups') {
+    $controller = new \mod_playergroup\controller\export_groups();
+    $controller->execute((int) $cm->instance, $format, $course->shortname);
+} else {
+    $controller = new \mod_playergroup\controller\export();
+    $controller->execute($context->id, $format, $course->shortname);
+}

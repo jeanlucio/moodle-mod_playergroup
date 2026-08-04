@@ -32,6 +32,7 @@
         "hasinvites": true,
         "isteacher": false,
         "reporturl": "/mod/playergroup/view.php?id=1&tab=report",
+        "groupsreporturl": "/mod/playergroup/view.php?id=1&tab=groupsreport",
         "receivedinvites": [
             {
                 "inviteid": 3,
@@ -66,6 +67,10 @@
 
     {{#isteacher}}
     <div class="d-flex justify-content-end mb-3">
+        <a href="{{groupsreporturl}}" class="btn btn-outline-secondary btn-sm me-2">
+            <i class="fa fa-users me-1" aria-hidden="true"></i>
+            {{#str}} groupsreport, mod_playergroup {{/str}}
+        </a>
         <a href="{{reporturl}}" class="btn btn-outline-secondary btn-sm">
             <i class="fa fa-list-alt me-1" aria-hidden="true"></i>
             {{#str}} viewreport, mod_playergroup {{/str}}

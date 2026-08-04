@@ -1,0 +1,92 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mod_playergroup/view_groups_report
+
+    Groups-and-members composition report visible to teachers only. One row per member,
+    so the export can be sorted/filtered by student name in a spreadsheet.
+
+    Example context (json):
+    {
+        "backurl": "/mod/playergroup/view.php?id=1",
+        "exporturl": "/mod/playergroup/export.php?id=1&type=groups",
+        "hasrows": true,
+        "rows": [
+            {"groupname": "Dragões do Norte", "privacy": "Open", "role": "Leader", "membername": "Ana Silva"},
+            {"groupname": "Dragões do Norte", "privacy": "Open", "role": "Member", "membername": "Carlos Souza"}
+        ]
+    }
+}}
+<div class="mod_playergroup-container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="h5 fw-bold m-0">
+            <i class="fa fa-users me-2" aria-hidden="true"></i>
+            {{#str}} groupsreport, mod_playergroup {{/str}}
+        </h3>
+        <div class="d-flex">
+            {{#hasrows}}
+            <a href="{{exporturl}}&amp;format=csv" class="btn btn-outline-success btn-sm me-2"
+                title="{{#str}} export_csv, mod_playergroup {{/str}}">
+                <i class="fa fa-download me-1" aria-hidden="true"></i>
+                {{#str}} export_csv, mod_playergroup {{/str}}
+            </a>
+            <a href="{{exporturl}}&amp;format=excel" class="btn btn-outline-success btn-sm me-2"
+                title="{{#str}} export_excel, mod_playergroup {{/str}}">
+                <i class="fa fa-file-excel-o me-1" aria-hidden="true"></i>
+                {{#str}} export_excel, mod_playergroup {{/str}}
+            </a>
+            {{/hasrows}}
+            <a href="{{backurl}}" class="btn btn-outline-secondary btn-sm">
+                <i class="fa fa-arrow-left me-1" aria-hidden="true"></i>
+                {{#str}} back, mod_playergroup {{/str}}
+            </a>
+        </div>
+    </div>
+
+    {{#hasrows}}
+    <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">{{#str}} report_group, mod_playergroup {{/str}}</th>
+                    <th scope="col">{{#str}} privacy, mod_playergroup {{/str}}</th>
+                    <th scope="col">{{#str}} report_role, mod_playergroup {{/str}}</th>
+                    <th scope="col">{{#str}} report_name, mod_playergroup {{/str}}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#rows}}
+                <tr>
+                    <td>{{groupname}}</td>
+                    <td>{{privacy}}</td>
+                    <td>{{role}}</td>
+                    <td>{{membername}}</td>
+                </tr>
+                {{/rows}}
+            </tbody>
+        </table>
+    </div>
+    {{/hasrows}}
+
+    {{^hasrows}}
+    <p class="text-muted text-center py-5">
+        {{#str}} groupsreport_empty, mod_playergroup {{/str}}
+    </p>
+    {{/hasrows}}
+
+</div>
