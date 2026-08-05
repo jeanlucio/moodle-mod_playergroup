@@ -440,9 +440,19 @@ $groupmembers = [
     $group6->id => array_slice($students, 23, 4),
 ];
 
+[$groupidsql, $groupidparams] = $DB->get_in_or_equal(array_keys($groupmembers), SQL_PARAMS_NAMED);
+$existingmembers = $DB->get_records_sql(
+    "SELECT id, groupid, userid FROM {groups_members} WHERE groupid $groupidsql",
+    $groupidparams
+);
+$existingpairs = [];
+foreach ($existingmembers as $existingmember) {
+    $existingpairs[$existingmember->groupid . '_' . $existingmember->userid] = true;
+}
+
 foreach ($groupmembers as $groupid => $members) {
     foreach ($members as $member) {
-        if (!$DB->record_exists('groups_members', ['groupid' => $groupid, 'userid' => $member->id])) {
+        if (!isset($existingpairs[$groupid . '_' . $member->id])) {
             groups_add_member($groupid, $member->id);
         }
     }
