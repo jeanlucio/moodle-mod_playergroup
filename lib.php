@@ -256,7 +256,7 @@ function playergroup_update_grades(\stdClass $playergroup, int $userid = 0): voi
 function playergroup_get_coursemodule_info(\stdClass $coursemodule): \cached_cm_info|false {
     global $DB;
 
-    $fields = 'id, name, completionjoingroup';
+    $fields = 'id, name, completionjoingroup, timeopen, timeclose';
     $playergroup = $DB->get_record('playergroup', ['id' => $coursemodule->instance], $fields);
     if (!$playergroup) {
         return false;
@@ -268,6 +268,11 @@ function playergroup_get_coursemodule_info(\stdClass $coursemodule): \cached_cm_
     if (!empty($playergroup->completionjoingroup)) {
         $info->customdata['customcompletionrules']['completionjoingroup'] = 1;
     }
+
+    // Carried in the modinfo cache so playergroup_cm_info_view() can read the availability
+    // window without a database query on every course page render.
+    $info->customdata['timeopen'] = (int) $playergroup->timeopen;
+    $info->customdata['timeclose'] = (int) $playergroup->timeclose;
 
     return $info;
 }
@@ -282,20 +287,10 @@ function playergroup_get_coursemodule_info(\stdClass $coursemodule): \cached_cm_
  * @return void
  */
 function playergroup_cm_info_view(\cm_info $cm): void {
-    global $DB;
-
-    $playergroup = $DB->get_record(
-        'playergroup',
-        ['id' => $cm->instance],
-        'timeopen, timeclose'
-    );
-    if (!$playergroup) {
-        return;
-    }
-
-    $now       = time();
-    $timeopen  = (int) $playergroup->timeopen;
-    $timeclose = (int) $playergroup->timeclose;
+    $customdata = $cm->customdata ?? [];
+    $now        = time();
+    $timeopen   = (int) ($customdata['timeopen'] ?? 0);
+    $timeclose  = (int) ($customdata['timeclose'] ?? 0);
 
     if ($timeopen > 0 && $now < $timeopen) {
         $msg = get_string('activityopensfrom', 'mod_playergroup', userdate($timeopen));
