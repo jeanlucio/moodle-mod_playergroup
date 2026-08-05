@@ -226,6 +226,35 @@ final class create_group_test extends advanced_testcase {
     }
 
     /**
+     * Test that create_group throws instead of leaving an orphaned native group when the
+     * caller cannot actually be added to it.
+     *
+     * groups_add_member() returns false (not an exception) when the caller is not enrolled
+     * in the group's course. A site admin passes require_login()/require_capability()
+     * everywhere regardless of enrolment, but is_enrolled() (checked inside
+     * groups_add_member()) still returns false for them if they hold no enrolment in this
+     * course; without checking the return value, create_group left behind a native group
+     * with no real member and a playergroup_meta row pointing at it.
+     */
+    public function test_execute_throws_and_cleans_up_when_add_member_fails(): void {
+        global $DB;
+
+        $groupsbefore = $DB->count_records('groups', ['courseid' => $this->course->id]);
+        $metabefore = $DB->count_records('playergroup_meta', ['playergroupid' => $this->cm->id]);
+
+        $this->setAdminUser();
+        try {
+            create_group::execute($this->cm->cmid, 'Ghost Group', '', '👻', 0, '');
+            $this->fail('Expected a moodle_exception because the admin is not enrolled.');
+        } catch (moodle_exception $e) {
+            $this->assertEquals('joinfailed', $e->errorcode);
+        }
+
+        $this->assertEquals($groupsbefore, $DB->count_records('groups', ['courseid' => $this->course->id]));
+        $this->assertEquals($metabefore, $DB->count_records('playergroup_meta', ['playergroupid' => $this->cm->id]));
+    }
+
+    /**
      * Test that create_group is blocked while another request holds the per-instance lock.
      *
      * Simulates a genuinely concurrent request (a second, independent database connection)

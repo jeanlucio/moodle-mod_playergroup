@@ -127,8 +127,13 @@ class create_group extends external_api {
                 groups_assign_grouping($playergroup->groupingid, $groupid);
             }
 
-            // Add the founding student as the first group member.
-            groups_add_member($groupid, $USER->id);
+            // Add the founding student as the first group member. groups_add_member()
+            // returns false (no exception) when the caller is not enrolled in the course -
+            // undo the native group so it is never left orphaned with no real member.
+            if (!groups_add_member($groupid, $USER->id)) {
+                groups_delete_group($groupid);
+                throw new \moodle_exception('joinfailed', 'mod_playergroup');
+            }
 
             $privacylevel = (int) $params['privacy'];
             $hashedpassword = '';
