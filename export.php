@@ -28,6 +28,13 @@ $id     = required_param('id', PARAM_INT);
 $format = optional_param('format', 'csv', PARAM_ALPHANUMEXT);
 $type   = optional_param('type', 'log', PARAM_ALPHA);
 
+// A format that is not an installed dataformat plugin would otherwise reach
+// \core\dataformat::download_data() and throw a raw coding_exception. Fall back to the
+// default rather than let an editable query-string value trigger a developer-facing error.
+if (!array_key_exists($format, \core_plugin_manager::instance()->get_plugins_of_type('dataformat'))) {
+    $format = 'csv';
+}
+
 $cm = get_coursemodule_from_id('playergroup', $id, 0, false, MUST_EXIST);
 $course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);
 
