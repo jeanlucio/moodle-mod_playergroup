@@ -26,9 +26,9 @@
  * Indicates API features that the plugin supports.
  *
  * @param string $feature The feature string.
- * @return ?bool True if supported, null if not.
+ * @return mixed True if supported, a purpose string for FEATURE_MOD_PURPOSE/FEATURE_MOD_OTHERPURPOSE, null if not.
  */
-function playergroup_supports(string $feature): ?bool {
+function playergroup_supports(string $feature): mixed {
     $features = [
         FEATURE_MOD_INTRO              => true,
         FEATURE_COMPLETION_TRACKS_VIEWS => true,
@@ -37,6 +37,8 @@ function playergroup_supports(string $feature): ?bool {
         FEATURE_GRADE_OUTCOMES         => true,
         FEATURE_BACKUP_MOODLE2         => true,
         FEATURE_SHOW_DESCRIPTION       => true,
+        FEATURE_MOD_PURPOSE            => MOD_PURPOSE_COLLABORATION,
+        FEATURE_MOD_OTHERPURPOSE       => MOD_PURPOSE_ASSESSMENT,
     ];
 
     return $features[$feature] ?? null;
