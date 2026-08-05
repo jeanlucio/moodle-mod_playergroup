@@ -123,6 +123,62 @@ final class renderer_test extends advanced_testcase {
     }
 
     /**
+     * Test that the group card's "view members" button carries the formatted name, not the
+     * raw one, in its data-groupname attribute.
+     *
+     * amd/src/main.js reads data-groupname and passes it straight into Str.get_string() as
+     * the $a for the members-modal title, which core/modal renders as HTML rather than text.
+     * The raw (unescaped) name is safe for data-name, used only to prefill a plain-text
+     * <input value="...">, but must never be the source for something rendered as HTML.
+     */
+    public function test_render_student_view_group_card_data_groupname_uses_formatted_name(): void {
+        $templatedata = (object) [
+            'cmid'               => 1,
+            'hasgroup'           => false,
+            'activityopen'       => true,
+            'caninvite'          => false,
+            'hasinviteableusers' => false,
+            'inviteableusers'    => [],
+            'hasinvites'         => false,
+            'receivedinvites'    => [],
+            'isteacher'          => false,
+            'reporturl'          => '',
+            'groupsreporturl'    => '',
+            'groups'             => [[
+                'groupid'             => 42,
+                'name'                => 'Formatted Safe Name',
+                'rawname'             => 'Raw <b>Unsafe</b> Name',
+                'description'         => '',
+                'rawdescription'      => '',
+                'badge'               => '🐉',
+                'membercount'         => 1,
+                'maxmembers'          => 5,
+                'membersjson'         => '[]',
+                'privacy'             => 0,
+                'isprivacyopen'       => true,
+                'isprivacyprotected'  => false,
+                'isprivacyclosed'     => false,
+                'isfull'              => false,
+                'ismygroup'           => false,
+                'leaderbadge'         => '',
+                'joinarialabel'       => '',
+                'editarialabel'       => '',
+                'leavearialabel'      => '',
+                'viewmembersarialabel' => '',
+                'canjoin'             => true,
+                'caninvite'           => false,
+                'canedit'             => false,
+                'canleave'            => false,
+            ]],
+        ];
+
+        $html = $this->renderer->render_student_view($templatedata);
+
+        $this->assertStringContainsString('data-groupname="Formatted Safe Name"', $html);
+        $this->assertStringNotContainsString('data-groupname="Raw', $html);
+    }
+
+    /**
      * Test that the activity log report renders the empty-log message when there are no rows.
      */
     public function test_render_activity_report_shows_empty_state(): void {
