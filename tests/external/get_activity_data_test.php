@@ -73,4 +73,39 @@ final class get_activity_data_test extends advanced_testcase {
         $this->assertFalse($isleaderbyname[fullname($joiner)]);
         $this->assertStringContainsString('Test Group', $result['groups'][0]['membersheading']);
     }
+
+    /**
+     * Test that the member list is ordered leader-first, then alphabetically - not by join
+     * order, which would otherwise put the earliest joiner first regardless of who actually
+     * leads the group today.
+     */
+    public function test_execute_orders_members_leader_first_then_alphabetically(): void {
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module('playergroup', ['course' => $course->id]);
+
+        $creator = $this->getDataGenerator()->create_user(['firstname' => 'Creator', 'lastname' => 'One']);
+        $this->getDataGenerator()->enrol_user($creator->id, $course->id, 'student');
+        $this->setUser($creator);
+        $created = create_group::execute($cm->cmid, 'Ordered Group', '', '🛡', 0, '');
+
+        // Joins in this order (Zulema before Alice), so join order and alphabetical order
+        // disagree - only the fix sorts the non-leaders alphabetically instead of by join time.
+        $zulema = $this->getDataGenerator()->create_user(['firstname' => 'Zulema', 'lastname' => 'Nunes']);
+        $this->getDataGenerator()->enrol_user($zulema->id, $course->id, 'student');
+        $this->setUser($zulema);
+        join_group::execute($cm->cmid, $created['groupid'], '');
+
+        $alice = $this->getDataGenerator()->create_user(['firstname' => 'Alice', 'lastname' => 'Vale']);
+        $this->getDataGenerator()->enrol_user($alice->id, $course->id, 'student');
+        $this->setUser($alice);
+        join_group::execute($cm->cmid, $created['groupid'], '');
+
+        $result = get_activity_data::execute($cm->cmid);
+        $result = external_api::clean_returnvalue(get_activity_data::execute_returns(), $result);
+
+        $names = array_column($result['groups'][0]['members'], 'fullname');
+        $this->assertSame([fullname($creator), fullname($alice), fullname($zulema)], $names);
+    }
 }

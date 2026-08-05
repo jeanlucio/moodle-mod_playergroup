@@ -155,6 +155,7 @@ class get_activity_data extends external_api {
                     'isleader' => (int) $member->userid === (int) $g->creatorid,
                 ];
             }
+            $groupmembers = \mod_playergroup\local\member_list::order($groupmembers);
 
             $groups[] = [
                 'groupid'            => $groupid,

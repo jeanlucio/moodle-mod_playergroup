@@ -172,6 +172,7 @@ foreach ($grouprecords as $g) {
             'isleader' => (int) $member->userid === (int) $g->creatorid,
         ];
     }
+    $groupmembers = \mod_playergroup\local\member_list::order($groupmembers);
     $membersjson = json_encode($groupmembers, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 
     $groupname = format_string($g->name);
