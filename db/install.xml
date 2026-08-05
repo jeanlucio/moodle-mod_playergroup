@@ -7,39 +7,38 @@
     <TABLE NAME="playergroup" COMMENT="Main configuration for each playergroup activity">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-        <FIELD NAME="course" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" COMMENT="Course ID"/>
-        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true" COMMENT="Activity name"/>
-        <FIELD NAME="intro" TYPE="text" NOTNULL="false" COMMENT="Activity description"/>
-        <FIELD NAME="introformat" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0"/>
-        <FIELD NAME="groupingid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" COMMENT="The automated grouping ID"/>
-        <FIELD NAME="minmembers" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="2" COMMENT="Minimum members per group"/>
-        <FIELD NAME="maxmembers" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="5" COMMENT="Maximum members per group"/>
-        <FIELD NAME="canleave" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1" COMMENT="Whether students can leave a group"/>
-        <FIELD NAME="deletegroups" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" COMMENT="Delete grouping and groups on activity deletion"/>
-        <FIELD NAME="deleteemptygroups" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1" COMMENT="Auto-delete a group when the last member leaves"/>
-        <FIELD NAME="grade" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" COMMENT="Foundation reward grade value (0 = disabled)"/>
-        <FIELD NAME="completionjoingroup" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" COMMENT="1 if the student must join or create a group to complete this activity"/>
-        <FIELD NAME="timeopen" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
-        <FIELD NAME="timeclose" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
-        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="course" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Course ID"/>
+        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="Activity name"/>
+        <FIELD NAME="intro" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Activity description"/>
+        <FIELD NAME="introformat" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="groupingid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The automated grouping ID"/>
+        <FIELD NAME="minmembers" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="2" SEQUENCE="false" COMMENT="Minimum members per group"/>
+        <FIELD NAME="maxmembers" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="5" SEQUENCE="false" COMMENT="Maximum members per group"/>
+        <FIELD NAME="canleave" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="Whether students can leave a group"/>
+        <FIELD NAME="deletegroups" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Delete grouping and groups on activity deletion"/>
+        <FIELD NAME="deleteemptygroups" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="Auto-delete a group when the last member leaves"/>
+        <FIELD NAME="grade" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Foundation reward grade value (0 = disabled)"/>
+        <FIELD NAME="completionjoingroup" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="1 if the student must join or create a group to complete this activity"/>
+        <FIELD NAME="timeopen" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timeclose" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
         <KEY NAME="course_fk" TYPE="foreign" FIELDS="course" REFTABLE="course" REFFIELDS="id"/>
       </KEYS>
     </TABLE>
-
     <TABLE NAME="playergroup_meta" COMMENT="Additional metadata for Moodle groups created via this plugin">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-        <FIELD NAME="groupid" TYPE="int" LENGTH="10" NOTNULL="true" COMMENT="The native Moodle Group ID"/>
-        <FIELD NAME="playergroupid" TYPE="int" LENGTH="10" NOTNULL="true" COMMENT="The activity instance ID"/>
-        <FIELD NAME="creatorid" TYPE="int" LENGTH="10" NOTNULL="true" COMMENT="The student who founded the group"/>
-        <FIELD NAME="badge" TYPE="char" LENGTH="255" NOTNULL="false" COMMENT="Emoji or path to badge image"/>
-        <FIELD NAME="privacy" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" COMMENT="0=open, 1=protected (password), 2=closed (invite only)"/>
-        <FIELD NAME="password" TYPE="char" LENGTH="255" NOTNULL="false" DEFAULT="" COMMENT="Hashed password for protected groups"/>
-        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
-        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="groupid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The native Moodle Group ID"/>
+        <FIELD NAME="playergroupid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The activity instance ID"/>
+        <FIELD NAME="creatorid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The student who founded the group"/>
+        <FIELD NAME="badge" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="Emoji or path to badge image"/>
+        <FIELD NAME="privacy" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="0=open, 1=protected (password), 2=closed (invite only)"/>
+        <FIELD NAME="password" TYPE="char" LENGTH="255" NOTNULL="false" DEFAULT="" SEQUENCE="false" COMMENT="Hashed password for protected groups"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
@@ -47,17 +46,16 @@
         <KEY NAME="playergroupid_fk" TYPE="foreign" FIELDS="playergroupid" REFTABLE="playergroup" REFFIELDS="id"/>
       </KEYS>
     </TABLE>
-
     <TABLE NAME="playergroup_invites" COMMENT="Management of student-to-student invites">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-        <FIELD NAME="playergroupid" TYPE="int" LENGTH="10" NOTNULL="true"/>
-        <FIELD NAME="groupid" TYPE="int" LENGTH="10" NOTNULL="true"/>
-        <FIELD NAME="senderid" TYPE="int" LENGTH="10" NOTNULL="true" COMMENT="User who sent the invite"/>
-        <FIELD NAME="receiverid" TYPE="int" LENGTH="10" NOTNULL="true" COMMENT="User who received the invite"/>
-        <FIELD NAME="status" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" COMMENT="0: pending, 1: accepted, 2: declined"/>
-        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
-        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="playergroupid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="groupid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="senderid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="User who sent the invite"/>
+        <FIELD NAME="receiverid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="User who received the invite"/>
+        <FIELD NAME="status" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="0: pending, 1: accepted, 2: declined"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
