@@ -2,6 +2,34 @@
 
 All notable changes to PlayerGroup are documented in this file.
 
+## [v1.3.0] — 2026-08-05
+
+### Added
+
+- Students can view the full member list of any group in the activity, not just their own, through a "View Members" button on each group card; mirrored in the Moodle mobile app, with the leader marked
+- Teacher "Groups and Members" composition report: one row per member across every group (group, privacy, role, member name), with its own CSV/Excel export, alongside the existing activity-log report
+- Member lists (web and mobile) now show the group leader first, then the rest alphabetically, instead of join order
+
+### Security
+
+- Invite picker (web and mobile) and the `send_invite` web service now consistently gate on `moodle/course:viewparticipants` and exclude suspended/expired enrolments, so a professor who hid the course participant list from students can no longer be bypassed by calling the service directly
+- Group join, create, and accept-invite operations are now serialised per activity instance with a lock, closing a race that could let a student join two groups at once or push a group over its member cap
+- `join_group`, `accept_invite`, and `create_group` now check the return value of Moodle's `groups_add_member()` instead of assuming success; a caller who is not actually enrolled in the course no longer receives a grade, completion state, or a group with no real member
+- Group descriptions rendered in the mobile app now go through the same sanitisation as the web view
+- Group name is no longer used unsanitised as the "View Members" modal title
+- Export format is now validated against installed dataformat plugins instead of being passed straight through
+- Deleting the activity no longer destroys groups that already existed in the same grouping before the activity was added to the course
+
+### Changed
+
+- Simplified the plugin icon SVG
+- Failed group actions (join, leave, edit, create, invite) now show a plain message instead of Moodle's generic developer error dialog with a stack trace
+- Edit Group and Leave Group buttons now show their label next to the icon instead of icon-only
+
+### Fixed
+
+- `playergroup_cm_info_view()` no longer queries the database on every course page render; the activity's opening/closing time now travels in the modinfo cache
+
 ## [v1.2.4] — 2026-06-23
 
 ### Added
