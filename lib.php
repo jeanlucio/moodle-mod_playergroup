@@ -38,8 +38,13 @@ function playergroup_supports(string $feature): mixed {
         FEATURE_BACKUP_MOODLE2         => true,
         FEATURE_SHOW_DESCRIPTION       => true,
         FEATURE_MOD_PURPOSE            => MOD_PURPOSE_COLLABORATION,
-        FEATURE_MOD_OTHERPURPOSE       => MOD_PURPOSE_ASSESSMENT,
     ];
+
+    // FEATURE_MOD_OTHERPURPOSE only exists from Moodle 5.x onwards; this plugin also
+    // targets Moodle 4.5, where referencing the undefined constant is a fatal error.
+    if (defined('FEATURE_MOD_OTHERPURPOSE')) {
+        $features[FEATURE_MOD_OTHERPURPOSE] = MOD_PURPOSE_ASSESSMENT;
+    }
 
     return $features[$feature] ?? null;
 }
