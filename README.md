@@ -1,11 +1,16 @@
 # Moodle Activity PlayerGroup
 
+![Moodle](https://img.shields.io/badge/Moodle-4.5%2B-orange?style=flat&logo=moodle&logoColor=white)
+![License](https://img.shields.io/badge/License-GPLv3-blue?style=flat)
+![Status](https://img.shields.io/badge/Status-Stable-green?style=flat)
+[![Latest Release](https://img.shields.io/github/v/release/jeanlucio/moodle-mod_playergroup?style=flat)](https://github.com/jeanlucio/moodle-mod_playergroup/releases)
+[![PlayerGames Ecosystem](https://img.shields.io/badge/PlayerGames-Ecosystem-6f42c1?style=flat&logo=gamepad&logoColor=white)](https://jeanlucio.github.io/playergames/)
+![Role](https://img.shields.io/badge/Role-Team_Formation-0dcaf0?style=flat)
+[![Author](https://img.shields.io/badge/by-Jean_Lucio-6f42c1?style=flat)](https://marketplace.moodle.com/user/984)
+
 [![Moodle Plugin CI](https://github.com/jeanlucio/moodle-mod_playergroup/actions/workflows/ci.yml/badge.svg)](https://github.com/jeanlucio/moodle-mod_playergroup/actions/workflows/ci.yml)
-![Moodle](https://img.shields.io/badge/Moodle-4.5%2B-orange?style=flat-square&logo=moodle&logoColor=white)
-![License](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)
-![Status](https://img.shields.io/badge/Status-Stable-green?style=flat-square)
-[![PlayerGames Ecosystem](https://img.shields.io/badge/PlayerGames-Ecosystem-6f42c1?style=flat-square&logo=gamepad&logoColor=white)](https://jeanlucio.github.io/playergames/)
-![Role](https://img.shields.io/badge/Role-Team_Formation-0dcaf0?style=flat-square)
+[![Last Commit](https://img.shields.io/github/last-commit/jeanlucio/moodle-mod_playergroup?style=flat)](https://github.com/jeanlucio/moodle-mod_playergroup/commits)
+[![Open Issues](https://img.shields.io/github/issues/jeanlucio/moodle-mod_playergroup?style=flat)](https://github.com/jeanlucio/moodle-mod_playergroup/issues)
 
 [English](#english) | [Português](#português)
 
