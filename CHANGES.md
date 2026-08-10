@@ -2,6 +2,12 @@
 
 All notable changes to PlayerGroup are documented in this file.
 
+## [v1.3.1] — 2026-08-10
+
+### Added
+
+- Declared the activity's chooser purpose (collaboration + assessment), so it now appears under its category tabs in "Add an activity or resource" instead of only under "All"
+
 ## [v1.3.0] — 2026-08-05
 
 ### Added
