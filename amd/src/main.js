@@ -94,6 +94,13 @@ define([
 
             initPasswordToggle(modal, 'pg-edit-grouppassword');
 
+            // Pressing enter inside the form must not trigger a native GET submission,
+            // which would drop the "id" query parameter and crash the page reload.
+            modal.getRoot().on('submit', 'form', function(e) {
+                e.preventDefault();
+                modal.getRoot().find('[data-action="save"]').trigger('click');
+            });
+
             modal.getRoot().on('change', '#pg-edit-groupprivacy', function() {
                 var passwordField = modal.getRoot().find('#pg-edit-password-field');
                 if ($(this).val() === '1') {
@@ -175,6 +182,13 @@ define([
             modal.show();
 
             initPasswordToggle(modal, 'pg-join-password');
+
+            // Pressing enter inside the form must not trigger a native GET submission,
+            // which would drop the "id" query parameter and crash the page reload.
+            modal.getRoot().on('submit', 'form', function(e) {
+                e.preventDefault();
+                modal.getRoot().find('[data-action="save"]').trigger('click');
+            });
 
             modal.getRoot().on(ModalEvents.save, function(saveEvent) {
                 saveEvent.preventDefault();

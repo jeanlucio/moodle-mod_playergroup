@@ -192,12 +192,23 @@ final class join_group_test extends advanced_testcase {
 
     /**
      * Test that joining a protected group with the wrong password is rejected.
+     *
+     * Asserts it is not a coding_exception, which extends moodle_exception and
+     * would therefore also satisfy a plain expectException(moodle_exception::class).
+     * This business rule must throw plain moodle_exception (see amd/src/main.js's
+     * Notification.alert handling), or the AJAX caller falls back to the "contact
+     * a developer" dialog instead of the friendly translated message.
      */
     public function test_execute_protected_group_with_wrong_password(): void {
         $this->make_group_protected('secret123');
 
-        $this->expectException(moodle_exception::class);
-        join_group::execute($this->cm->cmid, $this->groupid, 'wrongpass');
+        try {
+            join_group::execute($this->cm->cmid, $this->groupid, 'wrongpass');
+            $this->fail('Expected a moodle_exception for the wrong password.');
+        } catch (moodle_exception $e) {
+            $this->assertNotInstanceOf(\coding_exception::class, $e);
+            $this->assertEquals('wrongpassword', $e->errorcode);
+        }
     }
 
     /**

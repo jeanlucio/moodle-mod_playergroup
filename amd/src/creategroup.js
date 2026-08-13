@@ -61,6 +61,13 @@ define([
 
                     initPasswordToggle(modal, 'pg-grouppassword');
 
+                    // Pressing enter inside the form must not trigger a native GET submission,
+                    // which would drop the "id" query parameter and crash the page reload.
+                    modal.getRoot().on('submit', 'form', function(submitEvent) {
+                        submitEvent.preventDefault();
+                        modal.getRoot().find('[data-action="save"]').trigger('click');
+                    });
+
                     // Toggle password field visibility based on privacy selection.
                     modal.getRoot().on('change', '#pg-groupprivacy', function() {
                         var passwordField = modal.getRoot().find('#pg-password-field');

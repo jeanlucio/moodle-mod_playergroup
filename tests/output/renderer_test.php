@@ -252,4 +252,50 @@ final class renderer_test extends advanced_testcase {
         $this->assertStringContainsString('Dragões do Norte', $html);
         $this->assertStringContainsString('Ana Silva', $html);
     }
+
+    /**
+     * Test that the join-group password field disables browser autofill.
+     *
+     * Regression: without an autocomplete hint, the browser silently offered the
+     * student's own saved site password in this field.
+     */
+    public function test_render_from_template_join_password_field_disables_autofill(): void {
+        $html = $this->renderer->render_from_template('mod_playergroup/modal_joingroup', []);
+
+        $this->assertStringContainsString('id="pg-join-password"', $html);
+        $this->assertStringContainsString('autocomplete="new-password"', $html);
+    }
+
+    /**
+     * Test that the create-group password field disables browser autofill.
+     *
+     * Regression: without an autocomplete hint, the browser silently offered the
+     * student's own saved site password in this field.
+     */
+    public function test_render_from_template_create_group_password_field_disables_autofill(): void {
+        $html = $this->renderer->render_from_template('mod_playergroup/modal_creategroup', []);
+
+        $this->assertStringContainsString('id="pg-grouppassword"', $html);
+        $this->assertStringContainsString('autocomplete="new-password"', $html);
+    }
+
+    /**
+     * Test that the edit-group password field disables browser autofill.
+     *
+     * Regression: without an autocomplete hint, the browser silently offered the
+     * student's own saved site password in this field.
+     */
+    public function test_render_from_template_edit_group_password_field_disables_autofill(): void {
+        $html = $this->renderer->render_from_template('mod_playergroup/modal_editgroup', [
+            'name'               => 'Test',
+            'description'        => '',
+            'badge'              => '',
+            'isprivacyopen'      => false,
+            'isprivacyprotected' => true,
+            'isprivacyclosed'    => false,
+        ]);
+
+        $this->assertStringContainsString('id="pg-edit-grouppassword"', $html);
+        $this->assertStringContainsString('autocomplete="new-password"', $html);
+    }
 }
