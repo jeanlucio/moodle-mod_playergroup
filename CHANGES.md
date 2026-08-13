@@ -2,6 +2,16 @@
 
 All notable changes to PlayerGroup are documented in this file.
 
+## [v1.3.2] — 2026-08-13
+
+### Security
+
+- The password field in the join, create, and edit group modals no longer offers to autofill the browser's saved site password
+
+### Fixed
+
+- Pressing Enter in the join/create/edit group password field no longer crashes the page; it now submits exactly like clicking Save
+
 ## [v1.3.1] — 2026-08-10
 
 ### Added
