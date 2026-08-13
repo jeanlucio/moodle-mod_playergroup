@@ -14,22 +14,23 @@ Behat suite for browser acceptance. Every CI push runs against the full matrix (
 | `completion/custom_completion_test.php` | 2 | Custom completion rule `completionjoingroup`: incomplete without a group, complete once the student belongs to a group registered for the activity |
 | `backup/restore_test.php` | 3 | Backup/restore round-trip for content-only and user-data modes; original course unaffected |
 | `local/group_lock_test.php` | 3 | Lock acquired when free; throws `grouplockbusy` when the resource is held by a genuinely different database connection (not just a second lock-factory instance on the same one); a different activity instance's lock is never blocked by another |
+| `local/member_list_test.php` | 4 | The leader is placed first regardless of their position in the input; non-leaders are sorted alphabetically; a list with no leader still sorts everyone alphabetically; an empty list returns an empty array |
 | `privacy/provider_test.php` | 11 | Metadata declaration, context discovery, data export (creator/receiver), bulk and targeted deletion |
-| **Subtotal** | **32** | |
+| **Subtotal** | **36** | |
 
 ### Web Services (`tests/external/`)
 
 | Test file | Cases | What is covered |
 |-----------|------:|----------------|
-| `create_group_test.php` | 11 | All privacy levels, password hashing, creator membership, capability enforcement, duplicate and invalid-cmid guards, completion tracking, blocked while another request holds the per-instance lock |
-| `join_group_test.php` | 10 | Success, completion tracking, already-in-group and closed-group rejections, protected-group joins (correct/wrong password), invited user joining via password, resolution of pending invites on join, blocked while another request holds the per-instance lock |
+| `create_group_test.php` | 12 | All privacy levels, password hashing, creator membership, capability enforcement, duplicate and invalid-cmid guards, completion tracking, throws and cleans up (no orphaned native group) when the joining member add fails, blocked while another request holds the per-instance lock |
+| `join_group_test.php` | 11 | Success, completion tracking, already-in-group and closed-group rejections, protected-group joins (correct password; wrong password rejected with a plain `moodle_exception`, never `coding_exception`), invited user joining via password, resolution of pending invites on join, throws instead of silently succeeding when the joining member add fails, blocked while another request holds the per-instance lock |
 | `leave_group_test.php` | 8 | Success, `canleave` guard, not-in-group guard, empty-group auto-deletion, leadership transfer, pending invite cancellation |
 | `edit_group_test.php` | 6 | Updates name/description/badge; a non-creator is rejected; a new password is hashed; leaving the password blank keeps the existing hash; switching away from protected clears it; a `groupid` from another activity instance is rejected |
-| `accept_invite_test.php` | 6 | Success, completion tracking (manual/automatic), wrong-user and already-handled rejections, blocked while another request holds the per-instance lock |
+| `accept_invite_test.php` | 7 | Success, completion tracking (manual/automatic), wrong-user and already-handled rejections, throws instead of silently succeeding when the joining member add fails, blocked while another request holds the per-instance lock |
 | `reject_invite_test.php` | 4 | Success, wrong-user rejection, already-handled rejection, invalid inviteid |
-| `send_invite_test.php` | 2 | Pending invite creation, re-inviting a student after they join and leave a group |
-| `get_activity_data_test.php` | 1 | The mobile/web payload includes each group's member list and leader flag, validated against `execute_returns()` — this is what the mobile app actually consumes |
-| **Subtotal** | **48** | |
+| `send_invite_test.php` | 3 | Pending invite creation, re-inviting a student after they join and leave a group, a sender without `moodle/course:viewparticipants` is rejected |
+| `get_activity_data_test.php` | 2 | The mobile/web payload includes each group's member list and leader flag, validated against `execute_returns()` — this is what the mobile app actually consumes; members are ordered leader-first, then alphabetically |
+| **Subtotal** | **53** | |
 
 ### Reports & Exports (`tests/controller/`)
 
@@ -43,9 +44,9 @@ Behat suite for browser acceptance. Every CI push runs against the full matrix (
 
 | Test file | Cases | What is covered |
 |-----------|------:|----------------|
-| `renderer_test.php` | 6 | Student view empty/populated states; activity log report empty/populated states; groups-and-members report empty/populated states |
-| `mobile_test.php` | 3 | `mobile_init` returns `init.js` verbatim; `mobile_course_view` returns the rendered page plus group/member data; capability enforcement |
-| **Subtotal** | **9** | |
+| `renderer_test.php` | 10 | Student view empty/populated states; the group card's `data-groupname` attribute uses the formatted (escaped) name, never the raw one; activity log report empty/populated states; groups-and-members report empty/populated states; the join/create/edit group password fields all set `autocomplete="new-password"` so the browser never offers to fill in the student's own saved site password |
+| `mobile_test.php` | 4 | `mobile_init` returns `init.js` verbatim; `mobile_course_view` returns the rendered page plus group/member data; capability enforcement; the rendered page binds the group card's description to the sanitised field, never the raw one |
+| **Subtotal** | **14** | |
 
 ### Public API (`tests/api/`)
 
@@ -54,7 +55,7 @@ Behat suite for browser acceptance. Every CI push runs against the full matrix (
 | `group_info_test.php` | 6 | No group returns null; a group's summary fields; default badge fallback; bulk badge lookup across several groups; empty input; a native group with no PlayerGroup metadata is omitted |
 | **Subtotal** | **6** | |
 
-| **Grand Total** | **100** | |
+| **Grand Total** | **114** | |
 
 ```bash
 vendor/bin/phpunit --testsuite mod_playergroup
@@ -69,6 +70,7 @@ vendor/bin/phpunit --testsuite mod_playergroup
 | `output\mobile` | 100% |
 | `output\renderer` | 100% |
 | `local\group_lock` | 100% |
+| `local\member_list` | 100% |
 | `controller\export_groups` | 98% |
 | `privacy\provider` | 94% |
 | `instance_manager` | 93% |
@@ -92,10 +94,11 @@ event actually fires, so the instrumentation never sees them.
 |--------------|----------:|----------------|
 | `create_group.feature` | 2 | Student creates an open group; creation blocked after already joining one |
 | `join_group.feature` | 2 | Second student joins and sees the My Group badge; one-group-per-student enforcement |
+| `join_protected_group.feature` | 3 | Pressing enter in the password field joins the group, exactly like clicking Save (native form submission no longer drops the page's `id` parameter and crashes); the wrong password shows a dialog on the activity page itself, never a system error page; the password field carries `autocomplete="new-password"` |
 | `view.feature` | 3 | Student sees the empty state and Create Group button; report link visibility by role |
 | `invite_colleagues.feature` | 1 | A group creator sees an enrolled colleague listed in the invite modal |
 | `view_members.feature` | 1 | A student opens the member list and sees both members, with the leader marked |
-| **Total** | **9** | |
+| **Total** | **12** | |
 
 ```bash
 php admin/tool/behat/cli/init.php

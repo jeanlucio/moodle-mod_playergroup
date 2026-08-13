@@ -9,12 +9,12 @@ PostgreSQL & MariaDB).
 
 | Area | Files | Cases |
 |------|------:|------:|
-| Web services (`tests/external/`) | 8 | 48 |
-| Core (`lib_test.php`, grading, completion, locking, backup, privacy) | 7 | 32 |
+| Web services (`tests/external/`) | 8 | 53 |
+| Core (`lib_test.php`, grading, completion, locking, member ordering, backup, privacy) | 7 | 36 |
 | Reports & exports (`tests/controller/`) | 2 | 5 |
-| Output & mobile app (`tests/output/`) | 2 | 9 |
+| Output & mobile app (`tests/output/`) | 2 | 14 |
 | Public API (`tests/api/`) | 1 | 6 |
-| **Grand Total** | **19** | **100** |
+| **Grand Total** | **20** | **114** |
 
 ```bash
 vendor/bin/phpunit --testsuite mod_playergroup
@@ -28,10 +28,11 @@ vendor/bin/phpunit --testsuite mod_playergroup
 |--------------|----------:|
 | `create_group.feature` | 2 |
 | `join_group.feature` | 2 |
+| `join_protected_group.feature` | 3 |
 | `view.feature` | 3 |
 | `invite_colleagues.feature` | 1 |
 | `view_members.feature` | 1 |
-| **Total** | **9** |
+| **Total** | **12** |
 
 ```bash
 php admin/tool/behat/cli/init.php

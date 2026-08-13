@@ -9,12 +9,12 @@ completa (Moodle 4.5 → 5.x, PostgreSQL e MariaDB).
 
 | Área | Arquivos | Casos |
 |------|---------:|------:|
-| Web services (`tests/external/`) | 8 | 48 |
-| Núcleo (`lib_test.php`, notas, conclusão, lock, backup, privacidade) | 7 | 32 |
+| Web services (`tests/external/`) | 8 | 53 |
+| Núcleo (`lib_test.php`, notas, conclusão, lock, ordenação de integrantes, backup, privacidade) | 7 | 36 |
 | Relatórios e exportações (`tests/controller/`) | 2 | 5 |
-| Saída e app mobile (`tests/output/`) | 2 | 9 |
+| Saída e app mobile (`tests/output/`) | 2 | 14 |
 | API pública (`tests/api/`) | 1 | 6 |
-| **Total Geral** | **19** | **100** |
+| **Total Geral** | **20** | **114** |
 
 ```bash
 vendor/bin/phpunit --testsuite mod_playergroup
@@ -28,10 +28,11 @@ vendor/bin/phpunit --testsuite mod_playergroup
 |--------------------|--------:|
 | `create_group.feature` | 2 |
 | `join_group.feature` | 2 |
+| `join_protected_group.feature` | 3 |
 | `view.feature` | 3 |
 | `invite_colleagues.feature` | 1 |
 | `view_members.feature` | 1 |
-| **Total** | **9** |
+| **Total** | **12** |
 
 ```bash
 php admin/tool/behat/cli/init.php
