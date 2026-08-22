@@ -83,7 +83,7 @@
 
             <p class="card-text mb-4">{{{description}}}</p>
 
-            <div class="mt-auto d-flex justify-content-between align-items-center pg-card-footer">
+            <div class="mt-auto d-flex justify-content-between align-items-end pg-card-footer">
                 <button type="button" class="btn btn-outline-secondary btn-sm pg-btn-viewmembers"
                         data-action="viewmembers"
                         data-groupname="{{name}}"
@@ -93,7 +93,7 @@
                     {{membercount}} / {{maxmembers}}
                 </button>
 
-                <div class="pg-card-actions">
+                <div class="pg-card-actions d-grid gap-2">
                     {{#caninvite}}
                         <button type="button" class="btn btn-outline-primary btn-sm"
                                 data-action="openinvites"

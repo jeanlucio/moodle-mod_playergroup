@@ -42,18 +42,14 @@
     gap: 0.5rem;
 }
 
-.pg-card-actions {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: 0.5rem;
-    align-items: center;
-    margin-inline-start: auto;
-}
-
+/*
+ * Actions stack vertically (Bootstrap d-grid, set in the template) instead of wrapping
+ * inline: with 2-3 buttons (invite/edit/leave), inline wrapping split them across two
+ * rows and made the footer taller than the single-line viewmembers button, leaving it
+ * visually stranded mid-card instead of flush with the card's bottom edge.
+ */
 .path-mod-playergroup .pg-card-actions .btn {
     white-space: nowrap;
-    flex-shrink: 0;
 }
 
 .pg-invite-item {
