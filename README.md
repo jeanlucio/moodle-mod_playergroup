@@ -33,7 +33,7 @@ coverage, and security details.
 | Component | Version |
 |-----------|---------|
 | Moodle    | 4.5+    |
-| PHP       | 8.2+    |
+| PHP       | 8.1+    |
 
 ### 🛠️ Installation & Configuration
 
@@ -87,7 +87,7 @@ de testes automatizados e cobertura, e detalhes de segurança.
 | Componente | Versão |
 |------------|--------|
 | Moodle     | 4.5+   |
-| PHP        | 8.2+   |
+| PHP        | 8.1+   |
 
 ### 🛠️ Instalação e Configuração
 

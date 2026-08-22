@@ -3,4 +3,4 @@
 | Component | Version |
 |-----------|---------|
 | Moodle    | 4.5+    |
-| PHP       | 8.2+    |
+| PHP       | 8.1+    |
