@@ -50,6 +50,18 @@ function playergroup_supports(string $feature): mixed {
 }
 
 /**
+ * Tells Moodle this plugin's icon is branded, disabling the purpose-based recolour filter.
+ *
+ * Without this, core recolours pix/icon.svg to a flat purpose colour on the course page
+ * and activity chooser, discarding the icon's own authored colour.
+ *
+ * @return bool
+ */
+function playergroup_is_branded(): bool {
+    return true;
+}
+
+/**
  * Resolves the grouping ID from the form submission data.
  *
  * Handles three modes: create a new grouping, use an existing one, or none.
