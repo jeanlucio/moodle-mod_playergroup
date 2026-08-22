@@ -210,14 +210,35 @@ body {
   border-top: 1px solid var(--border);
 }
 
-.screenshot-gallery {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 1rem;
+.screenshot-carousel-wrap {
   margin: 1.5rem 0;
 }
 
+.screenshot-carousel {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.carousel-track {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.carousel-slide {
+  display: none;
+  margin: 0;
+  text-align: center;
+}
+
+.carousel-slide.is-active {
+  display: block;
+}
+
 .screenshot-thumb {
+  display: block;
+  width: 100%;
   padding: 0;
   background: none;
   border: 1px solid var(--border);
@@ -230,13 +251,73 @@ body {
 .screenshot-thumb img {
   display: block;
   width: 100%;
-  height: 140px;
-  object-fit: cover;
+  max-height: 480px;
+  object-fit: contain;
+  background-color: var(--code-bg);
 }
 
 .screenshot-thumb:hover,
 .screenshot-thumb:focus-visible {
   border-color: var(--accent-dark);
+}
+
+.carousel-caption {
+  margin: 0.6rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.carousel-arrow {
+  flex: 0 0 auto;
+  width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+  color: var(--text);
+  background-color: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.carousel-arrow:hover,
+.carousel-arrow:focus-visible {
+  color: var(--accent-dark);
+  border-color: var(--accent-dark);
+}
+
+.carousel-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+}
+
+.carousel-counter {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.carousel-dots {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.carousel-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  padding: 0;
+  background-color: var(--border);
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.carousel-dot.is-active {
+  background-color: var(--accent-dark);
 }
 
 .lightbox-overlay {
@@ -319,6 +400,16 @@ body {
        with long unbreakable filenames) grows to its own content width
        instead of being constrained and scrolling horizontally. */
     align-items: stretch;
+  }
+
+  .screenshot-carousel {
+    gap: 0.4rem;
+  }
+
+  .carousel-arrow {
+    width: 2rem;
+    height: 2rem;
+    font-size: 1.1rem;
   }
 
   .sidebar {
