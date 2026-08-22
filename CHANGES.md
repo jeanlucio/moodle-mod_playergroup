@@ -2,6 +2,13 @@
 
 All notable changes to PlayerGroup are documented in this file.
 
+## [v1.3.3] — 2026-08-22
+
+### Fixed
+
+- Activity icon on the course page and activity chooser is no longer recoloured to a flat purpose colour, so it now shows its own authored colour on both Moodle 4.5 and 5.x
+- Action buttons (invite/edit/leave) on a group's card no longer wrap across rows and detach the participant-count button from the card's bottom edge when all three appear together
+
 ## [v1.3.2] — 2026-08-13
 
 ### Security
