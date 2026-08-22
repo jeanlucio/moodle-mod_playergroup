@@ -21,9 +21,9 @@ diretamente na página da atividade — sem precisar de intervenção do profess
 formação manual de grupos por uma experiência de autoatendimento que funciona em qualquer
 formato de curso.
 
-Use a barra lateral para pular direto a qualquer seção desta página.
+<p class="page-hint">👈 Use a barra lateral para pular direto a qualquer seção desta página.</p>
 
-Código-fonte: [github.com/jeanlucio/moodle-mod_playergroup](https://github.com/jeanlucio/moodle-mod_playergroup)
+<p class="page-hint">🔗 Código-fonte: <a href="https://github.com/jeanlucio/moodle-mod_playergroup">github.com/jeanlucio/moodle-mod_playergroup</a></p>
 
 ---
 

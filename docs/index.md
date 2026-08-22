@@ -20,9 +20,9 @@ lang: en
 page — no teacher intervention needed. It replaces manual group assignment with a self-service
 experience that works for any course format.
 
-Use the sidebar to jump to any section on this page.
+<p class="page-hint">👈 Use the sidebar to jump to any section on this page.</p>
 
-Source code: [github.com/jeanlucio/moodle-mod_playergroup](https://github.com/jeanlucio/moodle-mod_playergroup)
+<p class="page-hint">🔗 Source code: <a href="https://github.com/jeanlucio/moodle-mod_playergroup">github.com/jeanlucio/moodle-mod_playergroup</a></p>
 
 ---
 
