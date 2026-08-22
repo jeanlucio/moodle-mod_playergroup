@@ -54,6 +54,7 @@ documentation.
 
 Found a bug or have a question? Open an issue on the
 [issue tracker](https://github.com/jeanlucio/moodle-mod_playergroup/issues).
+For general questions or ideas, use [GitHub Discussions](https://github.com/jeanlucio/moodle-mod_playergroup/discussions).
 
 ### 📄 License
 
@@ -108,6 +109,7 @@ documentação completa.
 
 Encontrou um bug ou tem alguma dúvida? Abra uma issue no
 [rastreador de issues](https://github.com/jeanlucio/moodle-mod_playergroup/issues).
+Para perguntas gerais ou ideias, use as [Discussions do GitHub](https://github.com/jeanlucio/moodle-mod_playergroup/discussions).
 
 ### 📄 Licença
 
