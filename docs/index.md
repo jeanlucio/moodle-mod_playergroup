@@ -22,8 +22,6 @@ experience that works for any course format.
 
 <p class="page-hint">👈 Use the sidebar to jump to any section on this page.</p>
 
-<p class="page-hint">🔗 Source code: <a href="https://github.com/jeanlucio/moodle-mod_playergroup">github.com/jeanlucio/moodle-mod_playergroup</a></p>
-
 ---
 
 <span id="screenshots"></span>

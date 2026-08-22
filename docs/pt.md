@@ -23,8 +23,6 @@ formato de curso.
 
 <p class="page-hint">👈 Use a barra lateral para pular direto a qualquer seção desta página.</p>
 
-<p class="page-hint">🔗 Código-fonte: <a href="https://github.com/jeanlucio/moodle-mod_playergroup">github.com/jeanlucio/moodle-mod_playergroup</a></p>
-
 ---
 
 <span id="screenshots"></span>
