@@ -43,11 +43,19 @@
 }
 
 /*
- * Actions stack vertically (Bootstrap d-grid, set in the template) instead of wrapping
- * inline: with 2-3 buttons (invite/edit/leave), inline wrapping split them across two
- * rows and made the footer taller than the single-line viewmembers button, leaving it
- * visually stranded mid-card instead of flush with the card's bottom edge.
+ * Actions stack vertically instead of wrapping inline: with 2-3 buttons
+ * (invite/edit/leave), inline wrapping split them across two rows and made the footer
+ * taller than the single-line viewmembers button, leaving it visually stranded mid-card
+ * instead of flush with the card's bottom edge. Custom flex column (not Bootstrap's
+ * d-grid utility, BS5-only) so the stack renders the same on Moodle 4.5's Bootstrap 4.
  */
+.path-mod-playergroup .pg-card-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+}
+
 .path-mod-playergroup .pg-card-actions .btn {
     white-space: nowrap;
 }
