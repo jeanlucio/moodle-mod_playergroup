@@ -15,13 +15,14 @@ Navegue pelas setas, pelos pontos, ou pelas teclas de seta do teclado. Clique na
           <img src="{{ '/assets/img/screenshots/' | append: shot.file | relative_url }}"
               alt="{{ shot.caption_pt }}" loading="lazy">
         </button>
-        <p class="carousel-caption">{{ shot.caption_pt }}</p>
       </div>
     {% endfor %}
     </div>
 
     <button type="button" class="carousel-arrow carousel-next" aria-label="Próxima tela">&#8250;</button>
   </div>
+
+  <p class="carousel-caption">{{ site.data.screenshots.first.caption_pt }}</p>
 
   <div class="carousel-meta">
     <p class="carousel-counter"><span class="carousel-current">1</span> / {{ site.data.screenshots.size }}</p>
