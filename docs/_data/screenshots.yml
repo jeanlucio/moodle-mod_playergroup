@@ -1,0 +1,15 @@
+# Each entry needs an image at docs/assets/img/screenshots/<file>, plus an
+# English and a Portuguese caption. The screenshots.md pages (en/pt) loop over
+# this list, so adding a new screenshot never touches the gallery markup.
+- file: course-overview.png
+  caption_en: "The activity appears on the course page like any other resource"
+  caption_pt: "A atividade aparece na página do curso como qualquer outro recurso"
+- file: groups-list.png
+  caption_en: "Students browse open groups and join one that fits, or create their own"
+  caption_pt: "Estudantes navegam pelos grupos abertos e entram em um que combine, ou criam o próprio"
+- file: teacher-report-members.png
+  caption_en: "Teachers get a full class roster in one table — group, privacy, role, and name — exportable to CSV or Excel"
+  caption_pt: "Professores têm a lista completa da turma em uma única tabela — grupo, privacidade, papel e nome — exportável para CSV ou Excel"
+- file: teacher-report-log.png
+  caption_en: "An audit log of every group action (created, joined, left), also exportable"
+  caption_pt: "Um registro de auditoria de cada ação nos grupos (criado, entrou, saiu), também exportável"

@@ -27,6 +27,9 @@ Código-fonte: [github.com/jeanlucio/moodle-mod_playergroup](https://github.com/
 
 ---
 
+<span id="screenshots"></span>
+{% include_relative pt/screenshots.md %}
+
 <span id="features"></span>
 {% include_relative pt/features.md %}
 
