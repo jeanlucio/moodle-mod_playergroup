@@ -251,7 +251,7 @@ body {
 .screenshot-thumb img {
   display: block;
   width: 100%;
-  max-height: 480px;
+  height: 340px;
   object-fit: contain;
   background-color: var(--code-bg);
 }
@@ -404,6 +404,10 @@ body {
 
   .screenshot-carousel {
     gap: 0.4rem;
+  }
+
+  .screenshot-thumb img {
+    height: 220px;
   }
 
   .carousel-arrow {
