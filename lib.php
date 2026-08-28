@@ -174,7 +174,7 @@ function playergroup_delete_instance(int $id): bool {
  * Creates or updates the grade item in the gradebook for a playergroup instance.
  *
  * @param \stdClass $playergroup The playergroup instance record.
- * @param mixed $grades Grade data, null, or GRADE_UPDATE_ITEM_ONLY.
+ * @param mixed $grades Grade data, null, or 'reset' to clear recorded grades.
  * @return int GRADE_UPDATE_OK or GRADE_UPDATE_FAILED.
  */
 function playergroup_grade_item_update(\stdClass $playergroup, mixed $grades = null): int {
@@ -197,12 +197,13 @@ function playergroup_grade_item_update(\stdClass $playergroup, mixed $grades = n
         $params = ['gradetype' => GRADE_TYPE_NONE];
     }
 
-    if ($grades === 'reset') {
+    $isreset = $grades === 'reset';
+    if ($isreset) {
         $params['reset'] = true;
         $grades = null;
     }
 
-    return grade_update(
+    $result = grade_update(
         'mod/playergroup',
         $playergroup->courseid,
         'mod',
@@ -212,6 +213,27 @@ function playergroup_grade_item_update(\stdClass $playergroup, mixed $grades = n
         $grades,
         $params
     );
+
+    // The core grade_update() function silently ignores a 'gradepass' key in
+    // $itemdetails: its own internal allow-list (lib/gradelib.php) only lets
+    // itemname/idnumber/gradetype/grademax/grademin/scaleid/multfactor/plusfactor/
+    // deleted/hidden through. The pass grade has to be applied directly on the
+    // grade_item instead, mirroring how mod_workshop does it.
+    if ($result === GRADE_UPDATE_OK && !$isreset && !empty($playergroup->gradepass)) {
+        $gradeitem = \grade_item::fetch([
+            'itemtype' => 'mod',
+            'itemmodule' => 'playergroup',
+            'iteminstance' => $playergroup->id,
+            'itemnumber' => 0,
+            'courseid' => $playergroup->courseid,
+        ]);
+        if ($gradeitem && (float)$gradeitem->gradepass !== (float)$playergroup->gradepass) {
+            $gradeitem->gradepass = (float)$playergroup->gradepass;
+            $gradeitem->update();
+        }
+    }
+
+    return $result;
 }
 
 /**
