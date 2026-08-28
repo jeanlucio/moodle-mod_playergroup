@@ -10,17 +10,17 @@ PostgreSQL & MariaDB).
 | Area | Files | Cases |
 |------|------:|------:|
 | Web services (`tests/external/`) | 8 | 53 |
-| Core (`lib_test.php`, grading, completion, locking, member ordering, backup, privacy) | 7 | 36 |
+| Core (`lib_test.php`, grading, completion, locking, member ordering, backup, privacy) | 8 | 37 |
 | Reports & exports (`tests/controller/`) | 2 | 5 |
 | Output & mobile app (`tests/output/`) | 2 | 14 |
 | Public API (`tests/api/`) | 1 | 6 |
-| **Grand Total** | **20** | **114** |
+| **Grand Total** | **21** | **115** |
 
 ```bash
 vendor/bin/phpunit --testsuite mod_playergroup
 ```
 
-**Overall line coverage** (`moodle-coverage`, PHPUnit + Xdebug): **80%**.
+**Overall line coverage** (`moodle-coverage`, PHPUnit + Xdebug): **82%**.
 
 ### Behat — Acceptance Tests
 

@@ -10,13 +10,14 @@ completa (Moodle 4.5 → 5.x, PostgreSQL e MariaDB).
 | Arquivo de teste | Casos | O que é coberto |
 |-----------------|------:|----------------|
 | `lib_test.php` | 9 | Ciclo de vida `add_instance`/`delete_instance`, declaração de funcionalidades suportadas; excluir uma atividade apontada para um agrupamento pré-existente só remove os grupos que esta instância registrou, deixando um grupo alheio e o próprio agrupamento intactos; um agrupamento auto-criado (modo "novo") ainda é removido quando fica vazio |
+| `lib_grade_item_update_test.php` | 1 | A nota de aprovação configurada realmente chega ao `grade_item` do diário de notas, não só que `grade_update()` devolve `GRADE_UPDATE_OK` |
 | `playergroup_grade_test.php` | 4 | Atribuição de nota ao entrar, atribuição em lote, persistência da nota após sair, sem nota quando desabilitado |
 | `completion/custom_completion_test.php` | 2 | Regra de conclusão personalizada `completionjoingroup`: incompleta sem grupo, completa quando o estudante pertence a um grupo registrado na atividade |
 | `backup/restore_test.php` | 3 | Round-trip de backup/restore em modo conteúdo e com dados de usuário; curso original não afetado |
 | `local/group_lock_test.php` | 3 | Lock adquirido quando livre; lança `grouplockbusy` quando o recurso está retido por uma conexão de banco genuinamente diferente (não só uma segunda instância da fábrica de locks na mesma conexão); o lock de uma instância de atividade diferente nunca é bloqueado pelo de outra |
 | `local/member_list_test.php` | 4 | O líder é colocado primeiro independente da posição na entrada; os demais integrantes são ordenados alfabeticamente; uma lista sem líder ainda ordena todos alfabeticamente; uma lista vazia devolve um array vazio |
 | `privacy/provider_test.php` | 11 | Declaração de metadados, descoberta de contextos, exportação de dados (criador/destinatário), exclusão em lote e individual |
-| **Subtotal** | **36** | |
+| **Subtotal** | **37** | |
 
 ### Web Services (`tests/external/`)
 
@@ -55,7 +56,7 @@ completa (Moodle 4.5 → 5.x, PostgreSQL e MariaDB).
 | `group_info_test.php` | 6 | Sem grupo devolve null; os campos do resumo de um grupo; emblema padrão como fallback; busca de emblemas em lote para vários grupos; entrada vazia; um grupo nativo sem metadados do PlayerGroup é omitido |
 | **Subtotal** | **6** | |
 
-| **Total Geral** | **114** | |
+| **Total Geral** | **115** | |
 
 ```bash
 vendor/bin/phpunit --testsuite mod_playergroup
@@ -83,7 +84,7 @@ vendor/bin/phpunit --testsuite mod_playergroup
 | `external\get_activity_data` | 89% |
 | `external\reject_invite` | 88% |
 | `completion\custom_completion` | 56% |
-| **Geral** | **80%** |
+| **Geral** | **82%** |
 
 As classes `event/*.php` não aparecem na lista — o Moodle só as carrega sob demanda quando o
 evento correspondente de fato ocorre, então a instrumentação nunca chega a vê-las.

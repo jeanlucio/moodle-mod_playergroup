@@ -2,6 +2,12 @@
 
 All notable changes to PlayerGroup are documented in this file.
 
+## [v1.3.4] — 2026-08-28
+
+### Fixed
+
+- Grade to pass configured in the activity settings now actually reaches the gradebook item; it was previously accepted by the form but silently dropped by Moodle core, so completion/grade-pass checks never saw it
+
 ## [v1.3.3] — 2026-08-22
 
 ### Fixed

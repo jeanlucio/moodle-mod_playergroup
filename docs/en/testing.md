@@ -10,13 +10,14 @@ Behat suite for browser acceptance. Every CI push runs against the full matrix (
 | Test file | Cases | What is covered |
 |-----------|------:|----------------|
 | `lib_test.php` | 9 | `add_instance`/`delete_instance` lifecycle, supported-features declaration; deleting an activity pointed at a pre-existing grouping only removes groups this instance registered, leaving a foreign group and the grouping itself untouched; an auto-created ("new" mode) grouping is still removed once left empty |
+| `lib_grade_item_update_test.php` | 1 | A configured pass grade actually lands on the gradebook's `grade_item`, not just that `grade_update()` returns `GRADE_UPDATE_OK` |
 | `playergroup_grade_test.php` | 4 | Grade award on join, bulk award, grade persistence after leaving, no grade when disabled |
 | `completion/custom_completion_test.php` | 2 | Custom completion rule `completionjoingroup`: incomplete without a group, complete once the student belongs to a group registered for the activity |
 | `backup/restore_test.php` | 3 | Backup/restore round-trip for content-only and user-data modes; original course unaffected |
 | `local/group_lock_test.php` | 3 | Lock acquired when free; throws `grouplockbusy` when the resource is held by a genuinely different database connection (not just a second lock-factory instance on the same one); a different activity instance's lock is never blocked by another |
 | `local/member_list_test.php` | 4 | The leader is placed first regardless of their position in the input; non-leaders are sorted alphabetically; a list with no leader still sorts everyone alphabetically; an empty list returns an empty array |
 | `privacy/provider_test.php` | 11 | Metadata declaration, context discovery, data export (creator/receiver), bulk and targeted deletion |
-| **Subtotal** | **36** | |
+| **Subtotal** | **37** | |
 
 ### Web Services (`tests/external/`)
 
@@ -55,7 +56,7 @@ Behat suite for browser acceptance. Every CI push runs against the full matrix (
 | `group_info_test.php` | 6 | No group returns null; a group's summary fields; default badge fallback; bulk badge lookup across several groups; empty input; a native group with no PlayerGroup metadata is omitted |
 | **Subtotal** | **6** | |
 
-| **Grand Total** | **114** | |
+| **Grand Total** | **115** | |
 
 ```bash
 vendor/bin/phpunit --testsuite mod_playergroup
@@ -83,7 +84,7 @@ vendor/bin/phpunit --testsuite mod_playergroup
 | `external\get_activity_data` | 89% |
 | `external\reject_invite` | 88% |
 | `completion\custom_completion` | 56% |
-| **Overall** | **80%** |
+| **Overall** | **82%** |
 
 The `event/*.php` classes aren't listed — Moodle only loads them lazily when the corresponding
 event actually fires, so the instrumentation never sees them.
