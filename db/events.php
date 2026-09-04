@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Version details for the PlayerGroup module.
+ * Event observers for mod_playergroup.
  *
  * @package    mod_playergroup
  * @copyright  2026 Jean Lúcio
@@ -24,9 +24,9 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'mod_playergroup';
-$plugin->version   = 2026090400; // YYYYMMDDXX format.
-$plugin->requires  = 2024100700; // Moodle 4.5.
-$plugin->supported = [405, 502];
-$plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = 'v1.3.5';
+$observers = [
+    [
+        'eventname' => \core\event\group_member_removed::class,
+        'callback'  => [\mod_playergroup\observer::class, 'group_member_removed'],
+    ],
+];

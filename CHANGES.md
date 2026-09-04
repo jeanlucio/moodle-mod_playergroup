@@ -2,6 +2,16 @@
 
 All notable changes to PlayerGroup are documented in this file.
 
+## [v1.3.5] — 2026-09-04
+
+### Fixed
+
+- "Delete empty groups" now also triggers when a group is emptied by any route other than a
+  student using the activity's own "Leave group" action — a teacher removing the last member
+  from the course's native Groups admin page, or the last member being unenrolled from the
+  course. Previously the cleanup only ran inside the leave-group action itself, so a group
+  emptied any other way stayed behind, still visible and still joinable.
+
 ## [v1.3.4] — 2026-08-28
 
 ### Fixed
