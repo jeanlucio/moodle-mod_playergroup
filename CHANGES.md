@@ -2,6 +2,12 @@
 
 All notable changes to PlayerGroup are documented in this file.
 
+## [v1.3.6] — 2026-09-04
+
+No functional changes. Republished v1.3.5's code under a new version number after the
+Marketplace's own automated test failed to read a log for that release (unrelated to the
+plugin's code or its CI, which had already passed).
+
 ## [v1.3.5] — 2026-09-04
 
 ### Fixed
