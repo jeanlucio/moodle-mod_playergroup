@@ -7,21 +7,20 @@
 # Required secret: MOODLE_MARKETPLACE_TOKEN
 # (generate at https://marketplace.moodle.com/account/security)
 #
-# NOTE: automatic publishing on tag push is disabled for now (the "push: tags" trigger
-# below is commented out) while this is being verified manually via workflow_dispatch.
-# Uncomment it once a manual run has been confirmed to publish correctly.
-#
 # The previous version of this file targeted the legacy Plugins directory endpoint
 # (local_plugins_add_version at moodle.org), retired when the Plugins directory went
 # read-only on 2026-07-14 in favour of the Marketplace. This replaces it with the
 # current Marketplace API.
 #
+# Automatic publishing on tag push, confirmed working manually via workflow_dispatch
+# on v1.3.5 and v1.3.6 (2026-09-04, both HTTP 201) before being enabled here.
+#
 name: Releasing in Moodle Marketplace
 
 on:
-  # push:
-  #   tags:
-  #     - v*
+  push:
+    tags:
+      - v*
 
   workflow_dispatch:
     inputs:
