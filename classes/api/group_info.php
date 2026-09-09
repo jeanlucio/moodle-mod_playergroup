@@ -30,8 +30,15 @@ namespace mod_playergroup\api;
  */
 class group_info {
     /**
-     * Returns summary information about the first playergroup the user belongs
-     * to in the given course, or null if the user has no group.
+     * Returns summary information about a playergroup the user belongs to in the
+     * given course, or null if the user has no group.
+     *
+     * A course can host multiple PlayerGroup activity instances (each with its own
+     * grouping), and a user can be a member of a group in more than one of them at
+     * the same time — joining is only exclusive within a single instance, not across
+     * the whole course. When the user belongs to more than one, this returns the
+     * group most recently joined (highest {groups_members}.timeadded), not
+     * necessarily tied to a specific instance.
      *
      * The returned object contains:
      *  - int    groupid
