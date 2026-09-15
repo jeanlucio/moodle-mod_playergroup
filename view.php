@@ -41,6 +41,7 @@ $PAGE->set_url('/mod/playergroup/view.php', ['id' => $cm->id]);
 $PAGE->set_title(format_string($playergroup->name));
 $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_context($context);
+$PAGE->set_pagelayout('incourse');
 
 // Record that the student has viewed this activity (completion tracking).
 $completion = new completion_info($course);
@@ -57,7 +58,6 @@ $event->add_record_snapshot('playergroup', $playergroup);
 $event->trigger();
 
 echo $OUTPUT->header();
-echo $OUTPUT->heading(format_string($playergroup->name));
 
 // Determine whether the activity is within the configured availability window.
 $now = time();
