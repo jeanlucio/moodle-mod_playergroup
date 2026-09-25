@@ -2,6 +2,10 @@
 
 All notable changes to PlayerGroup are documented in this file.
 
+## [v1.3.7] — 2026-09-25
+
+Tested and confirmed compatible with Moodle 5.3.
+
 ## [v1.3.6] — 2026-09-04
 
 No functional changes. Republished v1.3.5's code under a new version number after the
