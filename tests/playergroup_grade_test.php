@@ -65,17 +65,18 @@ final class playergroup_grade_test extends advanced_testcase {
      * Register a user as a member of a new group inside the given activity.
      *
      * @param \stdClass $playergroup The playergroup instance record.
-     * @param \stdClass $user
+     * @param \stdClass $user The student joining the group.
+     * @param int|null $timeadded When the user joined (null = now).
      * @return int The group ID.
      */
-    private function add_to_group(\stdClass $playergroup, \stdClass $user): int {
+    private function add_to_group(\stdClass $playergroup, \stdClass $user, ?int $timeadded = null): int {
         global $DB;
 
         $group = $this->getDataGenerator()->create_group(['courseid' => $playergroup->course]);
         $DB->insert_record('groups_members', (object) [
             'groupid'   => $group->id,
             'userid'    => $user->id,
-            'timeadded' => time(),
+            'timeadded' => $timeadded ?? time(),
             'component' => '',
             'itemid'    => 0,
         ]);
@@ -182,5 +183,62 @@ final class playergroup_grade_test extends advanced_testcase {
         playergroup_update_grades($playergroup, $user->id);
 
         $this->assertNull($this->get_rawgrade($playergroup, $user->id));
+    }
+
+    /**
+     * Return the grade_grade a user holds in the given instance.
+     *
+     * @param \stdClass $playergroup The playergroup instance record.
+     * @param int $userid The student whose grade is fetched.
+     * @return \grade_grade
+     */
+    private function get_grade(\stdClass $playergroup, int $userid): \grade_grade {
+        $gradeitem = \grade_item::fetch([
+            'itemtype'     => 'mod',
+            'itemmodule'   => 'playergroup',
+            'iteminstance' => $playergroup->id,
+            'itemnumber'   => 0,
+            'courseid'     => $playergroup->course,
+        ]);
+        return $gradeitem->get_grade($userid, false);
+    }
+
+    /**
+     * The grade is earned the moment the student joins a group, so that is the submission
+     * date the gradebook must carry — consumers such as late-penalty plugins read it.
+     */
+    public function test_reports_join_time_as_datesubmitted(): void {
+        $course = $this->getDataGenerator()->create_course();
+        $playergroup = $this->create_graded_activity($course, 10.0);
+        $user = $this->getDataGenerator()->create_user();
+        $joined = 1700000000;
+        $this->add_to_group($playergroup, $user, $joined);
+
+        playergroup_update_grades($playergroup, $user->id);
+
+        $this->assertEquals($joined, $this->get_grade($playergroup, $user->id)->get_datesubmitted());
+    }
+
+    /**
+     * Leaving and joining another group later re-sends the grade, but it was earned at the
+     * first join: the submission date must not move to the rejoin, nor on a bulk refresh.
+     */
+    public function test_rejoin_keeps_first_datesubmitted(): void {
+        global $DB;
+
+        $course = $this->getDataGenerator()->create_course();
+        $playergroup = $this->create_graded_activity($course, 10.0);
+        $user = $this->getDataGenerator()->create_user();
+        $firstjoin = 1700000000;
+        $groupid = $this->add_to_group($playergroup, $user, $firstjoin);
+        playergroup_update_grades($playergroup, $user->id);
+
+        $DB->delete_records('groups_members', ['groupid' => $groupid, 'userid' => $user->id]);
+        $this->add_to_group($playergroup, $user, $firstjoin + 30 * DAYSECS);
+        playergroup_update_grades($playergroup, $user->id);
+        $this->assertEquals($firstjoin, $this->get_grade($playergroup, $user->id)->get_datesubmitted());
+
+        playergroup_update_grades($playergroup);
+        $this->assertEquals($firstjoin, $this->get_grade($playergroup, $user->id)->get_datesubmitted());
     }
 }

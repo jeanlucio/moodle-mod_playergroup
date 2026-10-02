@@ -255,30 +255,44 @@ function playergroup_update_grades(\stdClass $playergroup, int $userid = 0): voi
         return;
     }
 
+    // The grade is earned once, the first time the student joins a group, and that is the
+    // submission date reported to the gradebook. A grade already recorded keeps its own
+    // date: after leaving and joining another group, the earliest current membership is
+    // the rejoin, which would otherwise look like a new, possibly late, submission.
+    $params = ['playergroupid' => $playergroup->id];
+    $userfilter = '';
     if ($userid > 0) {
-        $grade           = new \stdClass();
-        $grade->userid   = $userid;
-        $grade->rawgrade = (float) $playergroup->grade;
-        playergroup_grade_item_update($playergroup, [$userid => $grade]);
-        return;
+        $userfilter = 'AND gm.userid = :userid';
+        $params['userid'] = $userid;
     }
-
-    // Bulk: award grade to all students currently in a group in this activity.
-    $sql = "SELECT DISTINCT gm.userid
+    $sql = "SELECT gm.userid, MIN(gm.timeadded) AS timejoined, MIN(gg.timecreated) AS timegranted
               FROM {groups_members} gm
               JOIN {playergroup_meta} pm ON pm.groupid = gm.groupid
-             WHERE pm.playergroupid = :playergroupid";
+         LEFT JOIN {grade_items} gi ON gi.itemtype = 'mod'
+                   AND gi.itemmodule = 'playergroup'
+                   AND gi.iteminstance = pm.playergroupid
+                   AND gi.itemnumber = 0
+         LEFT JOIN {grade_grades} gg ON gg.itemid = gi.id AND gg.userid = gm.userid
+             WHERE pm.playergroupid = :playergroupid
+                   $userfilter
+          GROUP BY gm.userid";
+    $members = $DB->get_records_sql($sql, $params);
 
-    $members = $DB->get_records_sql($sql, ['playergroupid' => $playergroup->id]);
+    // A single-user award is always made right after the membership is written; the
+    // fallback only keeps the grade from being lost if that row is somehow missing.
+    if ($userid > 0 && empty($members)) {
+        $members[$userid] = (object) ['userid' => $userid, 'timejoined' => time(), 'timegranted' => null];
+    }
     if (empty($members)) {
         return;
     }
 
     $grades = [];
     foreach ($members as $member) {
-        $grade           = new \stdClass();
-        $grade->userid   = $member->userid;
-        $grade->rawgrade = (float) $playergroup->grade;
+        $grade                = new \stdClass();
+        $grade->userid        = $member->userid;
+        $grade->rawgrade      = (float) $playergroup->grade;
+        $grade->datesubmitted = (int) ($member->timegranted ?: $member->timejoined);
         $grades[$member->userid] = $grade;
     }
     playergroup_grade_item_update($playergroup, $grades);
