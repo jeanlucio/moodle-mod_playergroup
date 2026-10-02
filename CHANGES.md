@@ -2,6 +2,15 @@
 
 All notable changes to PlayerGroup are documented in this file.
 
+## [v1.3.8] — 2026-10-02
+
+### Fixed
+
+- Grades sent to the gradebook now carry their submission date: the moment the student first
+  joined a group in the activity. Leaving and later joining another group keeps that original
+  date, so Moodle's reports, and plugins that read the gradebook such as late-penalty tools,
+  never see it as a new submission.
+
 ## [v1.3.7] — 2026-09-25
 
 Tested and confirmed compatible with Moodle 5.3.
