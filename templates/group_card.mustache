@@ -41,6 +41,7 @@
         "leavearialabel": "Leave group Dragões do Norte",
         "viewmembersarialabel": "View members of Dragões do Norte",
         "membersjson": "[{&quot;fullname&quot;:&quot;Ana Silva&quot;,&quot;isleader&quot;:true}]",
+        "namehtml": "Dragões do Norte",
         "canviewmembers": true,
         "missingmessage": "",
         "canjoin": true,
@@ -95,7 +96,7 @@
                 {{#canviewmembers}}
                     <button type="button" class="btn btn-outline-secondary btn-sm pg-btn-viewmembers"
                             data-action="viewmembers"
-                            data-groupname="{{name}}"
+                            data-groupname="{{namehtml}}"
                             data-members="{{membersjson}}"
                             aria-label="{{viewmembersarialabel}}">
                         <i class="fa fa-users me-1" aria-hidden="true"></i>

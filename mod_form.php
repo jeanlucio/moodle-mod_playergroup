@@ -70,7 +70,7 @@ class mod_playergroup_mod_form extends moodleform_mod {
         if ($courseid) {
             $groupings = $DB->get_records('groupings', ['courseid' => $courseid], 'name ASC', 'id, name');
             foreach ($groupings as $g) {
-                $existinggroupings[$g->id] = format_string($g->name);
+                $existinggroupings[$g->id] = \mod_playergroup\local\text::plain($g->name);
             }
         }
         $mform->addElement(

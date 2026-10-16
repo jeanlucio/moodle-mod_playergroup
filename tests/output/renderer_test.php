@@ -124,7 +124,7 @@ final class renderer_test extends advanced_testcase {
     }
 
     /**
-     * Test that the group card's "view members" button carries the formatted name, not the
+     * Test that the group card's "view members" button carries the HTML-formatted name, not the
      * raw one, in its data-groupname attribute.
      *
      * amd/src/main.js reads data-groupname and passes it straight into Str.get_string() as
@@ -147,7 +147,8 @@ final class renderer_test extends advanced_testcase {
             'groupsreporturl'    => '',
             'groups'             => [[
                 'groupid'             => 42,
-                'name'                => 'Formatted Safe Name',
+                'name'                => 'Plain Name',
+                'namehtml'            => 'Formatted Safe Name',
                 'rawname'             => 'Raw <b>Unsafe</b> Name',
                 'description'         => '',
                 'rawdescription'      => '',
@@ -424,5 +425,64 @@ final class renderer_test extends advanced_testcase {
         $html = $this->renderer->render_student_view($templatedata);
 
         $this->assertStringContainsString(get_string('groupneedsmembers', 'mod_playergroup', 2), $html);
+    }
+
+    /**
+     * Test that a group name with an ampersand is escaped once in the card, not twice.
+     *
+     * The view hands the template plain text; the template escapes it, so "P&D" must reach the page
+     * as "P&amp;D" (shown as P&D), never as "P&amp;amp;D" (shown as P&amp;D).
+     */
+    public function test_render_student_view_group_card_escapes_the_name_once(): void {
+        $name = \mod_playergroup\local\text::plain('P&D');
+        $templatedata = (object) [
+            'cmid'               => 1,
+            'hasgroup'           => false,
+            'activityopen'       => true,
+            'caninvite'          => false,
+            'hasinviteableusers' => false,
+            'inviteableusers'    => [],
+            'hasinvites'         => false,
+            'receivedinvites'    => [],
+            'isteacher'          => false,
+            'reporturl'          => '',
+            'groupsreporturl'    => '',
+            'groups'             => [[
+                'groupid'             => 42,
+                'name'                => $name,
+                'namehtml'            => format_string('P&D'),
+                'rawname'             => 'P&D',
+                'description'         => '',
+                'rawdescription'      => '',
+                'badge'               => '🐉',
+                'membercount'         => 1,
+                'maxmembers'          => 5,
+                'membersjson'         => '[]',
+                'canviewmembers'      => true,
+                'privacy'             => 0,
+                'isprivacyopen'       => true,
+                'isprivacyprotected'  => false,
+                'isprivacyclosed'     => false,
+                'isfull'              => false,
+                'ismygroup'           => false,
+                'leaderbadge'         => '',
+                'joinarialabel'       => get_string('joingroup_named', 'mod_playergroup', $name),
+                'editarialabel'       => '',
+                'leavearialabel'      => '',
+                'viewmembersarialabel' => '',
+                'canjoin'             => true,
+                'caninvite'           => false,
+                'canedit'             => false,
+                'canleave'            => false,
+            ]],
+        ];
+
+        $html = $this->renderer->render_student_view($templatedata);
+
+        $this->assertStringContainsString('>P&amp;D</h4>', $html);
+        $this->assertStringContainsString('aria-label="Join group P&amp;D"', $html);
+        // The attribute holds HTML on purpose: the browser decodes it once, and the members modal
+        // renders that string as its title, so it must carry the escaped form.
+        $this->assertStringContainsString('data-groupname="P&amp;amp;D"', $html);
     }
 }

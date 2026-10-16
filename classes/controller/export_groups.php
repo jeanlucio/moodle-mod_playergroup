@@ -81,7 +81,7 @@ class export_groups {
                     }
 
                     yield [
-                        format_string($g->name),
+                        \mod_playergroup\local\text::plain($g->name),
                         $privacylabel,
                         $role,
                         fullname($member),
@@ -98,7 +98,7 @@ class export_groups {
             get_string('report_name', 'mod_playergroup'),
         ];
 
-        $filename = 'playergroup_groups_' . format_string($courseshortname) . '_' . date('Ymd');
+        $filename = 'playergroup_groups_' . \mod_playergroup\local\text::plain($courseshortname) . '_' . date('Ymd');
 
         // 5. Trigger download using the Moodle native API.
         \core\dataformat::download_data($filename, $format, $columns, $exportdata);

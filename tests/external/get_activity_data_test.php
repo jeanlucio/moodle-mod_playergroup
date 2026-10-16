@@ -244,4 +244,34 @@ final class get_activity_data_test extends advanced_testcase {
         $this->assertSame(get_string('groupneedsmembers', 'mod_playergroup', 2), $messages[$mygroup]);
         $this->assertSame('', $messages[$theirgroup]);
     }
+
+    /**
+     * Test that names with an ampersand reach the app as typed, with no HTML escaping of their own.
+     *
+     * The app prints these fields as text, so an "&amp;" in them would be shown literally.
+     */
+    public function test_execute_returns_names_as_plain_text(): void {
+        $this->resetAfterTest();
+
+        foreach ([1, 0] as $striptags) {
+            set_config('formatstringstriptags', $striptags);
+            $course = $this->getDataGenerator()->create_course();
+            $cm = $this->getDataGenerator()->create_module('playergroup', [
+                'course' => $course->id,
+                'name' => 'Q&A activity',
+            ]);
+            $student = $this->getDataGenerator()->create_user();
+            $this->getDataGenerator()->enrol_user($student->id, $course->id, 'student');
+            $this->setUser($student);
+            create_group::execute($cm->cmid, 'Ana & Pedro', '', '🛡', 0, '');
+
+            $result = get_activity_data::execute($cm->cmid);
+            $result = external_api::clean_returnvalue(get_activity_data::execute_returns(), $result);
+
+            $this->assertSame('Q&A activity', $result['name'], "striptags=$striptags");
+            $this->assertSame('Ana & Pedro', $result['groups'][0]['name'], "striptags=$striptags");
+            $this->assertStringContainsString('Ana & Pedro', $result['groups'][0]['membersheading']);
+            $this->assertStringNotContainsString('&amp;', json_encode($result));
+        }
+    }
 }

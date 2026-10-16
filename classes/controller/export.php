@@ -47,7 +47,7 @@ class export {
             get_string('report_action', 'mod_playergroup'),
         ];
 
-        $filename = 'playergroup_activitylog_' . format_string($courseshortname) . '_' . date('Ymd');
+        $filename = 'playergroup_activitylog_' . \mod_playergroup\local\text::plain($courseshortname) . '_' . date('Ymd');
 
         // Trigger download using the Moodle native API.
         \core\dataformat::download_data($filename, $format, $columns, $exportdata);

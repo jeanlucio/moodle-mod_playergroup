@@ -106,4 +106,28 @@ final class export_groups_test extends advanced_testcase {
         $this->assertStringContainsString(get_string('report_group', 'mod_playergroup'), $csv);
         $this->assertStringNotContainsString(get_string('leader', 'mod_playergroup'), $csv);
     }
+
+    /**
+     * Test that a group name with an ampersand is written to the file as typed.
+     */
+    public function test_execute_writes_group_names_as_plain_text(): void {
+        $this->resetAfterTest();
+
+        foreach ([1, 0] as $striptags) {
+            set_config('formatstringstriptags', $striptags);
+            $course = $this->getDataGenerator()->create_course();
+            $cm = $this->getDataGenerator()->create_module('playergroup', ['course' => $course->id]);
+            $creator = $this->getDataGenerator()->create_user();
+            $this->getDataGenerator()->enrol_user($creator->id, $course->id, 'student');
+            $this->setUser($creator);
+            create_group::execute($cm->cmid, 'P&D', '', '🛡', 0, '');
+
+            ob_start();
+            (new export_groups())->execute($cm->id, 'csv', $course->shortname);
+            $csv = ob_get_clean();
+
+            $this->assertStringContainsString('P&D', $csv, "striptags=$striptags");
+            $this->assertStringNotContainsString('&amp;', $csv, "striptags=$striptags");
+        }
+    }
 }

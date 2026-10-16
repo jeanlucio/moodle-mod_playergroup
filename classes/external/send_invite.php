@@ -134,10 +134,11 @@ class send_invite extends external_api {
         $group = $DB->get_record('groups', ['id' => (int) $sendergroupid], 'id, name', MUST_EXIST);
         $activityurl = new \moodle_url('/mod/playergroup/view.php', ['id' => $params['cmid']]);
 
-        $messagedata = (object) [
-            'sender' => fullname($USER),
-            'group'  => format_string($group->name),
-        ];
+        // The same sentence goes out as plain text and as HTML, so each gets the name the way it
+        // needs it: raw for the text, escaped once for the markup.
+        $groupname = \mod_playergroup\local\text::plain($group->name);
+        $messagedata = (object) ['sender' => fullname($USER), 'group' => $groupname];
+        $messagedatahtml = (object) ['sender' => s(fullname($USER)), 'group' => s($groupname)];
 
         $msg = new \core\message\message();
         $msg->component         = 'mod_playergroup';
@@ -147,12 +148,12 @@ class send_invite extends external_api {
         $msg->subject           = get_string('invitepending', 'mod_playergroup');
         $msg->fullmessage       = get_string('invitemessage', 'mod_playergroup', $messagedata);
         $msg->fullmessageformat = FORMAT_PLAIN;
-        $msg->fullmessagehtml   = '<p>' . get_string('invitemessage', 'mod_playergroup', $messagedata) . '</p>'
+        $msg->fullmessagehtml   = '<p>' . get_string('invitemessage', 'mod_playergroup', $messagedatahtml) . '</p>'
             . '<p><a href="' . $activityurl->out(false) . '">' . format_string($playergroup->name) . '</a></p>';
         $msg->smallmessage      = get_string('invitepending', 'mod_playergroup');
         $msg->notification      = 1;
         $msg->contexturl        = $activityurl->out(false);
-        $msg->contexturlname    = format_string($playergroup->name);
+        $msg->contexturlname    = \mod_playergroup\local\text::plain($playergroup->name);
         message_send($msg);
 
         return [

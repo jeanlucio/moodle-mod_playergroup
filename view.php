@@ -194,10 +194,13 @@ foreach ($grouprecords as $g) {
     $groupmembers = \mod_playergroup\local\member_list::order($groupmembers);
     $membersjson = json_encode($groupmembers, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 
-    $groupname = format_string($g->name);
+    // Plain text for everything the template escapes itself; the HTML form is kept only for the
+    // data-groupname attribute, which becomes the title of a modal that renders HTML.
+    $groupname = \mod_playergroup\local\text::plain($g->name, $context);
     $templatedata->groups[] = [
         'groupid'             => $groupid,
         'name'                => $groupname,
+        'namehtml'            => format_string($g->name),
         'rawname'             => $g->name,
         'description'         => format_text($g->description, (int) $g->descriptionformat, ['context' => $context]),
         'rawdescription'      => $g->description ?? '',
@@ -280,7 +283,7 @@ if ($hasgroup && $isopen && !$usergroupisfull && !empty($mygroupid) && $caninvit
             'userid'        => (int) $u->id,
             'fullname'      => fullname($u),
             'ingroup'       => $ingroup,
-            'groupname'     => $ingroup ? format_string($u->existinggroupname) : '',
+            'groupname'     => $ingroup ? \mod_playergroup\local\text::plain($u->existinggroupname, $context) : '',
             'invitepending' => $invitepending,
             'caninvite'     => !$ingroup && !$invitepending,
         ];
@@ -315,7 +318,7 @@ if ($hasgroup && $isopen && !$usergroupisfull && !empty($mygroupid) && $caninvit
             $sendername = $sender ? fullname($sender) : '';
             $templatedata->receivedinvites[] = [
                 'inviteid'  => (int) $inv->id,
-                'groupname' => format_string($inv->groupname),
+                'groupname' => \mod_playergroup\local\text::plain($inv->groupname, $context),
                 'badge'     => !empty($inv->badge) ? $inv->badge : '🛡️',
                 'sentby'    => get_string('invitedby', 'mod_playergroup', $sendername),
             ];
@@ -367,7 +370,7 @@ if ($tab === 'groupsreport' && $isteacher) {
             }
 
             $groupsreportrows[] = [
-                'groupname'  => format_string($g->name),
+                'groupname'  => \mod_playergroup\local\text::plain($g->name, $context),
                 'privacy'    => $privacylabel,
                 'role'       => $role,
                 'membername' => fullname($member),

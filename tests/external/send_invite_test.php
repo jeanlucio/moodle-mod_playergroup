@@ -180,4 +180,24 @@ final class send_invite_test extends advanced_testcase {
         $this->expectExceptionMessage(get_string('activitynotopen', 'mod_playergroup'));
         send_invite::execute($this->cm->cmid, $this->receiver->id);
     }
+
+    /**
+     * Test that the invitation names the group as typed in the text message and escaped once in the HTML one.
+     */
+    public function test_execute_message_names_the_group_once_escaped(): void {
+        global $DB;
+
+        $DB->set_field('groups', 'name', 'P&D', ['id' => $this->groupid]);
+        $this->setUser($this->leader);
+        $sink = $this->redirectMessages();
+
+        send_invite::execute($this->cm->cmid, $this->receiver->id);
+
+        $messages = $sink->get_messages();
+        $this->assertCount(1, $messages);
+        $this->assertStringContainsString('P&D', $messages[0]->fullmessage);
+        $this->assertStringNotContainsString('&amp;', $messages[0]->fullmessage);
+        $this->assertStringContainsString('P&amp;D', $messages[0]->fullmessagehtml);
+        $this->assertStringNotContainsString('P&amp;amp;D', $messages[0]->fullmessagehtml);
+    }
 }

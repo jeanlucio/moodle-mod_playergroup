@@ -165,7 +165,7 @@ class get_activity_data extends external_api {
             $creator = $canviewmembers ? ($creators[(int) $g->creatorid] ?? null) : null;
             $leaderbadge = $creator ? get_string('leadernamed', 'mod_playergroup', fullname($creator)) : '';
 
-            $groupname = format_string($g->name);
+            $groupname = \mod_playergroup\local\text::plain($g->name, $context);
             $groupmembers = [];
             foreach ($membersbygroup[$groupid] ?? [] as $member) {
                 $groupmembers[] = [
@@ -259,7 +259,7 @@ class get_activity_data extends external_api {
                     'userid'        => (int) $u->id,
                     'fullname'      => fullname($u),
                     'ingroup'       => $ingroup,
-                    'groupname'     => $ingroup ? format_string($u->existinggroupname) : '',
+                    'groupname'     => $ingroup ? \mod_playergroup\local\text::plain($u->existinggroupname, $context) : '',
                     'invitepending' => $invitepending,
                     'caninvite'     => !$ingroup && !$invitepending,
                 ];
@@ -293,7 +293,7 @@ class get_activity_data extends external_api {
                     $sendername = $sender ? fullname($sender) : '';
                     $receivedinvites[] = [
                         'inviteid'  => (int) $inv->id,
-                        'groupname' => format_string($inv->groupname),
+                        'groupname' => \mod_playergroup\local\text::plain($inv->groupname, $context),
                         'badge'     => !empty($inv->badge) ? $inv->badge : '🛡️',
                         'sentby'    => get_string('invitedby', 'mod_playergroup', $sendername),
                     ];
@@ -303,7 +303,7 @@ class get_activity_data extends external_api {
 
         return [
             'activityid'          => (int) $playergroup->id,
-            'name'                => format_string($playergroup->name),
+            'name'                => \mod_playergroup\local\text::plain($playergroup->name, $context),
             'intro'               => format_module_intro('playergroup', $playergroup, $params['cmid']),
             'maxmembers'          => (int) $playergroup->maxmembers,
             'canleave'            => !empty($playergroup->canleave),
