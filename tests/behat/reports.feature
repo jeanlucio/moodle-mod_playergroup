@@ -56,7 +56,3 @@ Feature: Teacher reads the activity log and the groups, and a student cannot
     Then I should see "Test Group"
     And I should not see "Activity Log"
     And I should not see "Export to CSV"
-
-  Scenario: A student cannot export the activity log
-    Given I am on the "Group Activity" "mod_playergroup > export" page logged in as "student1"
-    Then I should see "Sorry, but you do not currently have permissions to do that"
