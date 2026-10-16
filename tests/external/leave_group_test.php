@@ -200,4 +200,43 @@ final class leave_group_test extends advanced_testcase {
 
         $this->assertFalse($DB->record_exists('playergroup_invites', ['groupid' => $this->groupid]));
     }
+
+    /**
+     * Test that leaving is refused once the activity has closed, and the membership is untouched.
+     *
+     * The interface hides the button outside the window, but the web service can be called directly.
+     */
+    public function test_execute_refused_after_close_date(): void {
+        global $DB;
+
+        $DB->set_field('playergroup', 'timeclose', time() - HOURSECS, ['id' => $this->cm->id]);
+
+        try {
+            leave_group::execute($this->cm->cmid);
+            $this->fail('Leaving a group after the activity closed must be refused.');
+        } catch (moodle_exception $e) {
+            $this->assertSame('activityclosed', $e->errorcode);
+        }
+
+        $this->assertTrue(groups_is_member($this->groupid, $this->leader->id));
+        $this->assertTrue($DB->record_exists('playergroup_meta', ['groupid' => $this->groupid]));
+    }
+
+    /**
+     * Test that leaving is refused before the activity opens.
+     */
+    public function test_execute_refused_before_open_date(): void {
+        global $DB;
+
+        $DB->set_field('playergroup', 'timeopen', time() + HOURSECS, ['id' => $this->cm->id]);
+
+        try {
+            leave_group::execute($this->cm->cmid);
+            $this->fail('Leaving a group before the activity opens must be refused.');
+        } catch (moodle_exception $e) {
+            $this->assertSame('activitynotopen', $e->errorcode);
+        }
+
+        $this->assertTrue(groups_is_member($this->groupid, $this->leader->id));
+    }
 }

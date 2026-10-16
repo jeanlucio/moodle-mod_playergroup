@@ -27,6 +27,7 @@ namespace mod_playergroup\external;
 
 use advanced_testcase;
 use context_course;
+use moodle_exception;
 
 /**
  * Tests for \mod_playergroup\external\send_invite.
@@ -140,6 +141,43 @@ final class send_invite_test extends advanced_testcase {
 
         $this->setUser($this->leader);
         $this->expectException(\required_capability_exception::class);
+        send_invite::execute($this->cm->cmid, $this->receiver->id);
+    }
+
+    /**
+     * Test that sending an invite is refused once the activity has closed, and nothing is stored.
+     *
+     * The receiver could not accept it, since accept_invite enforces the same window.
+     */
+    public function test_execute_refused_after_close_date(): void {
+        global $DB;
+
+        $DB->set_field('playergroup', 'timeclose', time() - HOURSECS, ['id' => $this->cm->id]);
+        $this->setUser($this->leader);
+        $sink = $this->redirectMessages();
+
+        try {
+            send_invite::execute($this->cm->cmid, $this->receiver->id);
+            $this->fail('Inviting after the activity closed must be refused.');
+        } catch (moodle_exception $e) {
+            $this->assertSame('activityclosed', $e->errorcode);
+        }
+
+        $this->assertSame(0, $DB->count_records('playergroup_invites'));
+        $this->assertSame(0, $sink->count());
+    }
+
+    /**
+     * Test that sending an invite is refused before the activity opens.
+     */
+    public function test_execute_refused_before_open_date(): void {
+        global $DB;
+
+        $DB->set_field('playergroup', 'timeopen', time() + HOURSECS, ['id' => $this->cm->id]);
+        $this->setUser($this->leader);
+
+        $this->expectException(moodle_exception::class);
+        $this->expectExceptionMessage(get_string('activitynotopen', 'mod_playergroup'));
         send_invite::execute($this->cm->cmid, $this->receiver->id);
     }
 }

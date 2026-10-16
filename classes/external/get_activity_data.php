@@ -71,7 +71,7 @@ class get_activity_data extends external_api {
         $now = time();
         $timeopen  = (int) ($playergroup->timeopen ?? 0);
         $timeclose = (int) ($playergroup->timeclose ?? 0);
-        $isopen = ($timeopen === 0 || $now >= $timeopen) && ($timeclose === 0 || $now <= $timeclose);
+        $isopen = \mod_playergroup\local\activity_window::is_open($playergroup, $now);
 
         $availabilitymessage = '';
         if (!$isopen) {

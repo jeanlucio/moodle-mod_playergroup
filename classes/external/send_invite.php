@@ -69,6 +69,8 @@ class send_invite extends external_api {
         $cm = get_coursemodule_from_id('playergroup', $params['cmid'], 0, false, MUST_EXIST);
         $playergroup = $DB->get_record('playergroup', ['id' => $cm->instance], '*', MUST_EXIST);
 
+        \mod_playergroup\local\activity_window::require_open($playergroup);
+
         $coursecontext = \context_course::instance($cm->course);
 
         // Mirrors the check both UIs already apply before offering the invite picker: a

@@ -82,13 +82,7 @@ class accept_invite extends external_api {
         self::validate_context($context);
         require_capability('mod/playergroup:view', $context);
 
-        $now = time();
-        if ($playergroup->timeopen > 0 && $now < $playergroup->timeopen) {
-            throw new \moodle_exception('activitynotopen', 'mod_playergroup');
-        }
-        if ($playergroup->timeclose > 0 && $now > $playergroup->timeclose) {
-            throw new \moodle_exception('activityclosed', 'mod_playergroup');
-        }
+        \mod_playergroup\local\activity_window::require_open($playergroup);
 
         $lock = \mod_playergroup\local\group_lock::acquire($playergroup->id);
         try {

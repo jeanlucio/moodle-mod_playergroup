@@ -91,13 +91,7 @@ class create_group extends external_api {
         $cm = get_coursemodule_from_id('playergroup', $params['cmid'], 0, false, MUST_EXIST);
         $playergroup = $DB->get_record('playergroup', ['id' => $cm->instance], '*', MUST_EXIST);
 
-        $now = time();
-        if ($playergroup->timeopen > 0 && $now < $playergroup->timeopen) {
-            throw new \moodle_exception('activitynotopen', 'mod_playergroup');
-        }
-        if ($playergroup->timeclose > 0 && $now > $playergroup->timeclose) {
-            throw new \moodle_exception('activityclosed', 'mod_playergroup');
-        }
+        \mod_playergroup\local\activity_window::require_open($playergroup);
 
         // Reject unusable settings before anything is written: a protected group without a
         // password can never be joined, since join_group refuses an empty stored hash.

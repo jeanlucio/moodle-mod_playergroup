@@ -62,8 +62,7 @@ echo $OUTPUT->header();
 // Determine whether the activity is within the configured availability window.
 $now = time();
 $timeopen  = (int) ($playergroup->timeopen ?? 0);
-$timeclose = (int) ($playergroup->timeclose ?? 0);
-$isopen = ($timeopen === 0 || $now >= $timeopen) && ($timeclose === 0 || $now <= $timeclose);
+$isopen = \mod_playergroup\local\activity_window::is_open($playergroup, $now);
 
 // Load all groups linked to this activity instance.
 $sql = "SELECT g.id, g.name, g.description, g.descriptionformat, pm.badge, pm.privacy, pm.creatorid,
