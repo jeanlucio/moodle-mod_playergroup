@@ -153,4 +153,131 @@ final class observer_test extends advanced_testcase {
         $this->assertTrue($DB->record_exists('groups', ['id' => $groupid]));
         $this->assertTrue($DB->record_exists('playergroup_meta', ['groupid' => $groupid]));
     }
+
+    /**
+     * Builds a group of three students through the real web services, led by the first.
+     *
+     * @param int $deleteemptygroups Value of the activity's "delete empty groups" setting.
+     * @return array [cmid, groupid, leader, second, third]
+     */
+    private function create_group_of_three(int $deleteemptygroups = 1): array {
+        global $DB;
+
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course'            => $this->course->id,
+            'canleave'          => 1,
+            'deleteemptygroups' => $deleteemptygroups,
+        ]);
+        [$leader, $second, $third] = [
+            $this->getDataGenerator()->create_user(),
+            $this->getDataGenerator()->create_user(),
+            $this->getDataGenerator()->create_user(),
+        ];
+        foreach ([$leader, $second, $third] as $user) {
+            $this->getDataGenerator()->enrol_user($user->id, $this->course->id, 'student');
+        }
+
+        $this->setUser($leader);
+        $groupid = create_group::execute($cm->cmid, 'Trio', '', '🛡', 0, '')['groupid'];
+        $this->setUser($second);
+        join_group::execute($cm->cmid, $groupid, '');
+        $this->setUser($third);
+        join_group::execute($cm->cmid, $groupid, '');
+
+        // Make the order of joining unambiguous: the third student is the oldest remaining member.
+        $DB->set_field('groups_members', 'timeadded', 1000, ['groupid' => $groupid, 'userid' => $leader->id]);
+        $DB->set_field('groups_members', 'timeadded', 3000, ['groupid' => $groupid, 'userid' => $second->id]);
+        $DB->set_field('groups_members', 'timeadded', 2000, ['groupid' => $groupid, 'userid' => $third->id]);
+
+        return [$cm->cmid, $groupid, $leader, $second, $third];
+    }
+
+    /**
+     * A leader removed by unenrolling from the course, a path that never goes through leave_group,
+     * must hand the group to the oldest remaining member, or nobody can edit it again.
+     */
+    public function test_unenrolling_the_leader_hands_the_group_to_the_oldest_member(): void {
+        global $DB;
+
+        [, $groupid, $leader, , $third] = $this->create_group_of_three();
+
+        $instance = $DB->get_record('enrol', ['courseid' => $this->course->id, 'enrol' => 'manual'], '*', MUST_EXIST);
+        enrol_get_plugin('manual')->unenrol_user($instance, $leader->id);
+
+        $this->assertTrue($DB->record_exists('groups', ['id' => $groupid]));
+        $this->assertEquals($third->id, $DB->get_field('playergroup_meta', 'creatorid', ['groupid' => $groupid]));
+    }
+
+    /**
+     * A teacher removing the leader on the course's native Groups page has the same effect.
+     */
+    public function test_removing_the_leader_from_the_groups_page_hands_the_group_over(): void {
+        global $DB;
+
+        [, $groupid, $leader, , $third] = $this->create_group_of_three();
+
+        $this->setAdminUser();
+        groups_remove_member($groupid, $leader->id);
+
+        $this->assertEquals($third->id, $DB->get_field('playergroup_meta', 'creatorid', ['groupid' => $groupid]));
+    }
+
+    /**
+     * The hand-over does not depend on the "delete empty groups" setting.
+     */
+    public function test_the_leadership_passes_on_even_when_empty_groups_are_kept(): void {
+        global $DB;
+
+        [, $groupid, $leader, , $third] = $this->create_group_of_three(0);
+
+        groups_remove_member($groupid, $leader->id);
+
+        $this->assertEquals($third->id, $DB->get_field('playergroup_meta', 'creatorid', ['groupid' => $groupid]));
+    }
+
+    /**
+     * Removing a member who does not lead the group leaves the leader as is.
+     */
+    public function test_removing_another_member_keeps_the_leader(): void {
+        global $DB;
+
+        [, $groupid, $leader, $second] = $this->create_group_of_three();
+
+        groups_remove_member($groupid, $second->id);
+
+        $this->assertEquals($leader->id, $DB->get_field('playergroup_meta', 'creatorid', ['groupid' => $groupid]));
+    }
+
+    /**
+     * The new leader can really edit the group, which is the point of handing it over.
+     */
+    public function test_the_new_leader_can_edit_the_group(): void {
+        [$cmid, $groupid, $leader, , $third] = $this->create_group_of_three();
+
+        groups_remove_member($groupid, $leader->id);
+
+        $this->setUser($third);
+        $result = \mod_playergroup\external\edit_group::execute($cmid, $groupid, 'Renamed', '', '⚔', 0, '');
+        $this->assertTrue($result['success']);
+    }
+
+    /**
+     * Removing the only member, with empty groups kept, leaves the group as it was and raises nothing.
+     */
+    public function test_removing_the_only_member_of_a_kept_group_changes_nothing(): void {
+        global $DB;
+
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $this->course->id,
+            'deleteemptygroups' => 0,
+        ]);
+        $leader = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($leader->id, $this->course->id, 'student');
+        $this->setUser($leader);
+        $groupid = create_group::execute($cm->cmid, 'Solo', '', '🛡', 0, '')['groupid'];
+
+        groups_remove_member($groupid, $leader->id);
+
+        $this->assertEquals($leader->id, $DB->get_field('playergroup_meta', 'creatorid', ['groupid' => $groupid]));
+    }
 }

@@ -34,8 +34,9 @@ namespace mod_playergroup;
  */
 class observer {
     /**
-     * Deletes an empty playergroup-managed group, honouring the activity's own
-     * "delete empty groups" setting, regardless of how the group became empty.
+     * Keeps a playergroup-managed group coherent when a member is removed, whichever way it happened:
+     * hands the leadership on when the leader left, and deletes the group when it is now empty and the
+     * activity's own "delete empty groups" setting asks for it.
      *
      * groups_remove_member() fires this event on every removal path core has: this plugin's
      * own leave_group web service, a teacher removing a member from the course's native
@@ -56,6 +57,13 @@ class observer {
         if (!$meta) {
             // Not a group this plugin manages.
             return;
+        }
+
+        // The group's powers (editing it, its password) belong to the leader, so a group whose leader
+        // was removed would stay without anyone able to manage it. This runs before the empty-group
+        // check on purpose: it applies whether or not empty groups are deleted.
+        if ((int) $event->relateduserid === (int) $meta->creatorid) {
+            self::hand_over_leadership($groupid);
         }
 
         $playergroup = $DB->get_record('playergroup', ['id' => $meta->playergroupid]);
@@ -86,5 +94,25 @@ class observer {
             'context'  => \context_module::instance($cm->id),
             'objectid' => $groupid,
         ])->trigger();
+    }
+
+    /**
+     * Makes the oldest remaining member the leader of the group.
+     *
+     * Does nothing when nobody is left: the group then has no leader to speak of, and is either
+     * deleted or kept empty by the caller.
+     *
+     * @param int $groupid The native group ID.
+     * @return void
+     */
+    private static function hand_over_leadership(int $groupid): void {
+        global $DB;
+
+        $members = $DB->get_records('groups_members', ['groupid' => $groupid], 'timeadded ASC, id ASC', 'id, userid', 0, 1);
+        if (empty($members)) {
+            return;
+        }
+
+        $DB->set_field('playergroup_meta', 'creatorid', (int) reset($members)->userid, ['groupid' => $groupid]);
     }
 }

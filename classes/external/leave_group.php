@@ -86,37 +86,19 @@ class leave_group extends external_api {
             throw new \moodle_exception('notingroup', 'mod_playergroup');
         }
 
-        $meta = $DB->get_record('playergroup_meta', ['groupid' => $mygroupid], '*', MUST_EXIST);
-
-        // Find the oldest remaining member to determine next leader or detect empty group.
-        $nextsql = "SELECT id, userid
-                      FROM {groups_members}
-                     WHERE groupid = :groupid
-                       AND userid != :userid
-                     ORDER BY timeadded ASC";
-        $nextleaders = $DB->get_records_sql($nextsql, ['groupid' => $mygroupid, 'userid' => $USER->id], 0, 1);
-        $nextleader = !empty($nextleaders) ? (int) reset($nextleaders)->userid : null;
-        $willbeempty = ($nextleader === null);
-
         // Removal below fires \core\event\group_member_removed synchronously, and
-        // \mod_playergroup\observer::group_member_removed() reacts to it by deleting the
-        // group when it is now empty and the activity has "delete empty groups" enabled —
-        // the same cleanup this method used to do inline. Centralising it in the observer
-        // means it also runs for every other way a group can be emptied (a teacher removing
-        // the last member from the course's native Groups page, or an unenrolment), not only
-        // when a student uses this web service. See classes/observer.php for the full
-        // rationale.
+        // \mod_playergroup\observer::group_member_removed() reacts to it: it hands the leadership to
+        // the oldest remaining member when the leader is the one leaving, and deletes the group when
+        // it is now empty and the activity has "delete empty groups" enabled. Centralising that in the
+        // observer means it also runs for every other way a member can be removed (a teacher using the
+        // course's native Groups page, or an unenrolment), not only when a student uses this web
+        // service. See classes/observer.php for the full rationale.
         groups_remove_member((int) $mygroupid, $USER->id);
 
         \mod_playergroup\event\member_left::create([
             'context'  => $context,
             'objectid' => (int) $mygroupid,
         ])->trigger();
-
-        if (!$willbeempty && (int) $meta->creatorid === (int) $USER->id) {
-            // Transfer leadership to the oldest remaining member.
-            $DB->set_field('playergroup_meta', 'creatorid', $nextleader, ['groupid' => $mygroupid]);
-        }
 
         return [
             'success' => true,
