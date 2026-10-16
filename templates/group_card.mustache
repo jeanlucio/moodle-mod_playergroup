@@ -42,6 +42,7 @@
         "viewmembersarialabel": "View members of Dragões do Norte",
         "membersjson": "[{&quot;fullname&quot;:&quot;Ana Silva&quot;,&quot;isleader&quot;:true}]",
         "canviewmembers": true,
+        "missingmessage": "",
         "canjoin": true,
         "canedit": false,
         "canleave": false
@@ -81,6 +82,12 @@
                     </div>
                 </div>
             </div>
+
+            {{#missingmessage}}
+                <p class="small mb-3 pg-missing-members" role="status">
+                    <i class="fa fa-info-circle me-1" aria-hidden="true"></i>{{missingmessage}}
+                </p>
+            {{/missingmessage}}
 
             <p class="card-text mb-4">{{{description}}}</p>
 

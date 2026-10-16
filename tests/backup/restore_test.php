@@ -172,6 +172,51 @@ final class restore_test extends advanced_testcase {
     }
 
     /**
+     * Backup with userinfo carries who qualified for the grade and completion, with the user remapped.
+     *
+     * Without it a restored course would lose the completion of students who left their group
+     * after reaching the minimum size.
+     */
+    public function test_backup_restore_with_userinfo_keeps_qualified_students(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        [$course, $activity, , , $sender] = $this->create_fixture(withusers: true);
+        $DB->insert_record('playergroup_qualified', (object) [
+            'playergroupid' => $activity->id, 'userid' => $sender->id, 'timequalified' => 1700000000,
+        ]);
+
+        $newcourseid = $this->backup_and_restore($course, true);
+
+        $newactivity = $DB->get_record('playergroup', ['course' => $newcourseid], '*', MUST_EXIST);
+        $restored = $DB->get_records('playergroup_qualified', ['playergroupid' => $newactivity->id]);
+        $this->assertCount(1, $restored);
+        $row = reset($restored);
+        $this->assertSame((int) $sender->id, (int) $row->userid);
+        $this->assertSame(1700000000, (int) $row->timequalified);
+    }
+
+    /**
+     * Backup without userinfo carries no qualification, since it is user data.
+     */
+    public function test_backup_restore_content_only_has_no_qualified_students(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        [$course, $activity, , , $sender] = $this->create_fixture(withusers: true);
+        $DB->insert_record('playergroup_qualified', (object) [
+            'playergroupid' => $activity->id, 'userid' => $sender->id, 'timequalified' => 1700000000,
+        ]);
+
+        $newcourseid = $this->backup_and_restore($course, false);
+
+        $newactivity = $DB->get_record('playergroup', ['course' => $newcourseid], '*', MUST_EXIST);
+        $this->assertSame(0, $DB->count_records('playergroup_qualified', ['playergroupid' => $newactivity->id]));
+    }
+
+    /**
      * Creates a course with one playergroup activity, one group with meta,
      * and one invite between two enrolled students.
      *

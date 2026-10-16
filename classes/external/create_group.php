@@ -152,18 +152,15 @@ class create_group extends external_api {
             $meta->timecreated   = time();
             $meta->timemodified  = time();
             $DB->insert_record('playergroup_meta', $meta);
+
+            // With a minimum of one member the founder qualifies at once; otherwise the group
+            // still has to grow.
+            $qualified = \mod_playergroup\local\qualification::record_group($playergroup, $groupid);
         } finally {
             $lock->release();
         }
 
-        $modinfo = get_fast_modinfo($cm->course);
-        $cminfo = $modinfo->get_cm($cm->id);
-        $completion = new \completion_info($modinfo->get_course());
-        if ($completion->is_enabled($cminfo) == COMPLETION_TRACKING_AUTOMATIC) {
-            $completion->update_state($cminfo, COMPLETION_COMPLETE, $USER->id);
-        }
-
-        playergroup_update_grades($playergroup, $USER->id);
+        \mod_playergroup\local\qualification::award($playergroup, $cm, $qualified);
 
         \mod_playergroup\event\group_created::create([
             'context'  => $context,

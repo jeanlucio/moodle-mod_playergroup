@@ -216,4 +216,32 @@ final class get_activity_data_test extends advanced_testcase {
         $this->assertTrue($result['groups'][0]['canviewmembers']);
         $this->assertCount(2, $result['groups'][0]['members']);
     }
+
+    /**
+     * Test that the app is told why the student's own group does not count yet, and only for that group.
+     */
+    public function test_execute_reports_missing_members_for_the_own_group_only(): void {
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $course->id,
+            'minmembers' => 3,
+        ]);
+        [$mine, $theirs] = [$this->getDataGenerator()->create_user(), $this->getDataGenerator()->create_user()];
+        foreach ([$mine, $theirs] as $user) {
+            $this->getDataGenerator()->enrol_user($user->id, $course->id, 'student');
+        }
+        $this->setUser($theirs);
+        $theirgroup = create_group::execute($cm->cmid, 'Theirs', '', '🛡', 0, '')['groupid'];
+        $this->setUser($mine);
+        $mygroup = create_group::execute($cm->cmid, 'Mine', '', '🛡', 0, '')['groupid'];
+
+        $result = get_activity_data::execute($cm->cmid);
+        $result = external_api::clean_returnvalue(get_activity_data::execute_returns(), $result);
+
+        $messages = array_column($result['groups'], 'missingmessage', 'groupid');
+        $this->assertSame(get_string('groupneedsmembers', 'mod_playergroup', 2), $messages[$mygroup]);
+        $this->assertSame('', $messages[$theirgroup]);
+    }
 }

@@ -131,9 +131,25 @@ function playergroup_update_instance(\stdClass $playergroup, ?\mod_playergroup_m
     $playergroup->id           = $playergroup->instance;
     $playergroup->groupingid   = playergroup_resolve_groupingid($playergroup);
 
+    $oldminmembers = (int) $DB->get_field('playergroup', 'minmembers', ['id' => $playergroup->id]);
+
     $result = $DB->update_record('playergroup', $playergroup);
 
     playergroup_grade_item_update($playergroup);
+
+    // Lowering the minimum can make existing groups count. Raising it never takes anything away,
+    // since a student who already qualified keeps the grade and the completion.
+    if (isset($playergroup->minmembers) && (int) $playergroup->minmembers < $oldminmembers) {
+        $record = $DB->get_record('playergroup', ['id' => $playergroup->id], '*', MUST_EXIST);
+        $cm = get_coursemodule_from_instance('playergroup', $record->id, $record->course, false, MUST_EXIST);
+        $lock = \mod_playergroup\local\group_lock::acquire((int) $record->id);
+        try {
+            $qualified = \mod_playergroup\local\qualification::record_all_groups($record);
+        } finally {
+            $lock->release();
+        }
+        \mod_playergroup\local\qualification::award($record, $cm, $qualified);
+    }
 
     return $result;
 }
@@ -166,6 +182,7 @@ function playergroup_delete_instance(int $id): bool {
     // Clean up plugin-specific tables.
     $DB->delete_records('playergroup_invites', ['playergroupid' => $id]);
     $DB->delete_records('playergroup_meta', ['playergroupid' => $id]);
+    $DB->delete_records('playergroup_qualified', ['playergroupid' => $id]);
 
     return $DB->delete_records('playergroup', ['id' => $id]);
 }
@@ -239,13 +256,13 @@ function playergroup_grade_item_update(\stdClass $playergroup, mixed $grades = n
 /**
  * Updates grades in the gradebook for a playergroup instance.
  *
- * Grades are awarded permanently at join/create time. Leaving a group does not
- * remove a previously earned grade. On bulk recalculation (userid = 0), only
- * current members receive a grade; former members keep theirs because grade_update
- * only overwrites entries present in the supplied array.
+ * Grades are awarded permanently to students who qualified, that is, who were in a group
+ * that had reached the minimum number of members (see \mod_playergroup\local\qualification).
+ * Leaving a group does not remove a previously earned grade, and neither does the group
+ * shrinking afterwards. Students who never qualified are not graded.
  *
  * @param \stdClass $playergroup The playergroup instance.
- * @param int $userid Award grade for this user only (0 = all current members).
+ * @param int $userid Award grade for this user only (0 = every student who qualified).
  * @return void
  */
 function playergroup_update_grades(\stdClass $playergroup, int $userid = 0): void {
@@ -255,34 +272,28 @@ function playergroup_update_grades(\stdClass $playergroup, int $userid = 0): voi
         return;
     }
 
-    // The grade is earned once, the first time the student joins a group, and that is the
-    // submission date reported to the gradebook. A grade already recorded keeps its own
-    // date: after leaving and joining another group, the earliest current membership is
-    // the rejoin, which would otherwise look like a new, possibly late, submission.
+    // The grade is earned once, the first time the student is in a group that reached the minimum
+    // size, and that moment is the submission date reported to the gradebook. A grade already
+    // recorded keeps its own date: after leaving and joining another group, the student would
+    // otherwise look like a new, possibly late, submission.
     $params = ['playergroupid' => $playergroup->id];
     $userfilter = '';
     if ($userid > 0) {
-        $userfilter = 'AND gm.userid = :userid';
+        $userfilter = 'AND q.userid = :userid';
         $params['userid'] = $userid;
     }
-    $sql = "SELECT gm.userid, MIN(gm.timeadded) AS timejoined, MIN(gg.timecreated) AS timegranted
-              FROM {groups_members} gm
-              JOIN {playergroup_meta} pm ON pm.groupid = gm.groupid
+    $sql = "SELECT q.userid, q.timequalified, MIN(gg.timecreated) AS timegranted
+              FROM {playergroup_qualified} q
          LEFT JOIN {grade_items} gi ON gi.itemtype = 'mod'
                    AND gi.itemmodule = 'playergroup'
-                   AND gi.iteminstance = pm.playergroupid
+                   AND gi.iteminstance = q.playergroupid
                    AND gi.itemnumber = 0
-         LEFT JOIN {grade_grades} gg ON gg.itemid = gi.id AND gg.userid = gm.userid
-             WHERE pm.playergroupid = :playergroupid
+         LEFT JOIN {grade_grades} gg ON gg.itemid = gi.id AND gg.userid = q.userid
+             WHERE q.playergroupid = :playergroupid
                    $userfilter
-          GROUP BY gm.userid";
+          GROUP BY q.userid, q.timequalified";
     $members = $DB->get_records_sql($sql, $params);
 
-    // A single-user award is always made right after the membership is written; the
-    // fallback only keeps the grade from being lost if that row is somehow missing.
-    if ($userid > 0 && empty($members)) {
-        $members[$userid] = (object) ['userid' => $userid, 'timejoined' => time(), 'timegranted' => null];
-    }
     if (empty($members)) {
         return;
     }
@@ -292,7 +303,7 @@ function playergroup_update_grades(\stdClass $playergroup, int $userid = 0): voi
         $grade                = new \stdClass();
         $grade->userid        = $member->userid;
         $grade->rawgrade      = (float) $playergroup->grade;
-        $grade->datesubmitted = (int) ($member->timegranted ?: $member->timejoined);
+        $grade->datesubmitted = (int) ($member->timegranted ?: $member->timequalified);
         $grades[$member->userid] = $grade;
     }
     playergroup_grade_item_update($playergroup, $grades);

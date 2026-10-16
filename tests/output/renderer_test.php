@@ -374,4 +374,55 @@ final class renderer_test extends advanced_testcase {
         $this->assertStringNotContainsString(get_string('activitylog_empty', 'mod_playergroup'), $html);
         $this->assertStringNotContainsString('export.php', $html);
     }
+
+    /**
+     * Test that the card of the student's own group explains why it does not count yet.
+     */
+    public function test_render_student_view_group_card_shows_missing_members_message(): void {
+        $templatedata = (object) [
+            'cmid'               => 1,
+            'hasgroup'           => true,
+            'activityopen'       => true,
+            'caninvite'          => false,
+            'hasinviteableusers' => false,
+            'inviteableusers'    => [],
+            'hasinvites'         => false,
+            'receivedinvites'    => [],
+            'isteacher'          => false,
+            'reporturl'          => '',
+            'groupsreporturl'    => '',
+            'groups'             => [[
+                'groupid'             => 42,
+                'name'                => 'Small Team',
+                'rawname'             => 'Small Team',
+                'description'         => '',
+                'rawdescription'      => '',
+                'badge'               => '🐉',
+                'membercount'         => 1,
+                'maxmembers'          => 5,
+                'membersjson'         => '[]',
+                'canviewmembers'      => true,
+                'missingmessage'      => get_string('groupneedsmembers', 'mod_playergroup', 2),
+                'privacy'             => 0,
+                'isprivacyopen'       => true,
+                'isprivacyprotected'  => false,
+                'isprivacyclosed'     => false,
+                'isfull'              => false,
+                'ismygroup'           => true,
+                'leaderbadge'         => '',
+                'joinarialabel'       => '',
+                'editarialabel'       => '',
+                'leavearialabel'      => '',
+                'viewmembersarialabel' => '',
+                'canjoin'             => false,
+                'caninvite'           => false,
+                'canedit'             => false,
+                'canleave'            => false,
+            ]],
+        ];
+
+        $html = $this->renderer->render_student_view($templatedata);
+
+        $this->assertStringContainsString(get_string('groupneedsmembers', 'mod_playergroup', 2), $html);
+    }
 }

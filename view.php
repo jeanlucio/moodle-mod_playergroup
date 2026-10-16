@@ -86,6 +86,7 @@ $isteacher = has_capability('mod/playergroup:manage', $context);
 $coursecontext = $context->get_course_context();
 $caninviteusers = has_capability('moodle/course:viewparticipants', $coursecontext);
 $canviewnames = \mod_playergroup\local\member_list::can_view_names($context);
+$userqualified = \mod_playergroup\local\qualification::is_qualified((int) $playergroup->id, (int) $USER->id);
 
 $templatedata = new \stdClass();
 $templatedata->cmid               = $cm->id;
@@ -169,6 +170,12 @@ foreach ($grouprecords as $g) {
     $ismygroup   = $hasgroup && $groupid === (int) $mygroupid;
     $iscreator   = (int) $g->creatorid === (int) $USER->id;
 
+    // Tell the student why the group does not count yet, instead of leaving them without a grade.
+    $missing = $ismygroup
+        ? \mod_playergroup\local\qualification::missing_members($playergroup, $membercount, $userqualified)
+        : 0;
+    $missingmessage = $missing > 0 ? get_string('groupneedsmembers', 'mod_playergroup', $missing) : '';
+
     $canviewmembers = isset($namegroupids[$groupid]);
     $creator = $canviewmembers ? ($creators[(int) $g->creatorid] ?? null) : null;
     if ($creator) {
@@ -199,6 +206,7 @@ foreach ($grouprecords as $g) {
         'maxmembers'          => $maxmembers,
         'membersjson'         => $membersjson,
         'canviewmembers'      => $canviewmembers,
+        'missingmessage'      => $missingmessage,
         'privacy'             => $privacy,
         'isprivacyopen'       => $privacy === 0,
         'isprivacyprotected'  => $privacy === 1,

@@ -30,6 +30,7 @@
  *   1. playergroup — creates the activity instance, remaps groupingid.
  *   2. playergroup_meta — remaps groupid and creatorid; always restored.
  *   3. playergroup_invite — remaps groupid, senderid, receiverid; only with userinfo.
+ *   4. playergroup_qualified — remaps userid; only with userinfo.
  */
 class restore_playergroup_activity_structure_step extends restore_activity_structure_step {
     /**
@@ -50,6 +51,10 @@ class restore_playergroup_activity_structure_step extends restore_activity_struc
             $paths[] = new restore_path_element(
                 'playergroup_invite',
                 '/activity/playergroup/playergroup_invites/playergroup_invite'
+            );
+            $paths[] = new restore_path_element(
+                'playergroup_qualified',
+                '/activity/playergroup/playergroup_qualifieds/playergroup_qualified'
             );
         }
 
@@ -110,6 +115,27 @@ class restore_playergroup_activity_structure_step extends restore_activity_struc
 
         $newitemid = $DB->insert_record('playergroup_invites', $data);
         $this->set_mapping('playergroup_invite', $oldid, $newitemid);
+    }
+
+    /**
+     * Processes a playergroup_qualified record (user data — only when userinfo is enabled).
+     *
+     * @param array $data Parsed element data.
+     */
+    protected function process_playergroup_qualified(array $data): void {
+        global $DB;
+
+        $data = (object) $data;
+        $newuserid = $this->get_mappingid('user', $data->userid);
+        if (!$newuserid) {
+            // The user is not part of this restore, so there is nobody to credit.
+            return;
+        }
+
+        $data->playergroupid = $this->get_new_parentid('playergroup');
+        $data->userid = (int) $newuserid;
+
+        $DB->insert_record('playergroup_qualified', $data);
     }
 
     /**

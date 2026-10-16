@@ -115,6 +115,9 @@ class join_group extends external_api {
             if (!groups_add_member($params['groupid'], $USER->id)) {
                 throw new \moodle_exception('joinfailed', 'mod_playergroup');
             }
+
+            // Reaching the minimum qualifies every member of the group, not only the one joining.
+            $qualified = \mod_playergroup\local\qualification::record_group($playergroup, (int) $params['groupid']);
         } finally {
             $lock->release();
         }
@@ -136,14 +139,7 @@ class join_group extends external_api {
         $DB->set_field_select('playergroup_invites', 'timemodified', $now, $declinedselect, $inviteparams);
         $DB->set_field_select('playergroup_invites', 'status', 2, $declinedselect, $inviteparams);
 
-        $modinfo = get_fast_modinfo($cm->course);
-        $cminfo = $modinfo->get_cm($cm->id);
-        $completion = new \completion_info($modinfo->get_course());
-        if ($completion->is_enabled($cminfo) == COMPLETION_TRACKING_AUTOMATIC) {
-            $completion->update_state($cminfo, COMPLETION_COMPLETE, $USER->id);
-        }
-
-        playergroup_update_grades($playergroup, $USER->id);
+        \mod_playergroup\local\qualification::award($playergroup, $cm, $qualified);
 
         \mod_playergroup\event\member_joined::create([
             'context'  => $context,

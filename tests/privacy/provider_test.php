@@ -369,4 +369,96 @@ final class provider_test extends provider_testcase {
         $this->assertFalse($DB->record_exists('playergroup_meta', ['groupid' => $groupid]));
         $this->assertTrue($DB->record_exists('playergroup_meta', ['groupid' => $othergroupid]));
     }
+
+    /**
+     * Inserts a qualification row for the student in the fixture activity.
+     *
+     * @param \stdClass $user The student.
+     */
+    private function qualify(\stdClass $user): void {
+        global $DB;
+
+        $DB->insert_record('playergroup_qualified', (object) [
+            'playergroupid' => $this->cm->id,
+            'userid'        => $user->id,
+            'timequalified' => 1700000000,
+        ]);
+    }
+
+    /**
+     * Test that the qualification table is declared, with its personal fields.
+     */
+    public function test_get_metadata_declares_the_qualification_table(): void {
+        global $DB;
+
+        $items = provider::get_metadata(new collection('mod_playergroup'))->get_collection();
+        $declared = null;
+        foreach ($items as $item) {
+            if ($item->get_name() === 'playergroup_qualified') {
+                $declared = array_keys($item->get_privacy_fields());
+            }
+        }
+
+        $this->assertNotNull($declared);
+        $columns = array_diff(array_keys($DB->get_columns('playergroup_qualified')), ['id', 'playergroupid']);
+        $this->assertEqualsCanonicalizing($columns, $declared);
+    }
+
+    /**
+     * Test that a student who only qualified (no group created, no invite) is still found and exported.
+     */
+    public function test_qualified_only_student_is_found_and_exported(): void {
+        $student = $this->getDataGenerator()->create_user();
+        $this->qualify($student);
+        $context = \context_module::instance($this->cm->cmid);
+
+        $contextids = array_map(fn($c) => $c->id, provider::get_contexts_for_userid($student->id)->get_contexts());
+        $this->assertContains($context->id, $contextids);
+
+        $userlist = new userlist($context, 'mod_playergroup');
+        provider::get_users_in_context($userlist);
+        $this->assertContains((int) $student->id, array_map('intval', $userlist->get_userids()));
+
+        $this->export_context_data_for_user($student->id, $context, 'mod_playergroup');
+        $exported = \core_privacy\local\request\writer::with_context($context)->get_data(
+            [get_string('privacy:metadata:playergroup_qualified', 'mod_playergroup')]
+        );
+        $this->assertNotEmpty($exported->timequalified);
+    }
+
+    /**
+     * Test that erasing one student removes their qualification and leaves the others'.
+     */
+    public function test_delete_data_for_user_removes_only_their_qualification(): void {
+        global $DB;
+
+        $other = $this->getDataGenerator()->create_user();
+        $this->qualify($this->receiver);
+        $this->qualify($other);
+
+        $context = \context_module::instance($this->cm->cmid);
+        provider::delete_data_for_user(new approved_contextlist($this->receiver, 'mod_playergroup', [$context->id]));
+
+        $this->assertFalse($DB->record_exists('playergroup_qualified', ['userid' => $this->receiver->id]));
+        $this->assertTrue($DB->record_exists('playergroup_qualified', ['userid' => $other->id]));
+    }
+
+    /**
+     * Test that bulk erasure and erasing the whole context both remove the qualification.
+     */
+    public function test_bulk_and_context_deletion_remove_qualification(): void {
+        global $DB;
+
+        $other = $this->getDataGenerator()->create_user();
+        $this->qualify($this->receiver);
+        $this->qualify($other);
+        $context = \context_module::instance($this->cm->cmid);
+
+        provider::delete_data_for_users(new approved_userlist($context, 'mod_playergroup', [$this->receiver->id]));
+        $this->assertFalse($DB->record_exists('playergroup_qualified', ['userid' => $this->receiver->id]));
+        $this->assertTrue($DB->record_exists('playergroup_qualified', ['userid' => $other->id]));
+
+        provider::delete_data_for_all_users_in_context($context);
+        $this->assertSame(0, $DB->count_records('playergroup_qualified'));
+    }
 }

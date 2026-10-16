@@ -29,7 +29,7 @@ namespace mod_playergroup\completion;
 use core_completion\activity_custom_completion;
 
 /**
- * Defines and evaluates the custom completion rule: student must join or create a group.
+ * Defines and evaluates the custom completion rule: student must be in a group that reached the minimum size.
  */
 class custom_completion extends activity_custom_completion {
     /**
@@ -39,22 +39,16 @@ class custom_completion extends activity_custom_completion {
      * @return int COMPLETION_COMPLETE or COMPLETION_INCOMPLETE.
      */
     public function get_state(string $rule): int {
-        global $DB;
-
         $this->validate_rule($rule);
 
-        $sql = "SELECT gm.groupid
-                  FROM {groups_members} gm
-                  JOIN {playergroup_meta} pm ON pm.groupid = gm.groupid
-                 WHERE pm.playergroupid = :playergroupid
-                   AND gm.userid = :userid";
+        // Earned once and kept: the student was in a group that reached the minimum size, even if
+        // they have left it since.
+        $isqualified = \mod_playergroup\local\qualification::is_qualified(
+            (int) $this->cm->instance,
+            (int) $this->userid
+        );
 
-        $isingroup = $DB->record_exists_sql($sql, [
-            'playergroupid' => $this->cm->instance,
-            'userid'        => $this->userid,
-        ]);
-
-        return $isingroup ? COMPLETION_COMPLETE : COMPLETION_INCOMPLETE;
+        return $isqualified ? COMPLETION_COMPLETE : COMPLETION_INCOMPLETE;
     }
 
     /**

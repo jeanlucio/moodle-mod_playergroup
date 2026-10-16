@@ -32,6 +32,8 @@
  *        └── playergroup_meta (group badge, privacy, password)
  *   └── playergroup_invites (user data — only with userinfo)
  *        └── playergroup_invite
+ *   └── playergroup_qualifieds (user data — only with userinfo)
+ *        └── playergroup_qualified
  */
 class backup_playergroup_activity_structure_step extends backup_activity_structure_step {
     /**
@@ -61,12 +63,21 @@ class backup_playergroup_activity_structure_step extends backup_activity_structu
             'groupid', 'senderid', 'receiverid', 'status', 'timecreated', 'timemodified',
         ]);
 
+        // Who qualified for the grade and completion is user data too: without it a restored course
+        // would lose completion for students who left their group after qualifying.
+        $qualifieds = new backup_nested_element('playergroup_qualifieds');
+        $qualified = new backup_nested_element('playergroup_qualified', ['id'], [
+            'userid', 'timequalified',
+        ]);
+
         // Build the XML tree.
         $playergroup->add_child($metas);
         $metas->add_child($meta);
         if ($userinfo) {
             $playergroup->add_child($invites);
             $invites->add_child($invite);
+            $playergroup->add_child($qualifieds);
+            $qualifieds->add_child($qualified);
         }
 
         // Connect elements to their source tables.
@@ -74,6 +85,7 @@ class backup_playergroup_activity_structure_step extends backup_activity_structu
         $meta->set_source_table('playergroup_meta', ['playergroupid' => backup::VAR_PARENTID], 'id ASC');
         if ($userinfo) {
             $invite->set_source_table('playergroup_invites', ['playergroupid' => backup::VAR_PARENTID], 'id ASC');
+            $qualified->set_source_table('playergroup_qualified', ['playergroupid' => backup::VAR_PARENTID], 'id ASC');
         }
 
         // Annotate IDs that must be remapped on restore.
@@ -84,6 +96,7 @@ class backup_playergroup_activity_structure_step extends backup_activity_structu
             $invite->annotate_ids('group', 'groupid');
             $invite->annotate_ids('user', 'senderid');
             $invite->annotate_ids('user', 'receiverid');
+            $qualified->annotate_ids('user', 'userid');
         }
 
         // Annotate file areas.

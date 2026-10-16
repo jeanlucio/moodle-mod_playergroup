@@ -55,8 +55,9 @@ final class playergroup_grade_test extends advanced_testcase {
         global $DB;
 
         $cm = $this->getDataGenerator()->create_module('playergroup', [
-            'course' => $course->id,
-            'grade'  => $grade,
+            'course'     => $course->id,
+            'grade'      => $grade,
+            'minmembers' => 1,
         ]);
         return $DB->get_record('playergroup', ['id' => $cm->id], '*', MUST_EXIST);
     }
@@ -90,6 +91,18 @@ final class playergroup_grade_test extends advanced_testcase {
             'timecreated'   => time(),
             'timemodified'  => time(),
         ]);
+
+        // The activity has a minimum of one member, so the student qualifies on joining. The qualification
+        // moment is set to the join time so the submission date assertions below stay meaningful.
+        $newlyqualified = \mod_playergroup\local\qualification::record_group($playergroup, (int) $group->id);
+        if (in_array((int) $user->id, $newlyqualified, true) && $timeadded !== null) {
+            $DB->set_field(
+                'playergroup_qualified',
+                'timequalified',
+                $timeadded,
+                ['playergroupid' => $playergroup->id, 'userid' => $user->id]
+            );
+        }
         return $group->id;
     }
 

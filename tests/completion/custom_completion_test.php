@@ -45,6 +45,7 @@ final class custom_completion_test extends advanced_testcase {
         $course = $this->getDataGenerator()->create_course(['enablecompletion' => 1]);
         $cm = $this->getDataGenerator()->create_module('playergroup', [
             'course'              => $course->id,
+            'minmembers'          => 1,
             'completion'          => COMPLETION_TRACKING_AUTOMATIC,
             'completionjoingroup' => 1,
         ]);
@@ -98,8 +99,45 @@ final class custom_completion_test extends advanced_testcase {
             'timemodified'  => time(),
         ]);
 
+        // The activity has a minimum of one member, so being in the group is enough to qualify.
+        $playergroup = $DB->get_record('playergroup', ['id' => $cm->id], '*', MUST_EXIST);
+        \mod_playergroup\local\qualification::record_group($playergroup, (int) $group->id);
+
         $cminfo = get_fast_modinfo($course)->get_cm($cm->cmid);
         $completion = new custom_completion($cminfo, (int) $user->id);
+
+        $this->assertEquals(COMPLETION_COMPLETE, $completion->get_state('completionjoingroup'));
+    }
+
+    /**
+     * Being in a group that has not reached the minimum size is not enough, and the rule stays
+     * complete once earned even when the student is no longer in any group.
+     */
+    public function test_get_state_follows_the_qualification_not_the_current_membership(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        [$course, $cm] = $this->create_fixture();
+        $DB->set_field('playergroup', 'minmembers', 2, ['id' => $cm->id]);
+        $user = $this->getDataGenerator()->create_user();
+
+        $group = $this->getDataGenerator()->create_group(['courseid' => $course->id]);
+        $DB->insert_record('groups_members', (object) [
+            'groupid' => $group->id, 'userid' => $user->id, 'timeadded' => time(), 'component' => '', 'itemid' => 0,
+        ]);
+        $DB->insert_record('playergroup_meta', (object) [
+            'playergroupid' => $cm->id, 'groupid' => $group->id, 'creatorid' => $user->id, 'badge' => '🛡',
+            'privacy' => 0, 'password' => '', 'timecreated' => time(), 'timemodified' => time(),
+        ]);
+
+        $cminfo = get_fast_modinfo($course)->get_cm($cm->cmid);
+        $completion = new custom_completion($cminfo, (int) $user->id);
+        $this->assertEquals(COMPLETION_INCOMPLETE, $completion->get_state('completionjoingroup'));
+
+        $DB->insert_record('playergroup_qualified', (object) [
+            'playergroupid' => $cm->id, 'userid' => $user->id, 'timequalified' => time(),
+        ]);
+        $DB->delete_records('groups_members', ['groupid' => $group->id, 'userid' => $user->id]);
 
         $this->assertEquals(COMPLETION_COMPLETE, $completion->get_state('completionjoingroup'));
     }

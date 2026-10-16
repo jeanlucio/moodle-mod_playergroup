@@ -246,7 +246,8 @@ final class create_group_test extends advanced_testcase {
     }
 
     /**
-     * Test that creating a group with automatic completion marks the activity as complete.
+     * Test that creating a group with automatic completion marks the activity as complete when a
+     * group of one member is enough, that is, when the minimum is 1.
      */
     public function test_execute_with_automatic_completion_marks_complete(): void {
         global $CFG;
@@ -255,6 +256,7 @@ final class create_group_test extends advanced_testcase {
         $course = $this->getDataGenerator()->create_course(['enablecompletion' => 1]);
         $cm = $this->getDataGenerator()->create_module('playergroup', [
             'course'              => $course->id,
+            'minmembers'          => 1,
             'completion'          => COMPLETION_TRACKING_AUTOMATIC,
             'completionjoingroup' => 1,
         ]);

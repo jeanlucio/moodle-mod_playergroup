@@ -265,6 +265,7 @@
                         </ion-button>
                         <ion-text *ngIf="!group.canviewmembers">{{ group.membercount }}/{{ group.maxmembers }}</ion-text>
                         <ion-text *ngIf="group.ismygroup"> &bull; {{ group.leaderbadge }}</ion-text>
+                        <p *ngIf="group.missingmessage" class="pg-missing-members">{{ group.missingmessage }}</p>
                     </ion-card-subtitle>
                 </ion-card-header>
 

@@ -457,6 +457,9 @@ foreach ($groupmembers as $groupid => $members) {
         }
     }
 }
+// The members were added straight to the native groups, so record who counts for the grade and
+// completion the same way the web services do once a group reaches the minimum size.
+\mod_playergroup\local\qualification::record_all_groups($pginstance);
 cli_writeln("Membros adicionados: 27 alunos distribuídos nos 6 grupos.");
 cli_writeln("Sem grupo: Caio Figueiredo, Diana Teixeira, Estevao Borges.");
 

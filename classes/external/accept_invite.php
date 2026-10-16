@@ -104,6 +104,9 @@ class accept_invite extends external_api {
             if (!groups_add_member((int) $invite->groupid, $USER->id)) {
                 throw new \moodle_exception('joinfailed', 'mod_playergroup');
             }
+
+            // Reaching the minimum qualifies every member of the group, not only the one joining.
+            $qualified = \mod_playergroup\local\qualification::record_group($playergroup, (int) $invite->groupid);
         } finally {
             $lock->release();
         }
@@ -132,14 +135,7 @@ class accept_invite extends external_api {
             'objectid' => (int) $invite->groupid,
         ])->trigger();
 
-        $modinfo = get_fast_modinfo($cm->course);
-        $cminfo = $modinfo->get_cm($cm->id);
-        $completion = new \completion_info($modinfo->get_course());
-        if ($completion->is_enabled($cminfo) == COMPLETION_TRACKING_AUTOMATIC) {
-            $completion->update_state($cminfo, COMPLETION_COMPLETE, $USER->id);
-        }
-
-        playergroup_update_grades($playergroup, $USER->id);
+        \mod_playergroup\local\qualification::award($playergroup, $cm, $qualified);
 
         return [
             'success' => true,

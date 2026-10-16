@@ -38,6 +38,7 @@ use core_privacy\local\request\writer;
  * Personal data is stored in:
  * - playergroup_meta (creatorid)
  * - playergroup_invites (senderid, receiverid)
+ * - playergroup_qualified (userid)
  *
  * @package    mod_playergroup
  * @copyright  2026 Jean Lúcio
@@ -64,6 +65,11 @@ class provider implements
             'receiverid'  => 'privacy:metadata:receiverid',
             'timecreated' => 'privacy:metadata:timecreated',
         ], 'privacy:metadata:playergroup_invites');
+
+        $collection->add_database_table('playergroup_qualified', [
+            'userid'        => 'privacy:metadata:userid',
+            'timequalified' => 'privacy:metadata:timequalified',
+        ], 'privacy:metadata:playergroup_qualified');
 
         return $collection;
     }
@@ -104,6 +110,20 @@ class provider implements
             'modlevel2'     => CONTEXT_MODULE,
             'userid2'       => $userid,
             'userid3'       => $userid,
+        ]);
+
+        // Contexts where the user qualified for the grade and completion.
+        $sql = "SELECT ctx.id
+                  FROM {playergroup_qualified} pq
+                  JOIN {playergroup} pg ON pg.id = pq.playergroupid
+                  JOIN {modules} m ON m.name = :activityname3
+                  JOIN {course_modules} cm ON cm.instance = pg.id AND cm.module = m.id
+                  JOIN {context} ctx ON ctx.instanceid = cm.id AND ctx.contextlevel = :modlevel3
+                 WHERE pq.userid = :userid4";
+        $contextlist->add_from_sql($sql, [
+            'activityname3' => 'playergroup',
+            'modlevel3'     => CONTEXT_MODULE,
+            'userid4'       => $userid,
         ]);
 
         return $contextlist;
@@ -148,6 +168,15 @@ class provider implements
         $sql = "SELECT pi.receiverid AS userid
                   FROM {playergroup_invites} pi
                   JOIN {playergroup} pg ON pg.id = pi.playergroupid
+                  JOIN {modules} m ON m.name = :activityname
+                  JOIN {course_modules} cm ON cm.instance = pg.id AND cm.module = m.id
+                  JOIN {context} ctx ON ctx.instanceid = cm.id AND ctx.contextlevel = :modlevel
+                 WHERE ctx.id = :contextid";
+        $userlist->add_from_sql('userid', $sql, $params);
+
+        $sql = "SELECT pq.userid
+                  FROM {playergroup_qualified} pq
+                  JOIN {playergroup} pg ON pg.id = pq.playergroupid
                   JOIN {modules} m ON m.name = :activityname
                   JOIN {course_modules} cm ON cm.instance = pg.id AND cm.module = m.id
                   JOIN {context} ctx ON ctx.instanceid = cm.id AND ctx.contextlevel = :modlevel
@@ -234,6 +263,24 @@ class provider implements
                 (object)['invites' => $invites]
             );
         }
+
+        // Export when the user qualified for the grade and completion.
+        $sql = "SELECT pq.id, pq.timequalified, ctx.id AS contextid
+                  FROM {playergroup_qualified} pq
+                  JOIN {playergroup} pg ON pg.id = pq.playergroupid
+                  JOIN {modules} m ON m.name = 'playergroup'
+                  JOIN {course_modules} cm ON cm.instance = pg.id AND cm.module = m.id
+                  JOIN {context} ctx ON ctx.instanceid = cm.id
+                 WHERE ctx.id $insql
+                   AND pq.userid = :userid";
+        $qualifiedrecords = $DB->get_recordset_sql($sql, array_merge($inparams, ['userid' => $userid]));
+        foreach ($qualifiedrecords as $record) {
+            writer::with_context($contexts[$record->contextid])->export_data(
+                [get_string('privacy:metadata:playergroup_qualified', 'mod_playergroup')],
+                (object)['timequalified' => transform::datetime($record->timequalified)]
+            );
+        }
+        $qualifiedrecords->close();
     }
 
     /**
@@ -261,6 +308,12 @@ class provider implements
 
         $DB->delete_records_select(
             'playergroup_meta',
+            'playergroupid = :playergroupid',
+            ['playergroupid' => $cm->instance]
+        );
+
+        $DB->delete_records_select(
+            'playergroup_qualified',
             'playergroupid = :playergroupid',
             ['playergroupid' => $cm->instance]
         );
@@ -301,6 +354,12 @@ class provider implements
             "playergroupid $insql AND (senderid = :senderid OR receiverid = :receiverid)",
             array_merge($inparams, ['senderid' => $userid, 'receiverid' => $userid])
         );
+
+        $DB->delete_records_select(
+            'playergroup_qualified',
+            "playergroupid $insql AND userid = :userid",
+            array_merge($inparams, ['userid' => $userid])
+        );
     }
 
     /**
@@ -334,6 +393,13 @@ class provider implements
             'playergroup_invites',
             "playergroupid = :pgid1 AND senderid $sendersql",
             array_merge(['pgid1' => $cm->instance], $senderparams)
+        );
+
+        [$qualifiedsql, $qualifiedparams] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED, 'qlf');
+        $DB->delete_records_select(
+            'playergroup_qualified',
+            "playergroupid = :pgid3 AND userid $qualifiedsql",
+            array_merge(['pgid3' => $cm->instance], $qualifiedparams)
         );
 
         [$receiversql, $receiverparams] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED, 'rcv');

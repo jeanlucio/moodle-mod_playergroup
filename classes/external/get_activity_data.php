@@ -86,6 +86,7 @@ class get_activity_data extends external_api {
         $coursecontext = $context->get_course_context();
         $caninviteusers = has_capability('moodle/course:viewparticipants', $coursecontext);
         $canviewnames = \mod_playergroup\local\member_list::can_view_names($context);
+        $userqualified = \mod_playergroup\local\qualification::is_qualified((int) $playergroup->id, (int) $USER->id);
 
         $mygroupsql = "SELECT gm.groupid
                          FROM {groups_members} gm
@@ -155,6 +156,11 @@ class get_activity_data extends external_api {
             $ismygroup   = $hasgroup && $groupid === (int) $mygroupid;
             $iscreator   = (int) $g->creatorid === (int) $USER->id;
 
+            $missing = $ismygroup
+                ? \mod_playergroup\local\qualification::missing_members($playergroup, $membercount, $userqualified)
+                : 0;
+            $missingmessage = $missing > 0 ? get_string('groupneedsmembers', 'mod_playergroup', $missing) : '';
+
             $canviewmembers = isset($namegroupids[$groupid]);
             $creator = $canviewmembers ? ($creators[(int) $g->creatorid] ?? null) : null;
             $leaderbadge = $creator ? get_string('leadernamed', 'mod_playergroup', fullname($creator)) : '';
@@ -184,6 +190,7 @@ class get_activity_data extends external_api {
                 'maxmembers'         => $maxmembers,
                 'members'            => $groupmembers,
                 'canviewmembers'     => $canviewmembers,
+                'missingmessage'     => $missingmessage,
                 'membersheading'     => get_string('groupmembers_named', 'mod_playergroup', $groupname),
                 'privacy'            => $privacy,
                 'isprivacyopen'      => $privacy === 0,
@@ -338,6 +345,10 @@ class get_activity_data extends external_api {
             'canviewmembers'     => new external_value(
                 PARAM_BOOL,
                 'True if the names of this group\'s members may be shown to the current user'
+            ),
+            'missingmessage'     => new external_value(
+                PARAM_TEXT,
+                'Why the user\'s own group does not count yet (empty when it does)'
             ),
             'membersheading'     => new external_value(PARAM_TEXT, 'Title for the members list ("Members of X")'),
             'privacy'            => new external_value(PARAM_INT, 'Privacy level: 0=open, 1=protected, 2=closed'),
