@@ -134,4 +134,75 @@ final class reject_invite_test extends advanced_testcase {
         $this->expectException(\dml_missing_record_exception::class);
         reject_invite::execute(999999);
     }
+
+    /**
+     * Takes a capability away from the student role in the course.
+     *
+     * @param string $capability Capability to prohibit.
+     */
+    private function prohibit_for_students(string $capability): void {
+        global $DB;
+
+        $studentrole = $DB->get_field('role', 'id', ['shortname' => 'student'], MUST_EXIST);
+        assign_capability($capability, CAP_PROHIBIT, $studentrole, \context_course::instance($this->course->id)->id, true);
+        // A new request would build the module info again; here it is cached from before the change.
+        rebuild_course_cache($this->course->id, true, true);
+    }
+
+    /**
+     * Test that declining stays possible after the activity closed.
+     *
+     * Declining only changes the receiver's own invite, so there is nothing to freeze; the window
+     * applies to what changes the composition of the groups.
+     */
+    public function test_execute_still_works_after_the_close_date(): void {
+        global $DB;
+
+        $DB->set_field('playergroup', 'timeclose', time() - HOURSECS, ['id' => $this->cm->id]);
+
+        $result = reject_invite::execute($this->inviteid);
+
+        $this->assertTrue($result['success']);
+        $this->assertSame(2, (int) $DB->get_field('playergroup_invites', 'status', ['id' => $this->inviteid]));
+    }
+
+    /**
+     * Test that without the right to view the activity the core treats it as hidden, and the invite is left as it was.
+     */
+    public function test_execute_refuses_without_the_view_capability(): void {
+        global $DB;
+
+        $this->prohibit_for_students('mod/playergroup:view');
+
+        try {
+            reject_invite::execute($this->inviteid);
+            $this->fail('Declining needs the right to view the activity.');
+        } catch (\require_login_exception $e) {
+            $this->assertSame(0, (int) $DB->get_field('playergroup_invites', 'status', ['id' => $this->inviteid]));
+        }
+    }
+
+    /**
+     * Test that a student no longer enrolled in the course cannot answer the invite.
+     */
+    public function test_execute_refuses_a_receiver_who_left_the_course(): void {
+        global $DB;
+
+        $instance = $DB->get_record('enrol', ['courseid' => $this->course->id, 'enrol' => 'manual'], '*', MUST_EXIST);
+        enrol_get_plugin('manual')->unenrol_user($instance, $this->receiver->id);
+
+        $this->expectException(\require_login_exception::class);
+        reject_invite::execute($this->inviteid);
+    }
+
+    /**
+     * Test that the answer has the shape the service declares.
+     */
+    public function test_execute_returns_the_declared_structure(): void {
+        $result = reject_invite::execute($this->inviteid);
+        $clean = \core_external\external_api::clean_returnvalue(reject_invite::execute_returns(), $result);
+
+        $this->assertTrue($clean['success']);
+        $this->assertNotSame('', $clean['message']);
+    }
 }

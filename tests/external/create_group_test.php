@@ -354,4 +354,71 @@ final class create_group_test extends advanced_testcase {
 
         return $lock;
     }
+
+    /**
+     * Takes a capability away from the student role in the course.
+     *
+     * @param string $capability Capability to prohibit.
+     */
+    private function prohibit_for_students(string $capability): void {
+        global $DB;
+
+        $studentrole = $DB->get_field('role', 'id', ['shortname' => 'student'], MUST_EXIST);
+        assign_capability($capability, CAP_PROHIBIT, $studentrole, \context_course::instance($this->course->id)->id, true);
+        // A new request would build the module info again; here it is cached from before the change.
+        rebuild_course_cache($this->course->id, true, true);
+    }
+
+    /**
+     * Test that no group is created after the activity closed.
+     */
+    public function test_execute_refused_after_close_date(): void {
+        global $DB;
+
+        $DB->set_field('playergroup', 'timeclose', time() - HOURSECS, ['id' => $this->cm->id]);
+        $groupsbefore = $DB->count_records('groups', ['courseid' => $this->course->id]);
+
+        try {
+            create_group::execute($this->cm->cmid, 'Late', '', '🛡', 0, '');
+            $this->fail('A group cannot be created after the activity closed.');
+        } catch (moodle_exception $e) {
+            $this->assertSame('activityclosed', $e->errorcode);
+        }
+        $this->assertSame($groupsbefore, $DB->count_records('groups', ['courseid' => $this->course->id]));
+    }
+
+    /**
+     * Test that no group is created before the activity opens.
+     */
+    public function test_execute_refused_before_open_date(): void {
+        global $DB;
+
+        $DB->set_field('playergroup', 'timeopen', time() + HOURSECS, ['id' => $this->cm->id]);
+
+        $this->expectException(moodle_exception::class);
+        $this->expectExceptionMessage(get_string('activitynotopen', 'mod_playergroup'));
+        create_group::execute($this->cm->cmid, 'Early', '', '🛡', 0, '');
+    }
+
+    /**
+     * Test that someone outside the course cannot create a group.
+     */
+    public function test_execute_refuses_a_user_not_enrolled_in_the_course(): void {
+        $this->setUser($this->getDataGenerator()->create_user());
+
+        $this->expectException(\require_login_exception::class);
+        create_group::execute($this->cm->cmid, 'Intruder', '', '🛡', 0, '');
+    }
+
+    /**
+     * Test that the answer has the shape the service declares, including the new group's id.
+     */
+    public function test_execute_returns_the_declared_structure(): void {
+        $result = create_group::execute($this->cm->cmid, 'Shape', '', '🛡', 0, '');
+        $clean = \core_external\external_api::clean_returnvalue(create_group::execute_returns(), $result);
+
+        $this->assertTrue($clean['success']);
+        $this->assertGreaterThan(0, $clean['groupid']);
+        $this->assertNotSame('', $clean['message']);
+    }
 }

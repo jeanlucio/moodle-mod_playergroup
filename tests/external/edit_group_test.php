@@ -211,4 +211,95 @@ final class edit_group_test extends advanced_testcase {
         $this->expectException(\dml_missing_record_exception::class);
         edit_group::execute($othercm->cmid, $this->groupid, 'Cross Instance', '', '🛡', 0, '');
     }
+
+    /**
+     * Takes a capability away from the student role in the course.
+     *
+     * @param string $capability Capability to prohibit.
+     */
+    private function prohibit_for_students(string $capability): void {
+        global $DB;
+
+        $studentrole = $DB->get_field('role', 'id', ['shortname' => 'student'], MUST_EXIST);
+        assign_capability($capability, CAP_PROHIBIT, $studentrole, \context_course::instance($this->course->id)->id, true);
+        // A new request would build the module info again; here it is cached from before the change.
+        rebuild_course_cache($this->course->id, true, true);
+    }
+
+    /**
+     * Test that the right to create groups is checked on the server, and the group is left untouched.
+     *
+     * A leader whose right was taken away after creating the group must not keep editing it.
+     */
+    public function test_execute_requires_the_creategroup_capability(): void {
+        global $DB;
+
+        $this->prohibit_for_students('mod/playergroup:creategroup');
+
+        try {
+            edit_group::execute($this->cm->cmid, $this->groupid, 'Renamed', '', '⚔', 0, '');
+            $this->fail('Editing needs the creategroup capability.');
+        } catch (\required_capability_exception $e) {
+            $this->assertSame('Original Name', $DB->get_field('groups', 'name', ['id' => $this->groupid]));
+        }
+    }
+
+    /**
+     * Test that a group that does not exist is refused.
+     */
+    public function test_execute_refuses_an_unknown_group(): void {
+        $this->expectException(\dml_missing_record_exception::class);
+        edit_group::execute($this->cm->cmid, 999999, 'Renamed', '', '⚔', 0, '');
+    }
+
+    /**
+     * Test that the activity window is enforced after the close date, and nothing is written.
+     */
+    public function test_execute_refused_after_close_date(): void {
+        global $DB;
+
+        $DB->set_field('playergroup', 'timeclose', time() - HOURSECS, ['id' => $this->cm->id]);
+
+        try {
+            edit_group::execute($this->cm->cmid, $this->groupid, 'Renamed', '', '⚔', 0, '');
+            $this->fail('A group cannot be edited after the activity closed.');
+        } catch (moodle_exception $e) {
+            $this->assertSame('activityclosed', $e->errorcode);
+        }
+        $this->assertSame('Original Name', $DB->get_field('groups', 'name', ['id' => $this->groupid]));
+    }
+
+    /**
+     * Test that the activity window is enforced before the activity opens.
+     */
+    public function test_execute_refused_before_open_date(): void {
+        global $DB;
+
+        $DB->set_field('playergroup', 'timeopen', time() + HOURSECS, ['id' => $this->cm->id]);
+
+        $this->expectException(moodle_exception::class);
+        $this->expectExceptionMessage(get_string('activitynotopen', 'mod_playergroup'));
+        edit_group::execute($this->cm->cmid, $this->groupid, 'Renamed', '', '⚔', 0, '');
+    }
+
+    /**
+     * Test that someone outside the course cannot use the service.
+     */
+    public function test_execute_refuses_a_user_not_enrolled_in_the_course(): void {
+        $this->setUser($this->getDataGenerator()->create_user());
+
+        $this->expectException(\require_login_exception::class);
+        edit_group::execute($this->cm->cmid, $this->groupid, 'Renamed', '', '⚔', 0, '');
+    }
+
+    /**
+     * Test that the answer has the shape the service declares.
+     */
+    public function test_execute_returns_the_declared_structure(): void {
+        $result = edit_group::execute($this->cm->cmid, $this->groupid, 'Renamed', '', '⚔', 0, '');
+        $clean = \core_external\external_api::clean_returnvalue(edit_group::execute_returns(), $result);
+
+        $this->assertTrue($clean['success']);
+        $this->assertNotSame('', $clean['message']);
+    }
 }

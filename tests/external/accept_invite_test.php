@@ -334,4 +334,136 @@ final class accept_invite_test extends advanced_testcase {
 
         return $lock;
     }
+
+    /**
+     * Takes a capability away from the student role in the course.
+     *
+     * @param string $capability Capability to prohibit.
+     */
+    private function prohibit_for_students(string $capability): void {
+        global $DB;
+
+        $studentrole = $DB->get_field('role', 'id', ['shortname' => 'student'], MUST_EXIST);
+        assign_capability($capability, CAP_PROHIBIT, $studentrole, \context_course::instance($this->course->id)->id, true);
+        // A new request would build the module info again; here it is cached from before the change.
+        rebuild_course_cache($this->course->id, true, true);
+    }
+
+    /**
+     * Returns the status of the invite created in setUp.
+     *
+     * @return int 0 pending, 1 accepted, 2 declined.
+     */
+    private function invite_status(): int {
+        global $DB;
+
+        return (int) $DB->get_field('playergroup_invites', 'status', ['id' => $this->inviteid], MUST_EXIST);
+    }
+
+    /**
+     * Test that someone who already has a group cannot accept an invite to another one.
+     */
+    public function test_execute_refuses_when_the_receiver_already_has_a_group(): void {
+        create_group::execute($this->cm->cmid, 'Own team', '', '🛡', 0, '');
+
+        try {
+            accept_invite::execute($this->inviteid);
+            $this->fail('A student in a group must not accept another invite.');
+        } catch (moodle_exception $e) {
+            $this->assertSame('alreadyingroup', $e->errorcode);
+        }
+        $this->assertSame(0, $this->invite_status(), 'The invite is left pending.');
+        $this->assertFalse(groups_is_member($this->groupid, $this->receiver->id));
+    }
+
+    /**
+     * Test that an invite to a group that filled up meanwhile is refused, and nothing changes.
+     */
+    public function test_execute_refuses_when_the_group_is_full(): void {
+        global $DB;
+
+        $DB->set_field('playergroup', 'maxmembers', 1, ['id' => $this->cm->id]);
+
+        try {
+            accept_invite::execute($this->inviteid);
+            $this->fail('A full group must not take another member.');
+        } catch (moodle_exception $e) {
+            $this->assertSame('groupisfull', $e->errorcode);
+        }
+        $this->assertFalse(groups_is_member($this->groupid, $this->receiver->id));
+        $this->assertSame(0, $this->invite_status());
+    }
+
+    /**
+     * Test that an invite that does not exist is refused.
+     */
+    public function test_execute_refuses_an_unknown_invite(): void {
+        $this->expectException(\dml_missing_record_exception::class);
+        accept_invite::execute(999999);
+    }
+
+    /**
+     * Test that the activity window is enforced on the server, and the invite stays pending.
+     */
+    public function test_execute_refused_after_close_date(): void {
+        global $DB;
+
+        $DB->set_field('playergroup', 'timeclose', time() - HOURSECS, ['id' => $this->cm->id]);
+
+        try {
+            accept_invite::execute($this->inviteid);
+            $this->fail('An invite cannot be accepted after the activity closed.');
+        } catch (moodle_exception $e) {
+            $this->assertSame('activityclosed', $e->errorcode);
+        }
+        $this->assertFalse(groups_is_member($this->groupid, $this->receiver->id));
+        $this->assertSame(0, $this->invite_status());
+    }
+
+    /**
+     * Test that the activity window is enforced before the activity opens.
+     */
+    public function test_execute_refused_before_open_date(): void {
+        global $DB;
+
+        $DB->set_field('playergroup', 'timeopen', time() + HOURSECS, ['id' => $this->cm->id]);
+
+        $this->expectException(moodle_exception::class);
+        $this->expectExceptionMessage(get_string('activitynotopen', 'mod_playergroup'));
+        accept_invite::execute($this->inviteid);
+    }
+
+    /**
+     * Test that without the right to view the activity the core treats it as hidden, and the invite is not accepted.
+     */
+    public function test_execute_refuses_without_the_view_capability(): void {
+        $this->prohibit_for_students('mod/playergroup:view');
+
+        $this->expectException(\require_login_exception::class);
+        accept_invite::execute($this->inviteid);
+    }
+
+    /**
+     * Test that a student no longer enrolled in the course cannot accept what was sent to them.
+     */
+    public function test_execute_refuses_a_receiver_who_left_the_course(): void {
+        global $DB;
+
+        $instance = $DB->get_record('enrol', ['courseid' => $this->course->id, 'enrol' => 'manual'], '*', MUST_EXIST);
+        enrol_get_plugin('manual')->unenrol_user($instance, $this->receiver->id);
+
+        $this->expectException(\require_login_exception::class);
+        accept_invite::execute($this->inviteid);
+    }
+
+    /**
+     * Test that the answer has the shape the service declares.
+     */
+    public function test_execute_returns_the_declared_structure(): void {
+        $result = accept_invite::execute($this->inviteid);
+        $clean = \core_external\external_api::clean_returnvalue(accept_invite::execute_returns(), $result);
+
+        $this->assertTrue($clean['success']);
+        $this->assertNotSame('', $clean['message']);
+    }
 }

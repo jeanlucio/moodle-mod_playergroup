@@ -383,4 +383,107 @@ final class join_group_test extends advanced_testcase {
             'timemodified'  => time(),
         ]);
     }
+
+    /**
+     * Takes a capability away from the student role in the course.
+     *
+     * @param string $capability Capability to prohibit.
+     */
+    private function prohibit_for_students(string $capability): void {
+        global $DB;
+
+        $studentrole = $DB->get_field('role', 'id', ['shortname' => 'student'], MUST_EXIST);
+        assign_capability($capability, CAP_PROHIBIT, $studentrole, \context_course::instance($this->course->id)->id, true);
+        // A new request would build the module info again; here it is cached from before the change.
+        rebuild_course_cache($this->course->id, true, true);
+    }
+
+    /**
+     * Test that a full group refuses one more member, and the joiner stays out.
+     */
+    public function test_execute_refuses_when_the_group_is_full(): void {
+        global $DB;
+
+        $DB->set_field('playergroup', 'maxmembers', 1, ['id' => $this->cm->id]);
+
+        try {
+            join_group::execute($this->cm->cmid, $this->groupid, '');
+            $this->fail('A full group must not take another member.');
+        } catch (moodle_exception $e) {
+            $this->assertSame('groupisfull', $e->errorcode);
+        }
+        $this->assertFalse(groups_is_member($this->groupid, $this->joiner->id));
+    }
+
+    /**
+     * Test that a group of another activity cannot be joined through this one.
+     */
+    public function test_execute_rejects_a_group_of_another_activity(): void {
+        $other = $this->getDataGenerator()->create_module('playergroup', ['course' => $this->course->id]);
+
+        $this->expectException(\dml_missing_record_exception::class);
+        join_group::execute($other->cmid, $this->groupid, '');
+    }
+
+    /**
+     * Test that the activity window is enforced after the close date, and the joiner stays out.
+     */
+    public function test_execute_refused_after_close_date(): void {
+        global $DB;
+
+        $DB->set_field('playergroup', 'timeclose', time() - HOURSECS, ['id' => $this->cm->id]);
+
+        try {
+            join_group::execute($this->cm->cmid, $this->groupid, '');
+            $this->fail('Nobody can join after the activity closed.');
+        } catch (moodle_exception $e) {
+            $this->assertSame('activityclosed', $e->errorcode);
+        }
+        $this->assertFalse(groups_is_member($this->groupid, $this->joiner->id));
+    }
+
+    /**
+     * Test that the activity window is enforced before the activity opens.
+     */
+    public function test_execute_refused_before_open_date(): void {
+        global $DB;
+
+        $DB->set_field('playergroup', 'timeopen', time() + HOURSECS, ['id' => $this->cm->id]);
+
+        $this->expectException(moodle_exception::class);
+        $this->expectExceptionMessage(get_string('activitynotopen', 'mod_playergroup'));
+        join_group::execute($this->cm->cmid, $this->groupid, '');
+    }
+
+    /**
+     * Test that without the right to view the activity the core treats it as hidden, and nobody joins.
+     */
+    public function test_execute_refuses_without_the_view_capability(): void {
+        $this->prohibit_for_students('mod/playergroup:view');
+
+        $this->expectException(\require_login_exception::class);
+        join_group::execute($this->cm->cmid, $this->groupid, '');
+    }
+
+    /**
+     * Test that someone outside the course cannot join.
+     */
+    public function test_execute_refuses_a_user_not_enrolled_in_the_course(): void {
+        $this->setUser($this->getDataGenerator()->create_user());
+
+        $this->expectException(\require_login_exception::class);
+        join_group::execute($this->cm->cmid, $this->groupid, '');
+    }
+
+    /**
+     * Test that the answer has the shape the service declares.
+     */
+    public function test_execute_returns_the_declared_structure(): void {
+
+        $result = join_group::execute($this->cm->cmid, $this->groupid, '');
+        $clean = \core_external\external_api::clean_returnvalue(join_group::execute_returns(), $result);
+
+        $this->assertTrue($clean['success']);
+        $this->assertNotSame('', $clean['message']);
+    }
 }

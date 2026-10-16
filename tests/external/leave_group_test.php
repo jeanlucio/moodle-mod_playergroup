@@ -239,4 +239,68 @@ final class leave_group_test extends advanced_testcase {
 
         $this->assertTrue(groups_is_member($this->groupid, $this->leader->id));
     }
+
+    /**
+     * Takes a capability away from the student role in the course.
+     *
+     * @param string $capability Capability to prohibit.
+     */
+    private function prohibit_for_students(string $capability): void {
+        global $DB;
+
+        $studentrole = $DB->get_field('role', 'id', ['shortname' => 'student'], MUST_EXIST);
+        assign_capability($capability, CAP_PROHIBIT, $studentrole, \context_course::instance($this->course->id)->id, true);
+        // A new request would build the module info again; here it is cached from before the change.
+        rebuild_course_cache($this->course->id, true, true);
+    }
+
+    /**
+     * Test that being in a group of one activity does not let the student leave through another activity.
+     */
+    public function test_execute_does_not_leave_the_group_of_another_activity(): void {
+        $other = $this->getDataGenerator()->create_module('playergroup', ['course' => $this->course->id, 'canleave' => 1]);
+
+        try {
+            leave_group::execute($other->cmid);
+            $this->fail('The student has no group in the other activity.');
+        } catch (moodle_exception $e) {
+            $this->assertSame('notingroup', $e->errorcode);
+        }
+        $this->assertTrue(groups_is_member($this->groupid, $this->leader->id));
+    }
+
+    /**
+     * Test that without the right to view the activity the core treats it as hidden, and the membership is kept.
+     */
+    public function test_execute_refuses_without_the_view_capability(): void {
+        $this->prohibit_for_students('mod/playergroup:view');
+
+        try {
+            leave_group::execute($this->cm->cmid);
+            $this->fail('Leaving needs the right to view the activity.');
+        } catch (\require_login_exception $e) {
+            $this->assertTrue(groups_is_member($this->groupid, $this->leader->id));
+        }
+    }
+
+    /**
+     * Test that someone outside the course cannot use the service.
+     */
+    public function test_execute_refuses_a_user_not_enrolled_in_the_course(): void {
+        $this->setUser($this->getDataGenerator()->create_user());
+
+        $this->expectException(\require_login_exception::class);
+        leave_group::execute($this->cm->cmid);
+    }
+
+    /**
+     * Test that the answer has the shape the service declares.
+     */
+    public function test_execute_returns_the_declared_structure(): void {
+        $result = leave_group::execute($this->cm->cmid);
+        $clean = \core_external\external_api::clean_returnvalue(leave_group::execute_returns(), $result);
+
+        $this->assertTrue($clean['success']);
+        $this->assertNotSame('', $clean['message']);
+    }
 }
