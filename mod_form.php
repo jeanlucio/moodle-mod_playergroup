@@ -218,28 +218,57 @@ class mod_playergroup_mod_form extends moodleform_mod {
     /**
      * Add custom completion rules.
      *
+     * The element names carry the form's suffix. The core shows this form on the "Default activity
+     * completion" page with the suffix "_playergroup" and drops any custom rule whose name lacks it,
+     * which would also erase the rule from the defaults of every new activity.
+     *
      * @return array Array of string IDs of added items, empty array if none.
      */
     public function add_completion_rules(): array {
         $mform = $this->_form;
+        $suffix = $this->get_suffix();
         $group = [];
 
         $group[] =& $mform->createElement(
             'checkbox',
-            'completionjoingroup',
+            'completionjoingroup' . $suffix,
             '',
             get_string('completionjoingroup', 'mod_playergroup')
         );
 
         $mform->addGroup(
             $group,
-            'completionjoingroupgroup',
+            'completionjoingroupgroup' . $suffix,
             get_string('completionjoingroupgroup', 'mod_playergroup'),
             [' '],
             false
         );
 
-        return ['completionjoingroupgroup'];
+        return ['completionjoingroupgroup' . $suffix];
+    }
+
+    /**
+     * Stores an unticked completion rule as 0.
+     *
+     * A browser does not send an unticked checkbox, so the rule is missing from the submitted data and
+     * the update would leave the old 1 in the database. The rule only applies with automatic tracking,
+     * so it is also cleared when the teacher switches to another tracking mode.
+     *
+     * @param \stdClass $data Submitted data.
+     * @return void
+     */
+    public function data_postprocessing($data): void {
+        parent::data_postprocessing($data);
+
+        if (empty($data->completionunlocked)) {
+            return;
+        }
+
+        $name = 'completionjoingroup' . $this->get_suffix();
+        $automatic = !empty($data->completion) && (int) $data->completion === COMPLETION_TRACKING_AUTOMATIC;
+        if (!$automatic || empty($data->{$name})) {
+            $data->{$name} = 0;
+        }
     }
 
     /**
@@ -249,6 +278,6 @@ class mod_playergroup_mod_form extends moodleform_mod {
      * @return bool True if one or more rules is enabled, false if none are.
      */
     public function completion_rule_enabled($data): bool {
-        return !empty($data['completionjoingroup']);
+        return !empty($data['completionjoingroup' . $this->get_suffix()]);
     }
 }

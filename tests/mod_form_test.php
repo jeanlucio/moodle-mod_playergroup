@@ -155,4 +155,127 @@ final class mod_form_test extends advanced_testcase {
         $this->assertSame([], $this->form->validation($this->data(['grade' => 10]), []));
         $this->assertSame([], $this->form->validation($this->data(['grade' => 0]), []));
     }
+
+    /**
+     * Test that unticking the completion rule is stored as 0.
+     *
+     * A browser does not send an unticked checkbox, so the rule is simply missing from the submitted data
+     * and, unless the form fills it in, the update leaves the old 1 in the database: the box comes back
+     * ticked and the activity keeps the rule the teacher just removed.
+     */
+    public function test_an_unticked_completion_rule_is_submitted_as_zero(): void {
+        $data = (object) ['completionunlocked' => 1, 'completion' => COMPLETION_TRACKING_AUTOMATIC];
+
+        $this->form->data_postprocessing($data);
+
+        $this->assertObjectHasProperty('completionjoingroup', $data);
+        $this->assertSame(0, (int) $data->completionjoingroup);
+    }
+
+    /**
+     * Test that a ticked rule stays on while the tracking is automatic, and goes off when it is not.
+     */
+    public function test_the_completion_rule_only_stays_on_with_automatic_tracking(): void {
+        $ticked = (object) [
+            'completionunlocked' => 1,
+            'completion' => COMPLETION_TRACKING_AUTOMATIC,
+            'completionjoingroup' => 1,
+        ];
+        $this->form->data_postprocessing($ticked);
+        $this->assertSame(1, (int) $ticked->completionjoingroup);
+
+        $manual = (object) [
+            'completionunlocked' => 1,
+            'completion' => COMPLETION_TRACKING_MANUAL,
+            'completionjoingroup' => 1,
+        ];
+        $this->form->data_postprocessing($manual);
+        $this->assertSame(0, (int) $manual->completionjoingroup);
+    }
+
+    /**
+     * Test the whole save: the stored rule really goes to 0 when the teacher unticks it.
+     */
+    public function test_saving_with_the_rule_unticked_clears_it_in_the_database(): void {
+        global $DB;
+
+        $course = $this->getDataGenerator()->create_course(['enablecompletion' => 1]);
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $course->id,
+            'completion' => COMPLETION_TRACKING_AUTOMATIC,
+            'completionjoingroup' => 1,
+        ]);
+        $this->assertSame(1, (int) $DB->get_field('playergroup', 'completionjoingroup', ['id' => $cm->id]));
+
+        // What the form returns when the box was unticked: the key is absent.
+        $data = $DB->get_record('playergroup', ['id' => $cm->id], '*', MUST_EXIST);
+        unset($data->completionjoingroup);
+        $data->instance = $cm->id;
+        $data->groupingmode = 'none';
+        $data->completionunlocked = 1;
+        $data->completion = COMPLETION_TRACKING_AUTOMATIC;
+
+        $this->form->data_postprocessing($data);
+        playergroup_update_instance($data, $this->form);
+
+        $this->assertSame(0, (int) $DB->get_field('playergroup', 'completionjoingroup', ['id' => $cm->id]));
+    }
+
+    /**
+     * Builds the form the core shows on the "Default activity completion" page for this activity.
+     *
+     * @return \MoodleQuickForm The form with the activity's completion rules added to it.
+     */
+    private function default_completion_form(): \MoodleQuickForm {
+        global $DB;
+
+        $course = $this->getDataGenerator()->create_course(['enablecompletion' => 1]);
+        $module = $DB->get_record('modules', ['name' => 'playergroup'], '*', MUST_EXIST);
+        $module->formattedname = get_string('modulename', 'mod_playergroup');
+
+        $defaultform = new \core_completion_defaultedit_form(null, [
+            'course' => $course,
+            'modules' => [$module->id => $module],
+        ]);
+
+        $property = new \ReflectionProperty($defaultform, '_form');
+        return $property->getValue($defaultform);
+    }
+
+    /**
+     * Test that the completion rule survives on the default completion page.
+     *
+     * The core renders that page with the activity's own form and a suffix ("_playergroup") on every
+     * element name, and silently removes any custom rule whose name lacks it. With the rule gone, saving
+     * the page drops it from the defaults of every new activity, with no message.
+     */
+    public function test_the_completion_rule_is_kept_on_the_default_completion_page(): void {
+        $mform = $this->default_completion_form();
+
+        // The core checks the group, the name add_completion_rules() returns; the checkbox sits inside it.
+        $this->assertTrue($mform->elementExists('completionjoingroupgroup_playergroup'));
+        $names = array_map(
+            fn($element) => $element->getName(),
+            $mform->getElement('completionjoingroupgroup_playergroup')->getElements()
+        );
+        $this->assertSame(['completionjoingroup_playergroup'], $names);
+    }
+
+    /**
+     * Test that the rule is read under the suffixed name when the form carries a suffix.
+     */
+    public function test_the_completion_rule_is_read_with_the_suffix(): void {
+        $this->form->set_suffix('_playergroup');
+
+        $this->assertTrue($this->form->completion_rule_enabled(['completionjoingroup_playergroup' => 1]));
+        $this->assertFalse($this->form->completion_rule_enabled(['completionjoingroup' => 1]));
+    }
+
+    /**
+     * Test that the rule keeps its plain name outside the default completion page.
+     */
+    public function test_the_completion_rule_is_read_without_suffix_on_the_activity_form(): void {
+        $this->assertTrue($this->form->completion_rule_enabled(['completionjoingroup' => 1]));
+        $this->assertFalse($this->form->completion_rule_enabled([]));
+    }
 }

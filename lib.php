@@ -340,7 +340,7 @@ function playergroup_update_grades(\stdClass $playergroup, int $userid = 0): voi
 function playergroup_get_coursemodule_info(\stdClass $coursemodule): \cached_cm_info|false {
     global $DB;
 
-    $fields = 'id, name, completionjoingroup, timeopen, timeclose';
+    $fields = 'id, name, intro, introformat, completionjoingroup, timeopen, timeclose';
     $playergroup = $DB->get_record('playergroup', ['id' => $coursemodule->instance], $fields);
     if (!$playergroup) {
         return false;
@@ -349,7 +349,15 @@ function playergroup_get_coursemodule_info(\stdClass $coursemodule): \cached_cm_
     $info = new \cached_cm_info();
     $info->name = $playergroup->name;
 
-    if (!empty($playergroup->completionjoingroup)) {
+    // The core shows the activity description on the course page only when the module fills it in.
+    if (!empty($coursemodule->showdescription)) {
+        // Do not filter the cached version: the filters run at display time.
+        $info->content = format_module_intro('playergroup', $playergroup, $coursemodule->id, false);
+    }
+
+    // The completion rule only applies while the tracking is automatic, whatever stayed in the database.
+    $automatic = (int) ($coursemodule->completion ?? 0) === COMPLETION_TRACKING_AUTOMATIC;
+    if ($automatic && !empty($playergroup->completionjoingroup)) {
         $info->customdata['customcompletionrules']['completionjoingroup'] = 1;
     }
 

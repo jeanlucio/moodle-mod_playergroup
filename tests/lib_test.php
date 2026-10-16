@@ -365,6 +365,106 @@ final class lib_test extends advanced_testcase {
     }
 
     /**
+     * Fetches the raw course module row, which is what the core hands to get_coursemodule_info().
+     *
+     * @param \stdClass $cm Activity as returned by the generator.
+     * @return \stdClass The course_modules record.
+     */
+    private function cm_row(\stdClass $cm): \stdClass {
+        global $DB;
+
+        return $DB->get_record('course_modules', ['id' => $cm->cmid], '*', MUST_EXIST);
+    }
+
+    /**
+     * Test that the description is offered to the course page when the teacher asks for it.
+     *
+     * The activity declares the "Display description on course page" option, but the core leaves it to
+     * each module to fill in the content; without it the box does nothing.
+     */
+    public function test_get_coursemodule_info_shows_the_description_when_asked(): void {
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $course->id,
+            'intro' => '<p>Form a team of up to five</p>',
+            'introformat' => FORMAT_HTML,
+            'showdescription' => 1,
+        ]);
+
+        $info = playergroup_get_coursemodule_info($this->cm_row($cm));
+
+        $this->assertStringContainsString('Form a team of up to five', (string) $info->content);
+    }
+
+    /**
+     * Test that the description stays off the course page when the option is not ticked.
+     */
+    public function test_get_coursemodule_info_hides_the_description_when_not_asked(): void {
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $course->id,
+            'intro' => '<p>Form a team of up to five</p>',
+            'introformat' => FORMAT_HTML,
+            'showdescription' => 0,
+        ]);
+
+        $info = playergroup_get_coursemodule_info($this->cm_row($cm));
+
+        $this->assertEmpty($info->content);
+    }
+
+    /**
+     * Test that the course page, which reads the cached module info, shows the description too.
+     */
+    public function test_the_description_reaches_the_course_page_through_modinfo(): void {
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $course->id,
+            'intro' => '<p>Form a team of up to five</p>',
+            'introformat' => FORMAT_HTML,
+            'showdescription' => 1,
+        ]);
+
+        $cminfo = get_fast_modinfo($course)->get_cm($cm->cmid);
+
+        $this->assertStringContainsString('Form a team of up to five', $cminfo->get_formatted_content());
+    }
+
+    /**
+     * Test that the completion rule is published for the course page only while the tracking is automatic.
+     *
+     * A value left over from before the teacher switched to manual tracking must not keep the rule alive.
+     */
+    public function test_get_coursemodule_info_ignores_the_rule_without_automatic_tracking(): void {
+        $course = $this->getDataGenerator()->create_course(['enablecompletion' => 1]);
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $course->id,
+            'completion' => COMPLETION_TRACKING_MANUAL,
+            'completionjoingroup' => 1,
+        ]);
+
+        $info = playergroup_get_coursemodule_info($this->cm_row($cm));
+
+        $this->assertArrayNotHasKey('completionjoingroup', $info->customdata['customcompletionrules'] ?? []);
+    }
+
+    /**
+     * Test that the rule is published when the tracking is automatic and the rule is on.
+     */
+    public function test_get_coursemodule_info_publishes_the_rule_with_automatic_tracking(): void {
+        $course = $this->getDataGenerator()->create_course(['enablecompletion' => 1]);
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $course->id,
+            'completion' => COMPLETION_TRACKING_AUTOMATIC,
+            'completionjoingroup' => 1,
+        ]);
+
+        $info = playergroup_get_coursemodule_info($this->cm_row($cm));
+
+        $this->assertArrayHasKey('completionjoingroup', $info->customdata['customcompletionrules']);
+    }
+
+    /**
      * Test that playergroup_supports returns expected values.
      */
     public function test_supports_known_features(): void {
