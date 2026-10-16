@@ -59,7 +59,9 @@ $capabilities = [
     ],
 
     'mod/playergroup:manage' => [
-        'riskbitmask' => RISK_XSS,
+        // It gives the names of the students and the log of what they did, in the reports and in their
+        // CSV and Excel exports. It writes no HTML, so it carries no XSS risk.
+        'riskbitmask' => RISK_PERSONAL,
         'captype' => 'write',
         'contextlevel' => CONTEXT_MODULE,
         'archetypes' => [
