@@ -28,7 +28,7 @@
  *
  * Restore order:
  *   1. playergroup — creates the activity instance, remaps groupingid.
- *   2. playergroup_meta — remaps groupid and creatorid; always restored.
+ *   2. playergroup_meta — remaps groupid and creatorid; only with userinfo.
  *   3. playergroup_invite — remaps groupid, senderid, receiverid; only with userinfo.
  *   4. playergroup_qualified — remaps userid; only with userinfo.
  */
@@ -43,11 +43,13 @@ class restore_playergroup_activity_structure_step extends restore_activity_struc
         $userinfo = $this->get_setting_value('userinfo');
 
         $paths[] = new restore_path_element('playergroup', '/activity/playergroup');
-        $paths[] = new restore_path_element(
-            'playergroup_meta',
-            '/activity/playergroup/playergroup_metas/playergroup_meta'
-        );
+        // Group metadata is user data. Backups made before that was so carry it even without users;
+        // it is ignored here, since it would bring back groups nobody leads.
         if ($userinfo) {
+            $paths[] = new restore_path_element(
+                'playergroup_meta',
+                '/activity/playergroup/playergroup_metas/playergroup_meta'
+            );
             $paths[] = new restore_path_element(
                 'playergroup_invite',
                 '/activity/playergroup/playergroup_invites/playergroup_invite'
@@ -89,9 +91,17 @@ class restore_playergroup_activity_structure_step extends restore_activity_struc
         $data = (object) $data;
         $oldid = $data->id;
 
+        // A group or a leader that did not come with the restore cannot be linked: a row with group 0
+        // or leader 0 would point at nothing or leave the group without anyone able to manage it.
+        $newgroupid = (int) $this->get_mappingid('group', $data->groupid);
+        $newcreatorid = (int) $this->get_mappingid('user', $data->creatorid);
+        if (!$newgroupid || !$newcreatorid) {
+            return;
+        }
+
         $data->playergroupid = $this->get_new_parentid('playergroup');
-        $data->groupid = (int) $this->get_mappingid('group', $data->groupid);
-        $data->creatorid = (int) $this->get_mappingid('user', $data->creatorid);
+        $data->groupid = $newgroupid;
+        $data->creatorid = $newcreatorid;
 
         $newitemid = $DB->insert_record('playergroup_meta', $data);
         $this->set_mapping('playergroup_meta', $oldid, $newitemid);
@@ -108,10 +118,18 @@ class restore_playergroup_activity_structure_step extends restore_activity_struc
         $data = (object) $data;
         $oldid = $data->id;
 
+        $newgroupid = (int) $this->get_mappingid('group', $data->groupid);
+        $newsenderid = (int) $this->get_mappingid('user', $data->senderid);
+        $newreceiverid = (int) $this->get_mappingid('user', $data->receiverid);
+        if (!$newgroupid || !$newsenderid || !$newreceiverid) {
+            // An invite needs its group and both people; without any of them it means nothing.
+            return;
+        }
+
         $data->playergroupid = $this->get_new_parentid('playergroup');
-        $data->groupid = (int) $this->get_mappingid('group', $data->groupid);
-        $data->senderid = (int) $this->get_mappingid('user', $data->senderid);
-        $data->receiverid = (int) $this->get_mappingid('user', $data->receiverid);
+        $data->groupid = $newgroupid;
+        $data->senderid = $newsenderid;
+        $data->receiverid = $newreceiverid;
 
         $newitemid = $DB->insert_record('playergroup_invites', $data);
         $this->set_mapping('playergroup_invite', $oldid, $newitemid);

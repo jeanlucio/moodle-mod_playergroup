@@ -28,8 +28,8 @@
  *
  * XML tree:
  *   playergroup (activity config)
- *   └── playergroup_metas (content — always)
- *        └── playergroup_meta (group badge, privacy, password)
+ *   └── playergroup_metas (user data — only with userinfo)
+ *        └── playergroup_meta (group badge, privacy, password, leader)
  *   └── playergroup_invites (user data — only with userinfo)
  *        └── playergroup_invite
  *   └── playergroup_qualifieds (user data — only with userinfo)
@@ -51,7 +51,9 @@ class backup_playergroup_activity_structure_step extends backup_activity_structu
             'completionjoingroup', 'timeopen', 'timeclose', 'timemodified',
         ]);
 
-        // Group metadata is content: badge, privacy, password — always backed up.
+        // Group metadata describes groups the students created: their leader, their password and their
+        // privacy. Without the users it would restore as groups nobody leads, with a password nobody
+        // knows, so it is user data and is backed up only when userinfo is enabled.
         $metas = new backup_nested_element('playergroup_metas');
         $meta = new backup_nested_element('playergroup_meta', ['id'], [
             'groupid', 'creatorid', 'badge', 'privacy', 'password', 'timecreated', 'timemodified',
@@ -71,9 +73,9 @@ class backup_playergroup_activity_structure_step extends backup_activity_structu
         ]);
 
         // Build the XML tree.
-        $playergroup->add_child($metas);
-        $metas->add_child($meta);
         if ($userinfo) {
+            $playergroup->add_child($metas);
+            $metas->add_child($meta);
             $playergroup->add_child($invites);
             $invites->add_child($invite);
             $playergroup->add_child($qualifieds);
@@ -82,17 +84,17 @@ class backup_playergroup_activity_structure_step extends backup_activity_structu
 
         // Connect elements to their source tables.
         $playergroup->set_source_table('playergroup', ['id' => backup::VAR_ACTIVITYID]);
-        $meta->set_source_table('playergroup_meta', ['playergroupid' => backup::VAR_PARENTID], 'id ASC');
         if ($userinfo) {
+            $meta->set_source_table('playergroup_meta', ['playergroupid' => backup::VAR_PARENTID], 'id ASC');
             $invite->set_source_table('playergroup_invites', ['playergroupid' => backup::VAR_PARENTID], 'id ASC');
             $qualified->set_source_table('playergroup_qualified', ['playergroupid' => backup::VAR_PARENTID], 'id ASC');
         }
 
         // Annotate IDs that must be remapped on restore.
         $playergroup->annotate_ids('grouping', 'groupingid');
-        $meta->annotate_ids('group', 'groupid');
-        $meta->annotate_ids('user', 'creatorid');
         if ($userinfo) {
+            $meta->annotate_ids('group', 'groupid');
+            $meta->annotate_ids('user', 'creatorid');
             $invite->annotate_ids('group', 'groupid');
             $invite->annotate_ids('user', 'senderid');
             $invite->annotate_ids('user', 'receiverid');

@@ -54,15 +54,15 @@ final class restore_test extends advanced_testcase {
     }
 
     /**
-     * Backup without userinfo: playergroup and playergroup_meta are restored;
-     * playergroup_invites are NOT included.
+     * Backup without userinfo: only the activity itself is restored. The groups the students created
+     * (playergroup_meta, with their leader and password) and the invites are user data and stay out.
      */
     public function test_backup_restore_content_only(): void {
         global $DB;
         $this->resetAfterTest();
         $this->setAdminUser();
 
-        [$course, $activity, $groupid, , , ] = $this->create_fixture(withusers: true);
+        [$course, $activity] = $this->create_fixture(withusers: true);
 
         $newcourseid = $this->backup_and_restore($course, false);
 
@@ -78,19 +78,9 @@ final class restore_test extends advanced_testcase {
         $this->assertSame((int) $activity->canleave, (int) $newactivity->canleave);
         $this->assertSame((int) $activity->deletegroups, (int) $newactivity->deletegroups);
 
-        // Meta always included (content data).
-        $this->assertSame(1, $DB->count_records('playergroup_meta', ['playergroupid' => $newactivity->id]));
-
-        $newmeta = $DB->get_record('playergroup_meta', ['playergroupid' => $newactivity->id], '*', MUST_EXIST);
-
-        // Content field preserved.
-        $this->assertSame('⚔', $newmeta->badge);
-        $this->assertSame(0, (int) $newmeta->privacy);
-
-        // Group ID remapped to a group in the new course (must be > 0 and differ from original).
-        $this->assertGreaterThan(0, (int) $newmeta->groupid);
-        $this->assertNotSame($groupid, (int) $newmeta->groupid);
-        $this->assertTrue($DB->record_exists('groups', ['id' => $newmeta->groupid, 'courseid' => $newcourseid]));
+        // The students' groups are user data: restoring them without the students would bring back
+        // groups nobody leads, locked behind a password nobody knows.
+        $this->assertSame(0, $DB->count_records('playergroup_meta', ['playergroupid' => $newactivity->id]));
 
         // Invites must NOT be present (no userinfo).
         $this->assertSame(0, $DB->count_records('playergroup_invites', ['playergroupid' => $newactivity->id]));
