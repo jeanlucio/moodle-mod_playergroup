@@ -354,4 +354,24 @@ final class renderer_test extends advanced_testcase {
         $this->assertStringContainsString('id="pg-edit-grouppassword"', $html);
         $this->assertStringContainsString('autocomplete="new-password"', $html);
     }
+
+    /**
+     * Test that the report explains why it is empty when no log store can be queried, rather than
+     * showing the normal "no records" message, and offers no export.
+     */
+    public function test_render_activity_report_explains_missing_log_store(): void {
+        $reportdata = (object) [
+            'rows'      => [],
+            'hasrows'   => false,
+            'noreader'  => true,
+            'backurl'   => '',
+            'exporturl' => 'https://example.invalid/export.php?id=1',
+        ];
+
+        $html = $this->renderer->render_activity_report($reportdata);
+
+        $this->assertStringContainsString(get_string('activitylog_noreader', 'mod_playergroup'), $html);
+        $this->assertStringNotContainsString(get_string('activitylog_empty', 'mod_playergroup'), $html);
+        $this->assertStringNotContainsString('export.php', $html);
+    }
 }

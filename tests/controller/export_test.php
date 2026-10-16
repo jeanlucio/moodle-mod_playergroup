@@ -78,6 +78,8 @@ final class export_test extends advanced_testcase {
      */
     public function test_execute_streams_csv_with_no_events(): void {
         $this->resetAfterTest();
+        set_config('enabled_stores', 'logstore_standard', 'tool_log');
+        get_log_manager(true);
 
         $course = $this->getDataGenerator()->create_course();
         $cm = $this->getDataGenerator()->create_module('playergroup', ['course' => $course->id]);
@@ -90,5 +92,26 @@ final class export_test extends advanced_testcase {
 
         $this->assertStringContainsString(get_string('report_action', 'mod_playergroup'), $csv);
         $this->assertStringNotContainsString(get_string('event_group_created', 'mod_playergroup'), $csv);
+    }
+
+    /**
+     * Test that the export refuses to produce a file when no log store can be queried, instead of
+     * handing the teacher an empty one that reads as "nobody did anything".
+     */
+    public function test_execute_throws_when_no_log_reader_is_enabled(): void {
+        $this->resetAfterTest();
+        set_config('enabled_stores', '', 'tool_log');
+        get_log_manager(true);
+
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module('playergroup', ['course' => $course->id]);
+        $context = context_module::instance($cm->cmid);
+
+        try {
+            (new export())->execute($context->id, 'csv', $course->shortname);
+            $this->fail('An export without a log reader must be refused.');
+        } catch (\moodle_exception $e) {
+            $this->assertSame('activitylog_noreader', $e->errorcode);
+        }
     }
 }

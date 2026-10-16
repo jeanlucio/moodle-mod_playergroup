@@ -31,6 +31,7 @@ $string['activityclosed'] = 'Esta atividade não está mais aceitando formação
 $string['activityclosedmsg'] = 'Esta atividade foi encerrada. A formação de grupos não é mais permitida.';
 $string['activitylog'] = 'Registro de Atividade';
 $string['activitylog_empty'] = 'Nenhuma atividade registrada ainda.';
+$string['activitylog_noreader'] = 'Nenhum armazenamento de log que possa ser consultado está habilitado, então o registro de atividades está indisponível. Peça a um administrador do site que habilite um em Administração do site > Plugins > Logging > Gerenciar locais de armazenamento de log.';
 $string['activitynotopen'] = 'Esta atividade ainda não está aberta para formação de grupos.';
 $string['activityopensfrom'] = 'Esta atividade será aberta para formação de grupos em {$a}.';
 $string['alreadyingroup'] = 'Você já pertence a um grupo nesta atividade.';

@@ -24,6 +24,7 @@
         "backurl": "/mod/playergroup/view.php?id=1",
         "exporturl": "/mod/playergroup/export.php?id=1",
         "hasrows": true,
+        "noreader": false,
         "rows": [
             {
                 "date": "24/04/2026 14:32",
@@ -87,9 +88,16 @@
     {{/hasrows}}
 
     {{^hasrows}}
-    <p class="text-muted text-center py-5">
-        {{#str}} activitylog_empty, mod_playergroup {{/str}}
-    </p>
+        {{#noreader}}
+        <div class="alert alert-warning" role="alert">
+            {{#str}} activitylog_noreader, mod_playergroup {{/str}}
+        </div>
+        {{/noreader}}
+        {{^noreader}}
+        <p class="text-muted text-center py-5">
+            {{#str}} activitylog_empty, mod_playergroup {{/str}}
+        </p>
+        {{/noreader}}
     {{/hasrows}}
 
 </div>

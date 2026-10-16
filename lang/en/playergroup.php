@@ -31,6 +31,7 @@ $string['activityclosed'] = 'This activity is no longer accepting group formatio
 $string['activityclosedmsg'] = 'This activity has closed. Group formation is no longer allowed.';
 $string['activitylog'] = 'Activity Log';
 $string['activitylog_empty'] = 'No activity recorded yet.';
+$string['activitylog_noreader'] = 'No log store that can be queried is enabled, so the activity log is unavailable. Ask a site administrator to enable one in Site administration > Plugins > Logging > Manage log stores.';
 $string['activitynotopen'] = 'This activity is not yet open for group formation.';
 $string['activityopensfrom'] = 'This activity will open for group formation on {$a}.';
 $string['alreadyingroup'] = 'You already belong to a group in this activity.';

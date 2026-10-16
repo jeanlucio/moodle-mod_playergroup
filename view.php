@@ -321,56 +321,12 @@ $renderer = $PAGE->get_renderer('mod_playergroup');
 
 // Teacher: activity log report.
 if ($tab === 'report' && $isteacher) {
-    $eventsmap = [
-        '\\mod_playergroup\\event\\group_created'  => get_string('event_group_created', 'mod_playergroup'),
-        '\\mod_playergroup\\event\\member_joined'  => get_string('event_member_joined', 'mod_playergroup'),
-        '\\mod_playergroup\\event\\member_left'    => get_string('event_member_left', 'mod_playergroup'),
-        '\\mod_playergroup\\event\\invite_accepted' => get_string('event_invite_accepted', 'mod_playergroup'),
-    ];
-
-    [$inevents, $ineventsparams] = $DB->get_in_or_equal(
-        array_keys($eventsmap),
-        SQL_PARAMS_NAMED,
-        'evt'
-    );
-
-    $logsql = "SELECT l.id, l.timecreated, l.userid, l.eventname
-                 FROM {logstore_standard_log} l
-                WHERE l.contextid = :contextid
-                  AND l.eventname $inevents
-             ORDER BY l.timecreated DESC";
-
-    $logentries = $DB->get_records_sql(
-        $logsql,
-        array_merge(['contextid' => $context->id], $ineventsparams),
-        0,
-        200
-    );
-
-    $userids = [];
-    foreach ($logentries as $entry) {
-        $userids[(int) $entry->userid] = (int) $entry->userid;
-    }
-
-    $logusers = [];
-    if (!empty($userids)) {
-        $userfields = 'id, firstname, lastname, firstnamephonetic, lastnamephonetic, middlename, alternatename';
-        $logusers = $DB->get_records_list('user', 'id', $userids, '', $userfields);
-    }
-
-    $rows = [];
-    foreach ($logentries as $entry) {
-        $loguser = $logusers[(int) $entry->userid] ?? null;
-        $rows[] = [
-            'date'     => userdate($entry->timecreated),
-            'username' => $loguser ? fullname($loguser) : '?',
-            'action'   => $eventsmap[$entry->eventname] ?? $entry->eventname,
-        ];
-    }
+    $rows = \mod_playergroup\local\activity_log::get_rows($context->id, 200);
 
     $reportdata = new \stdClass();
-    $reportdata->rows    = $rows;
-    $reportdata->hasrows = !empty($rows);
+    $reportdata->rows     = $rows ?? [];
+    $reportdata->hasrows  = !empty($rows);
+    $reportdata->noreader = $rows === null;
     $reportdata->backurl = (new moodle_url('/mod/playergroup/view.php', ['id' => $cm->id]))->out(false);
     $reportdata->exporturl = (new moodle_url('/mod/playergroup/export.php', ['id' => $cm->id]))->out(false);
 
