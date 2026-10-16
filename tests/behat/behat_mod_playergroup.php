@@ -31,7 +31,11 @@ require_once(__DIR__ . '/../../../../lib/behat/behat_base.php');
  * Step definitions and page-name resolver for mod_playergroup.
  *
  * Supported page types for "I am on the '[name]' 'mod_playergroup > [type]' page":
- *   view   — The student/teacher activity view (view.php?id=<cmid>).
+ *   view         — The student/teacher activity view (view.php?id=<cmid>).
+ *   report       — The teacher activity log tab (view.php?id=<cmid>&tab=report).
+ *   groupsreport — The teacher groups and members tab (view.php?id=<cmid>&tab=groupsreport).
+ *   export       — The log export entry point (export.php?id=<cmid>).
+ *   index        — The course index of the activities (index.php?id=<courseid>, named by course short name).
  */
 class behat_mod_playergroup extends behat_base {
     /**
@@ -52,6 +56,24 @@ class behat_mod_playergroup extends behat_base {
             case 'view':
                 return new moodle_url(
                     '/mod/playergroup/view.php',
+                    ['id' => $this->get_cm_by_playergroup_name($identifier)->id]
+                );
+
+            case 'report':
+                return new moodle_url(
+                    '/mod/playergroup/view.php',
+                    ['id' => $this->get_cm_by_playergroup_name($identifier)->id, 'tab' => 'report']
+                );
+
+            case 'groupsreport':
+                return new moodle_url(
+                    '/mod/playergroup/view.php',
+                    ['id' => $this->get_cm_by_playergroup_name($identifier)->id, 'tab' => 'groupsreport']
+                );
+
+            case 'export':
+                return new moodle_url(
+                    '/mod/playergroup/export.php',
                     ['id' => $this->get_cm_by_playergroup_name($identifier)->id]
                 );
 
