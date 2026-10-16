@@ -40,6 +40,7 @@ class behat_mod_playergroup extends behat_base {
      * Supported identifiers:
      * | pagetype | identifier meaning   | URL                           |
      * | view     | Activity name        | /mod/playergroup/view.php?id= |
+     * | index    | Course short name    | /mod/playergroup/index.php?id=|
      *
      * @param string $type     Page type (e.g. 'view').
      * @param string $identifier Activity name as it appears in the database.
@@ -52,6 +53,13 @@ class behat_mod_playergroup extends behat_base {
                 return new moodle_url(
                     '/mod/playergroup/view.php',
                     ['id' => $this->get_cm_by_playergroup_name($identifier)->id]
+                );
+
+            case 'index':
+                global $DB;
+                return new moodle_url(
+                    '/mod/playergroup/index.php',
+                    ['id' => $DB->get_field('course', 'id', ['shortname' => $identifier], MUST_EXIST)]
                 );
 
             default:

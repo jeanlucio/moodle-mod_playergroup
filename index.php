@@ -41,7 +41,7 @@ $instances = get_all_instances_in_course('playergroup', $course);
 
 if (empty($instances)) {
     notice(
-        get_string('nogroups', 'mod_playergroup'),
+        get_string('thereareno', 'moodle', get_string('modulenameplural', 'mod_playergroup')),
         new moodle_url('/course/view.php', ['id' => $id])
     );
 }
