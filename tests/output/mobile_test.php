@@ -153,4 +153,56 @@ final class mobile_test extends advanced_testcase {
         $this->expectException(\moodle_exception::class);
         mobile::mobile_course_view(['cmid' => $cm->cmid, 'courseid' => $course->id, 'appversioncode' => 40100]);
     }
+
+    /**
+     * Test that the app gets the right to create groups and only shows the button to who has it.
+     */
+    public function test_mobile_course_view_offers_creating_a_group_only_with_the_capability(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module('playergroup', ['course' => $course->id]);
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $this->setUser($student);
+        $args = ['cmid' => $cm->cmid, 'courseid' => $course->id, 'appversioncode' => 40100];
+
+        $result = mobile::mobile_course_view($args);
+        $this->assertArrayHasKey('cancreate', $result['otherdata']);
+        $this->assertSame(1, $result['otherdata']['cancreate']);
+
+        $studentrole = $DB->get_field('role', 'id', ['shortname' => 'student'], MUST_EXIST);
+        assign_capability(
+            'mod/playergroup:creategroup',
+            CAP_PROHIBIT,
+            $studentrole,
+            \context_course::instance($course->id)->id,
+            true
+        );
+
+        $result = mobile::mobile_course_view($args);
+        $this->assertArrayHasKey('cancreate', $result['otherdata']);
+        $this->assertSame(0, $result['otherdata']['cancreate']);
+    }
+
+    /**
+     * Test that the app's Create group button depends on that right.
+     *
+     * The Angular condition cannot be run in PHPUnit, so the rendered markup is checked.
+     */
+    public function test_mobile_course_view_binds_the_create_button_to_the_capability(): void {
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module('playergroup', ['course' => $course->id]);
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $this->setUser($student);
+
+        $result = mobile::mobile_course_view(['cmid' => $cm->cmid, 'courseid' => $course->id, 'appversioncode' => 40100]);
+
+        $this->assertMatchesRegularExpression(
+            '/class="pg-create-btn"\s+\*ngIf="[^"]*CONTENT_OTHERDATA\.cancreate/',
+            $result['templates'][0]['html']
+        );
+    }
 }

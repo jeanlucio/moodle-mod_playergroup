@@ -236,7 +236,7 @@
 
             <!-- Create group button -->
             <ion-button expand="block" class="pg-create-btn"
-                *ngIf="!CONTENT_OTHERDATA.hasgroup && CONTENT_OTHERDATA.activityopen"
+                *ngIf="CONTENT_OTHERDATA.cancreate && !CONTENT_OTHERDATA.hasgroup && CONTENT_OTHERDATA.activityopen"
                 (click)="showCreate()">
                 <% str_mobile_creategroup %>
             </ion-button>

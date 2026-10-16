@@ -25,6 +25,7 @@
         "cmid": 1,
         "hasgroup": false,
         "activityopen": true,
+        "cancreate": true,
         "availabilitymessage": "",
         "caninvite": false,
         "hasinviteableusers": false,
@@ -87,6 +88,7 @@
 
     {{^hasgroup}}
     {{#activityopen}}
+    {{#cancreate}}
     <div class="mb-4">
         <button type="button" class="btn btn-primary" data-action="creategroup">
             <i class="fa fa-plus me-1" aria-hidden="true"></i>
@@ -96,6 +98,7 @@
             {{#str}} onegrouponly, mod_playergroup {{/str}}
         </small>
     </div>
+    {{/cancreate}}
     {{/activityopen}}
     {{/hasgroup}}
 

@@ -84,7 +84,11 @@ class get_activity_data extends external_api {
 
         $isteacher = has_capability('mod/playergroup:manage', $context);
         $coursecontext = $context->get_course_context();
-        $caninviteusers = has_capability('moodle/course:viewparticipants', $coursecontext);
+        // What the buttons offer must match what the services behind them require, or the student fills in a
+        // form only to be refused: creating and editing need creategroup, inviting needs manageinvites.
+        $cancreate = has_capability('mod/playergroup:creategroup', $context);
+        $caninviteusers = has_capability('moodle/course:viewparticipants', $coursecontext)
+            && has_capability('mod/playergroup:manageinvites', $context);
         $canviewnames = \mod_playergroup\local\member_list::can_view_names($context);
         $userqualified = \mod_playergroup\local\qualification::is_qualified((int) $playergroup->id, (int) $USER->id);
 
@@ -201,7 +205,7 @@ class get_activity_data extends external_api {
                 'leaderbadge'        => $leaderbadge,
                 'canjoin'            => $isopen && !$hasgroup && $privacy !== 2 && !$isfull,
                 'caninvite'          => $ismygroup && $isopen && !$isfull && $caninviteusers,
-                'canedit'            => $ismygroup && $isopen && $iscreator,
+                'canedit'            => $ismygroup && $isopen && $iscreator && $cancreate,
                 'canleave'           => $ismygroup && $canleaveany,
             ];
 
@@ -314,6 +318,7 @@ class get_activity_data extends external_api {
             'hasgroup'            => $hasgroup,
             'mygroupid'           => $hasgroup ? (int) $mygroupid : 0,
             'isteacher'           => $isteacher,
+            'cancreate'           => $cancreate,
             'groups'              => $groups,
             'receivedinvites'     => $receivedinvites,
             'inviteableusers'     => $inviteableusers,
@@ -393,6 +398,7 @@ class get_activity_data extends external_api {
             'hasgroup'            => new external_value(PARAM_BOOL, 'True if the current user belongs to a group'),
             'mygroupid'           => new external_value(PARAM_INT, 'Current user\'s group ID (0 if none)'),
             'isteacher'           => new external_value(PARAM_BOOL, 'True if the current user is a teacher/manager'),
+            'cancreate'           => new external_value(PARAM_BOOL, 'True if the current user may create groups'),
             'groups'              => new external_multiple_structure($groupstructure, 'List of all groups in this activity'),
             'receivedinvites'     => new external_multiple_structure($invitestructure, 'Pending invitations received by the user'),
             'inviteableusers'     => new external_multiple_structure(

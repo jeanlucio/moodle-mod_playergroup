@@ -84,7 +84,11 @@ $mygroupid = $DB->get_field_sql($mygroupsql, ['playergroupid' => $playergroup->i
 $hasgroup = !empty($mygroupid);
 $isteacher = has_capability('mod/playergroup:manage', $context);
 $coursecontext = $context->get_course_context();
-$caninviteusers = has_capability('moodle/course:viewparticipants', $coursecontext);
+// What the buttons offer must match what the services behind them require: creating and editing need
+// creategroup, inviting needs manageinvites and, to pick people, viewing the participants.
+$cancreate = has_capability('mod/playergroup:creategroup', $context);
+$caninviteusers = has_capability('moodle/course:viewparticipants', $coursecontext)
+    && has_capability('mod/playergroup:manageinvites', $context);
 $canviewnames = \mod_playergroup\local\member_list::can_view_names($context);
 $userqualified = \mod_playergroup\local\qualification::is_qualified((int) $playergroup->id, (int) $USER->id);
 
@@ -92,6 +96,7 @@ $templatedata = new \stdClass();
 $templatedata->cmid               = $cm->id;
 $templatedata->hasgroup           = $hasgroup;
 $templatedata->activityopen       = $isopen;
+$templatedata->cancreate          = $cancreate;
 $templatedata->caninvite          = false;
 $templatedata->hasinviteableusers = false;
 $templatedata->inviteableusers    = [];
@@ -223,7 +228,7 @@ foreach ($grouprecords as $g) {
         'viewmembersarialabel' => get_string('viewmembers_named', 'mod_playergroup', $groupname),
         'canjoin'             => $isopen && !$hasgroup && $privacy !== 2 && !$isfull,
         'caninvite'           => $ismygroup && $isopen && !$isfull && $caninviteusers,
-        'canedit'             => $ismygroup && $isopen && $iscreator,
+        'canedit'             => $ismygroup && $isopen && $iscreator && $cancreate,
         'canleave'            => $ismygroup && $canleaveany,
     ];
 

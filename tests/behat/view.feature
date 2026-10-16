@@ -8,6 +8,7 @@ Feature: Teacher and student can view a PlayerGroup activity
     Given the following "users" exist:
       | username | firstname | lastname | email                 |
       | teacher1 | Terry     | Teacher  | teacher1@example.com  |
+      | teacher2 | Tina      | Helper   | teacher2@example.com  |
       | student1 | Sam       | Student  | student1@example.com  |
     And the following "courses" exist:
       | fullname | shortname | category |
@@ -15,6 +16,7 @@ Feature: Teacher and student can view a PlayerGroup activity
     And the following "course enrolments" exist:
       | user     | course | role           |
       | teacher1 | C1     | editingteacher |
+      | teacher2 | C1     | teacher        |
       | student1 | C1     | student        |
     And the following "activities" exist:
       | activity    | name             | course | idnumber |
@@ -32,3 +34,14 @@ Feature: Teacher and student can view a PlayerGroup activity
   Scenario: Teacher sees the View Report link
     Given I am on the "Group Activity" "mod_playergroup > view" page logged in as "teacher1"
     Then I should see "View Report"
+
+  Scenario: A non-editing teacher, who may not create groups, is not offered to
+    Given I am on the "Group Activity" "mod_playergroup > view" page logged in as "teacher2"
+    Then I should not see "Create Group"
+
+  Scenario: A student whose right to create groups was taken away is not offered to
+    Given the following "permission overrides" exist:
+      | capability                  | permission | role    | contextlevel    | reference |
+      | mod/playergroup:creategroup | Prohibit   | student | Activity module | pg1       |
+    When I am on the "Group Activity" "mod_playergroup > view" page logged in as "student1"
+    Then I should not see "Create Group"

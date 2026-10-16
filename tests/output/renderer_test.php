@@ -485,4 +485,46 @@ final class renderer_test extends advanced_testcase {
         // renders that string as its title, so it must carry the escaped form.
         $this->assertStringContainsString('data-groupname="P&amp;amp;D"', $html);
     }
+
+    /**
+     * Builds the minimum data the student view needs, for a user without a group in an open activity.
+     *
+     * @param array $overrides Values replacing the defaults.
+     * @return \stdClass Template data.
+     */
+    private function empty_view_data(array $overrides = []): \stdClass {
+        return (object) array_merge([
+            'cmid'               => 1,
+            'hasgroup'           => false,
+            'activityopen'       => true,
+            'cancreate'          => true,
+            'caninvite'          => false,
+            'hasinviteableusers' => false,
+            'inviteableusers'    => [],
+            'hasinvites'         => false,
+            'receivedinvites'    => [],
+            'isteacher'          => false,
+            'reporturl'          => '',
+            'groupsreporturl'    => '',
+            'groups'             => [],
+        ], $overrides);
+    }
+
+    /**
+     * Test that the Create group button is shown to someone who may create groups.
+     */
+    public function test_render_student_view_shows_create_button_when_allowed(): void {
+        $html = $this->renderer->render_student_view($this->empty_view_data(['cancreate' => true]));
+
+        $this->assertStringContainsString('data-action="creategroup"', $html);
+    }
+
+    /**
+     * Test that the Create group button is hidden from someone the server would refuse.
+     */
+    public function test_render_student_view_hides_create_button_when_not_allowed(): void {
+        $html = $this->renderer->render_student_view($this->empty_view_data(['cancreate' => false]));
+
+        $this->assertStringNotContainsString('data-action="creategroup"', $html);
+    }
 }

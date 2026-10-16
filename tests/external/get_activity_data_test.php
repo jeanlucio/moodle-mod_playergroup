@@ -274,4 +274,109 @@ final class get_activity_data_test extends advanced_testcase {
             $this->assertStringNotContainsString('&amp;', json_encode($result));
         }
     }
+
+    /**
+     * Takes a capability of the activity away from the student role in the course.
+     *
+     * @param \stdClass $course Course where the override applies.
+     * @param string $capability Capability to prohibit.
+     */
+    private function prohibit_for_students(\stdClass $course, string $capability): void {
+        global $DB;
+
+        $studentrole = $DB->get_field('role', 'id', ['shortname' => 'student'], MUST_EXIST);
+        assign_capability($capability, CAP_PROHIBIT, $studentrole, \context_course::instance($course->id)->id, true);
+    }
+
+    /**
+     * Test that the app is told whether the user may create a group, which the server requires.
+     *
+     * Offering "Create group" to someone the server will refuse loses what they typed and ends in
+     * a permission error.
+     */
+    public function test_execute_tells_whether_the_user_can_create_a_group(): void {
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module('playergroup', ['course' => $course->id]);
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $this->setUser($student);
+
+        $result = get_activity_data::execute($cm->cmid);
+        $result = external_api::clean_returnvalue(get_activity_data::execute_returns(), $result);
+        $this->assertArrayHasKey('cancreate', $result);
+        $this->assertTrue($result['cancreate']);
+
+        $this->prohibit_for_students($course, 'mod/playergroup:creategroup');
+
+        $result = get_activity_data::execute($cm->cmid);
+        $result = external_api::clean_returnvalue(get_activity_data::execute_returns(), $result);
+        $this->assertArrayHasKey('cancreate', $result);
+        $this->assertFalse($result['cancreate']);
+    }
+
+    /**
+     * Test that a non-editing teacher, who can view the activity but may not create groups, is not offered to.
+     */
+    public function test_execute_does_not_offer_creating_a_group_to_a_non_editing_teacher(): void {
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module('playergroup', ['course' => $course->id]);
+        $teacher = $this->getDataGenerator()->create_and_enrol($course, 'teacher');
+        $this->setUser($teacher);
+
+        $result = get_activity_data::execute($cm->cmid);
+        $result = external_api::clean_returnvalue(get_activity_data::execute_returns(), $result);
+
+        $this->assertArrayHasKey('cancreate', $result);
+        $this->assertFalse($result['cancreate']);
+    }
+
+    /**
+     * Test that a leader who later loses the right to create groups is not offered to edit the group.
+     *
+     * The editing service asks for the same capability, so the button would only lead to an error.
+     */
+    public function test_execute_does_not_offer_editing_to_a_leader_without_creategroup(): void {
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module('playergroup', ['course' => $course->id]);
+        $leader = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $this->setUser($leader);
+        create_group::execute($cm->cmid, 'Team', '', '🛡', 0, '');
+
+        $result = external_api::clean_returnvalue(get_activity_data::execute_returns(), get_activity_data::execute($cm->cmid));
+        $this->assertTrue($result['groups'][0]['canedit'], 'Before the change the leader can edit.');
+
+        $this->prohibit_for_students($course, 'mod/playergroup:creategroup');
+
+        $result = external_api::clean_returnvalue(get_activity_data::execute_returns(), get_activity_data::execute($cm->cmid));
+        $this->assertFalse($result['groups'][0]['canedit']);
+    }
+
+    /**
+     * Test that inviting is not offered, and the people picker is not filled, without manageinvites.
+     */
+    public function test_execute_does_not_offer_invites_without_manageinvites(): void {
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module('playergroup', ['course' => $course->id]);
+        $leader = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $this->setUser($leader);
+        create_group::execute($cm->cmid, 'Team', '', '🛡', 0, '');
+
+        $result = external_api::clean_returnvalue(get_activity_data::execute_returns(), get_activity_data::execute($cm->cmid));
+        $this->assertTrue($result['groups'][0]['caninvite'], 'Before the change the leader can invite.');
+        $this->assertNotEmpty($result['inviteableusers']);
+
+        $this->prohibit_for_students($course, 'mod/playergroup:manageinvites');
+
+        $result = external_api::clean_returnvalue(get_activity_data::execute_returns(), get_activity_data::execute($cm->cmid));
+        $this->assertFalse($result['groups'][0]['caninvite']);
+        $this->assertEmpty($result['inviteableusers']);
+    }
 }

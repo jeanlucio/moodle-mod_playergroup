@@ -113,6 +113,7 @@ class mobile {
                 'hasgroup'            => (int) $data['hasgroup'],
                 'mygroupid'           => (int) $data['mygroupid'],
                 'isteacher'           => (int) $data['isteacher'],
+                'cancreate'           => (int) $data['cancreate'],
                 'maxmembers'          => (int) $data['maxmembers'],
                 'canleave'            => (int) $data['canleave'],
                 'groups'              => json_encode($data['groups']),
