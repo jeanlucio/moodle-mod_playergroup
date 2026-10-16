@@ -71,4 +71,29 @@ final class access_test extends advanced_testcase {
             $this->assertSame(0, $risk & ~$valid, "$name declares an unknown risk bit.");
         }
     }
+
+    /**
+     * Test that a capability that only reads is declared as read.
+     *
+     * mod/playergroup:manage opens the reports and their exports and nothing writes with it. A write
+     * capability is treated differently by the core, for instance in read-only contexts, and the role
+     * screen groups the capabilities by this type.
+     */
+    public function test_manage_is_a_read_capability(): void {
+        $capabilities = $this->load_capabilities();
+
+        $this->assertSame('read', $capabilities['mod/playergroup:manage']['captype']);
+    }
+
+    /**
+     * Test that the capabilities that do change something keep the write type.
+     */
+    public function test_capabilities_that_change_data_stay_write(): void {
+        $capabilities = $this->load_capabilities();
+
+        foreach (['creategroup', 'manageinvites', 'addinstance'] as $name) {
+            $this->assertSame('write', $capabilities["mod/playergroup:$name"]['captype'], $name);
+        }
+        $this->assertSame('read', $capabilities['mod/playergroup:view']['captype']);
+    }
 }

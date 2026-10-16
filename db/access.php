@@ -60,9 +60,10 @@ $capabilities = [
 
     'mod/playergroup:manage' => [
         // It gives the names of the students and the log of what they did, in the reports and in their
-        // CSV and Excel exports. It writes no HTML, so it carries no XSS risk.
+        // CSV and Excel exports. It writes no HTML, so it carries no XSS risk, and nothing is changed
+        // with it, so it is a read capability.
         'riskbitmask' => RISK_PERSONAL,
-        'captype' => 'write',
+        'captype' => 'read',
         'contextlevel' => CONTEXT_MODULE,
         'archetypes' => [
             'teacher' => CAP_ALLOW,
