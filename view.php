@@ -85,6 +85,7 @@ $hasgroup = !empty($mygroupid);
 $isteacher = has_capability('mod/playergroup:manage', $context);
 $coursecontext = $context->get_course_context();
 $caninviteusers = has_capability('moodle/course:viewparticipants', $coursecontext);
+$canviewnames = \mod_playergroup\local\member_list::can_view_names($context);
 
 $templatedata = new \stdClass();
 $templatedata->cmid               = $cm->id;
@@ -121,10 +122,22 @@ if (!$isopen) {
 $canleaveany = $hasgroup && !empty($playergroup->canleave) && $isopen;
 $usergroupisfull = false;
 
+// Names of other groups' members and leaders are only loaded when the user may see them, so the
+// data never reaches the page (or its data-members attribute) otherwise. The user's own group is
+// always shown.
+$namegroupids = [];
+foreach ($grouprecords as $g) {
+    if ($canviewnames || (int) $g->id === (int) $mygroupid) {
+        $namegroupids[(int) $g->id] = (int) $g->id;
+    }
+}
+
 // Bulk-load creator profiles to avoid per-card queries.
 $creatorids = [];
 foreach ($grouprecords as $g) {
-    $creatorids[(int) $g->creatorid] = (int) $g->creatorid;
+    if (isset($namegroupids[(int) $g->id])) {
+        $creatorids[(int) $g->creatorid] = (int) $g->creatorid;
+    }
 }
 $creators = [];
 if (!empty($creatorids)) {
@@ -134,9 +147,8 @@ if (!empty($creatorids)) {
 
 // Bulk-load all group members (for the "view members" modal) to avoid per-card queries.
 $membersbygroup = [];
-$displayedgroupids = array_map(fn($g): int => (int) $g->id, $grouprecords);
-if (!empty($displayedgroupids)) {
-    [$groupidsinsql, $groupidsinparams] = $DB->get_in_or_equal($displayedgroupids, SQL_PARAMS_NAMED, 'grp');
+if (!empty($namegroupids)) {
+    [$groupidsinsql, $groupidsinparams] = $DB->get_in_or_equal($namegroupids, SQL_PARAMS_NAMED, 'grp');
     $membersql = "SELECT gm.id, gm.groupid, u.id AS userid, u.firstname, u.lastname, u.firstnamephonetic,
                          u.lastnamephonetic, u.middlename, u.alternatename
                     FROM {groups_members} gm
@@ -157,7 +169,8 @@ foreach ($grouprecords as $g) {
     $ismygroup   = $hasgroup && $groupid === (int) $mygroupid;
     $iscreator   = (int) $g->creatorid === (int) $USER->id;
 
-    $creator = $creators[(int) $g->creatorid] ?? null;
+    $canviewmembers = isset($namegroupids[$groupid]);
+    $creator = $canviewmembers ? ($creators[(int) $g->creatorid] ?? null) : null;
     if ($creator) {
         $leaderbadge = get_string('leadernamed', 'mod_playergroup', fullname($creator));
     } else {
@@ -185,6 +198,7 @@ foreach ($grouprecords as $g) {
         'membercount'         => $membercount,
         'maxmembers'          => $maxmembers,
         'membersjson'         => $membersjson,
+        'canviewmembers'      => $canviewmembers,
         'privacy'             => $privacy,
         'isprivacyopen'       => $privacy === 0,
         'isprivacyprotected'  => $privacy === 1,

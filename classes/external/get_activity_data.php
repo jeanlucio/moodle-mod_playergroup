@@ -85,6 +85,7 @@ class get_activity_data extends external_api {
         $isteacher = has_capability('mod/playergroup:manage', $context);
         $coursecontext = $context->get_course_context();
         $caninviteusers = has_capability('moodle/course:viewparticipants', $coursecontext);
+        $canviewnames = \mod_playergroup\local\member_list::can_view_names($context);
 
         $mygroupsql = "SELECT gm.groupid
                          FROM {groups_members} gm
@@ -105,9 +106,20 @@ class get_activity_data extends external_api {
                    ORDER BY g.name ASC";
         $grouprecords = $DB->get_records_sql($groupsql, ['playergroupid' => $playergroup->id]);
 
+        // Names of other groups' members and leaders are only loaded when the user may see them;
+        // the user's own group is always shown.
+        $namegroupids = [];
+        foreach ($grouprecords as $g) {
+            if ($canviewnames || (int) $g->id === (int) $mygroupid) {
+                $namegroupids[(int) $g->id] = (int) $g->id;
+            }
+        }
+
         $creatorids = [];
         foreach ($grouprecords as $g) {
-            $creatorids[(int) $g->creatorid] = (int) $g->creatorid;
+            if (isset($namegroupids[(int) $g->id])) {
+                $creatorids[(int) $g->creatorid] = (int) $g->creatorid;
+            }
         }
         $creators = [];
         if (!empty($creatorids)) {
@@ -117,9 +129,8 @@ class get_activity_data extends external_api {
 
         // Bulk-load all group members (for the "view members" panel) to avoid per-card queries.
         $membersbygroup = [];
-        $displayedgroupids = array_map(fn($g): int => (int) $g->id, $grouprecords);
-        if (!empty($displayedgroupids)) {
-            [$groupidsinsql, $groupidsinparams] = $DB->get_in_or_equal($displayedgroupids, SQL_PARAMS_NAMED, 'grp');
+        if (!empty($namegroupids)) {
+            [$groupidsinsql, $groupidsinparams] = $DB->get_in_or_equal($namegroupids, SQL_PARAMS_NAMED, 'grp');
             $membersql = "SELECT gm.id, gm.groupid, u.id AS userid, u.firstname, u.lastname, u.firstnamephonetic,
                                  u.lastnamephonetic, u.middlename, u.alternatename
                             FROM {groups_members} gm
@@ -144,7 +155,8 @@ class get_activity_data extends external_api {
             $ismygroup   = $hasgroup && $groupid === (int) $mygroupid;
             $iscreator   = (int) $g->creatorid === (int) $USER->id;
 
-            $creator = $creators[(int) $g->creatorid] ?? null;
+            $canviewmembers = isset($namegroupids[$groupid]);
+            $creator = $canviewmembers ? ($creators[(int) $g->creatorid] ?? null) : null;
             $leaderbadge = $creator ? get_string('leadernamed', 'mod_playergroup', fullname($creator)) : '';
 
             $groupname = format_string($g->name);
@@ -171,6 +183,7 @@ class get_activity_data extends external_api {
                 'membercount'        => $membercount,
                 'maxmembers'         => $maxmembers,
                 'members'            => $groupmembers,
+                'canviewmembers'     => $canviewmembers,
                 'membersheading'     => get_string('groupmembers_named', 'mod_playergroup', $groupname),
                 'privacy'            => $privacy,
                 'isprivacyopen'      => $privacy === 0,
@@ -322,6 +335,10 @@ class get_activity_data extends external_api {
             'membercount'        => new external_value(PARAM_INT, 'Current number of members'),
             'maxmembers'         => new external_value(PARAM_INT, 'Maximum allowed members'),
             'members'            => new external_multiple_structure($memberstructure, 'List of group members'),
+            'canviewmembers'     => new external_value(
+                PARAM_BOOL,
+                'True if the names of this group\'s members may be shown to the current user'
+            ),
             'membersheading'     => new external_value(PARAM_TEXT, 'Title for the members list ("Members of X")'),
             'privacy'            => new external_value(PARAM_INT, 'Privacy level: 0=open, 1=protected, 2=closed'),
             'isprivacyopen'      => new external_value(PARAM_BOOL, 'True if privacy is open'),

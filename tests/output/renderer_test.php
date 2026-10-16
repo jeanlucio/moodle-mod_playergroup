@@ -99,6 +99,7 @@ final class renderer_test extends advanced_testcase {
                 'membercount'         => 1,
                 'maxmembers'          => 5,
                 'membersjson'         => '[]',
+                'canviewmembers'      => true,
                 'privacy'             => 0,
                 'isprivacyopen'       => true,
                 'isprivacyprotected'  => false,
@@ -154,6 +155,7 @@ final class renderer_test extends advanced_testcase {
                 'membercount'         => 1,
                 'maxmembers'          => 5,
                 'membersjson'         => '[]',
+                'canviewmembers'      => true,
                 'privacy'             => 0,
                 'isprivacyopen'       => true,
                 'isprivacyprotected'  => false,
@@ -176,6 +178,60 @@ final class renderer_test extends advanced_testcase {
 
         $this->assertStringContainsString('data-groupname="Formatted Safe Name"', $html);
         $this->assertStringNotContainsString('data-groupname="Raw', $html);
+    }
+
+    /**
+     * Test that a group whose members the user may not see renders only the member count: no
+     * "view members" button and no data-members attribute that could carry names.
+     */
+    public function test_render_student_view_group_card_without_member_names(): void {
+        $templatedata = (object) [
+            'cmid'               => 1,
+            'hasgroup'           => false,
+            'activityopen'       => true,
+            'caninvite'          => false,
+            'hasinviteableusers' => false,
+            'inviteableusers'    => [],
+            'hasinvites'         => false,
+            'receivedinvites'    => [],
+            'isteacher'          => false,
+            'reporturl'          => '',
+            'groupsreporturl'    => '',
+            'groups'             => [[
+                'groupid'             => 42,
+                'name'                => 'Hidden Roster',
+                'rawname'             => 'Hidden Roster',
+                'description'         => '',
+                'rawdescription'      => '',
+                'badge'               => '🐉',
+                'membercount'         => 3,
+                'maxmembers'          => 5,
+                'membersjson'         => '[]',
+                'canviewmembers'      => false,
+                'privacy'             => 0,
+                'isprivacyopen'       => true,
+                'isprivacyprotected'  => false,
+                'isprivacyclosed'     => false,
+                'isfull'              => false,
+                'ismygroup'           => false,
+                'leaderbadge'         => '',
+                'joinarialabel'       => '',
+                'editarialabel'       => '',
+                'leavearialabel'      => '',
+                'viewmembersarialabel' => '',
+                'canjoin'             => true,
+                'caninvite'           => false,
+                'canedit'             => false,
+                'canleave'            => false,
+            ]],
+        ];
+
+        $html = $this->renderer->render_student_view($templatedata);
+
+        $this->assertStringContainsString('Hidden Roster', $html);
+        $this->assertStringContainsString('3 / 5', $html);
+        $this->assertStringNotContainsString('data-action="viewmembers"', $html);
+        $this->assertStringNotContainsString('data-members', $html);
     }
 
     /**

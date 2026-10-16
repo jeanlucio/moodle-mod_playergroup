@@ -93,4 +93,33 @@ final class member_list_test extends advanced_testcase {
     public function test_order_with_empty_list_returns_empty_array(): void {
         $this->assertSame([], member_list::order([]));
     }
+
+    /**
+     * Test that names are visible with viewparticipants, hidden without it, and that managing the
+     * activity is enough on its own.
+     */
+    public function test_can_view_names_follows_participants_and_manage_capabilities(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module('playergroup', ['course' => $course->id]);
+        $context = \context_module::instance($cm->cmid);
+        $coursecontext = \context_course::instance($course->id);
+
+        $student = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($student->id, $course->id, 'student');
+        $this->setUser($student);
+        $this->assertTrue(member_list::can_view_names($context));
+
+        $studentrole = $DB->get_field('role', 'id', ['shortname' => 'student'], MUST_EXIST);
+        assign_capability('moodle/course:viewparticipants', CAP_PREVENT, $studentrole, $coursecontext->id, true);
+        $this->assertFalse(member_list::can_view_names($context));
+
+        // A role that manages the activity but cannot see the participant list still sees the names.
+        $roleid = create_role('Activity manager', 'pgmanager', '');
+        assign_capability('mod/playergroup:manage', CAP_ALLOW, $roleid, $coursecontext->id, true);
+        $this->getDataGenerator()->role_assign($roleid, $student->id, $coursecontext->id);
+        $this->assertTrue(member_list::can_view_names($context));
+    }
 }

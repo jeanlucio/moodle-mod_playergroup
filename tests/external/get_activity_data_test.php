@@ -108,4 +108,112 @@ final class get_activity_data_test extends advanced_testcase {
         $names = array_column($result['groups'][0]['members'], 'fullname');
         $this->assertSame([fullname($creator), fullname($alice), fullname($zulema)], $names);
     }
+
+    /**
+     * Builds an activity with one group of two members and a student who has no group.
+     *
+     * @return array [course, cmid, creator, joiner, viewer]
+     */
+    private function build_group_with_outsider(): array {
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module('playergroup', ['course' => $course->id]);
+
+        $creator = $this->getDataGenerator()->create_user(['firstname' => 'Creator', 'lastname' => 'One']);
+        $joiner = $this->getDataGenerator()->create_user(['firstname' => 'Joiner', 'lastname' => 'Two']);
+        $viewer = $this->getDataGenerator()->create_user(['firstname' => 'Viewer', 'lastname' => 'Three']);
+        foreach ([$creator, $joiner, $viewer] as $user) {
+            $this->getDataGenerator()->enrol_user($user->id, $course->id, 'student');
+        }
+
+        $this->setUser($creator);
+        $created = create_group::execute($cm->cmid, 'Test Group', '', '🛡', 0, '');
+        $this->setUser($joiner);
+        join_group::execute($cm->cmid, $created['groupid'], '');
+
+        return [$course, $cm->cmid, $creator, $joiner, $viewer];
+    }
+
+    /**
+     * Removes the right to see the course participant list from the student role in the course.
+     *
+     * @param \stdClass $course Course where the override applies.
+     */
+    private function hide_participants_from_students(\stdClass $course): void {
+        global $DB;
+
+        $studentrole = $DB->get_field('role', 'id', ['shortname' => 'student'], MUST_EXIST);
+        assign_capability(
+            'moodle/course:viewparticipants',
+            CAP_PREVENT,
+            $studentrole,
+            \context_course::instance($course->id)->id,
+            true
+        );
+    }
+
+    /**
+     * Test that names of other groups' members and leaders are withheld from a user who cannot
+     * see the course participants, the same decision the invite picker already applies.
+     *
+     * The member count stays visible; only the names are withheld, and they must not appear
+     * anywhere in the response.
+     */
+    public function test_execute_hides_names_without_viewparticipants(): void {
+        $this->resetAfterTest();
+
+        [$course, $cmid, $creator, $joiner, $viewer] = $this->build_group_with_outsider();
+        $this->hide_participants_from_students($course);
+
+        $this->setUser($viewer);
+        $result = get_activity_data::execute($cmid);
+        $result = external_api::clean_returnvalue(get_activity_data::execute_returns(), $result);
+
+        $group = $result['groups'][0];
+        $this->assertFalse($group['canviewmembers']);
+        $this->assertSame([], $group['members']);
+        $this->assertSame('', $group['leaderbadge']);
+        $this->assertSame(2, $group['membercount']);
+
+        $encoded = json_encode($result);
+        $this->assertStringNotContainsString($creator->lastname, $encoded);
+        $this->assertStringNotContainsString($joiner->firstname, $encoded);
+    }
+
+    /**
+     * Test that a member always sees the names in their own group, even without the capability.
+     */
+    public function test_execute_shows_names_in_own_group_without_viewparticipants(): void {
+        $this->resetAfterTest();
+
+        [$course, $cmid, $creator, $joiner] = $this->build_group_with_outsider();
+        $this->hide_participants_from_students($course);
+
+        $this->setUser($joiner);
+        $result = get_activity_data::execute($cmid);
+        $result = external_api::clean_returnvalue(get_activity_data::execute_returns(), $result);
+
+        $group = $result['groups'][0];
+        $this->assertTrue($group['canviewmembers']);
+        $this->assertEqualsCanonicalizing(
+            [fullname($creator), fullname($joiner)],
+            array_column($group['members'], 'fullname')
+        );
+        $this->assertNotSame('', $group['leaderbadge']);
+    }
+
+    /**
+     * Test that a user with the capability keeps seeing every group's members.
+     */
+    public function test_execute_shows_names_with_viewparticipants(): void {
+        $this->resetAfterTest();
+
+        [, $cmid, , , $viewer] = $this->build_group_with_outsider();
+
+        $this->setUser($viewer);
+        $result = get_activity_data::execute($cmid);
+        $result = external_api::clean_returnvalue(get_activity_data::execute_returns(), $result);
+
+        $this->assertTrue($result['groups'][0]['canviewmembers']);
+        $this->assertCount(2, $result['groups'][0]['members']);
+    }
 }

@@ -60,4 +60,21 @@ final class member_list {
 
         return $rest;
     }
+
+    /**
+     * Tells whether the current user may see the names of other groups' members and leaders.
+     *
+     * Follows the same decision the invite picker already applies: a teacher who removes
+     * moodle/course:viewparticipants from students has decided they should not browse
+     * course-mates by name, so the member list and the leader label must not offer another route to
+     * the same information. Managers of the activity always see names. Callers show a user's own
+     * group regardless, since that user is already one of its members.
+     *
+     * @param \context_module $context The activity context.
+     * @return bool True when names of members of other groups may be shown.
+     */
+    public static function can_view_names(\context_module $context): bool {
+        return has_capability('moodle/course:viewparticipants', $context->get_course_context())
+            || has_capability('mod/playergroup:manage', $context);
+    }
 }
