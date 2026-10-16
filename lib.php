@@ -131,16 +131,17 @@ function playergroup_update_instance(\stdClass $playergroup, ?\mod_playergroup_m
     $playergroup->id           = $playergroup->instance;
     $playergroup->groupingid   = playergroup_resolve_groupingid($playergroup);
 
-    $oldminmembers = (int) $DB->get_field('playergroup', 'minmembers', ['id' => $playergroup->id]);
+    $old = $DB->get_record('playergroup', ['id' => $playergroup->id], 'id, minmembers, grade', MUST_EXIST);
 
     $result = $DB->update_record('playergroup', $playergroup);
 
     playergroup_grade_item_update($playergroup);
 
+    $record = $DB->get_record('playergroup', ['id' => $playergroup->id], '*', MUST_EXIST);
+
     // Lowering the minimum can make existing groups count. Raising it never takes anything away,
     // since a student who already qualified keeps the grade and the completion.
-    if (isset($playergroup->minmembers) && (int) $playergroup->minmembers < $oldminmembers) {
-        $record = $DB->get_record('playergroup', ['id' => $playergroup->id], '*', MUST_EXIST);
+    if ((int) $record->minmembers < (int) $old->minmembers) {
         $cm = get_coursemodule_from_instance('playergroup', $record->id, $record->course, false, MUST_EXIST);
         $lock = \mod_playergroup\local\group_lock::acquire((int) $record->id);
         try {
@@ -149,6 +150,12 @@ function playergroup_update_instance(\stdClass $playergroup, ?\mod_playergroup_m
             $lock->release();
         }
         \mod_playergroup\local\qualification::award($record, $cm, $qualified);
+    }
+
+    // Turning the grade on, or changing its value, must reach the students who already qualified:
+    // creating the grade item sends no grades, and only a student qualifying later would be graded.
+    if ((float) $record->grade > 0 && (float) $record->grade !== (float) $old->grade) {
+        playergroup_update_grades($record);
     }
 
     return $result;

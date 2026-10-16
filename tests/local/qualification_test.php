@@ -367,4 +367,91 @@ final class qualification_test extends advanced_testcase {
         $this->assertSame(0, $DB->count_records('playergroup_qualified', ['playergroupid' => $activity->id]));
         $this->assertSame(1, $DB->count_records('playergroup_qualified', ['playergroupid' => $other->id]));
     }
+
+    /**
+     * Test that turning the grade on after students qualified grades them, with the date they qualified.
+     *
+     * Creating the grade item sends no grades, so without an explicit resend only students who
+     * qualify later would ever be graded.
+     */
+    public function test_turning_the_grade_on_grades_who_already_qualified(): void {
+        global $DB;
+
+        $activity = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $this->course->id,
+            'minmembers' => 2,
+            'grade' => 0,
+            'completion' => COMPLETION_TRACKING_AUTOMATIC,
+            'completionjoingroup' => 1,
+        ]);
+        [$first, $second, $late] = [$this->create_student(), $this->create_student(), $this->create_student()];
+        $groupid = $this->found_group($activity, $first);
+        $this->join($activity, $second, $groupid);
+        $this->assertNull($this->rawgrade($activity, $first));
+
+        $record = $DB->get_record('playergroup', ['id' => $activity->id], '*', MUST_EXIST);
+        $record->instance = $record->id;
+        $record->grade = 10;
+        playergroup_update_instance($record);
+
+        $this->assertEquals(10.0, $this->rawgrade($activity, $first));
+        $this->assertEquals(10.0, $this->rawgrade($activity, $second));
+        $this->assertNull($this->rawgrade($activity, $late), 'Someone who never qualified is still not graded.');
+
+        $qualified = (int) $DB->get_field(
+            'playergroup_qualified',
+            'timequalified',
+            ['playergroupid' => $activity->id, 'userid' => $first->id],
+            MUST_EXIST
+        );
+        $gradeitem = \grade_item::fetch(['itemmodule' => 'playergroup', 'iteminstance' => $activity->id, 'itemnumber' => 0]);
+        $this->assertEquals($qualified, $gradeitem->get_grade($first->id, false)->get_datesubmitted());
+    }
+
+    /**
+     * Test that changing the maximum grade updates the grades already given.
+     */
+    public function test_changing_the_grade_value_updates_the_grades_already_given(): void {
+        global $DB;
+
+        $activity = $this->create_activity(2);
+        [$first, $second] = [$this->create_student(), $this->create_student()];
+        $groupid = $this->found_group($activity, $first);
+        $this->join($activity, $second, $groupid);
+        $this->assertEquals(10.0, $this->rawgrade($activity, $first));
+
+        // One of them has left by then: the grade is theirs to keep, and it follows the new value too.
+        $this->setUser($second);
+        leave_group::execute($activity->cmid);
+
+        $record = $DB->get_record('playergroup', ['id' => $activity->id], '*', MUST_EXIST);
+        $record->instance = $record->id;
+        $record->grade = 20;
+        playergroup_update_instance($record);
+
+        $this->assertEquals(20.0, $this->rawgrade($activity, $first));
+        $this->assertEquals(20.0, $this->rawgrade($activity, $second));
+    }
+
+    /**
+     * Test that saving the settings without touching the grade does not resend it.
+     */
+    public function test_an_unchanged_grade_is_not_resent(): void {
+        global $DB;
+
+        $activity = $this->create_activity(1);
+        $student = $this->create_student();
+        $this->found_group($activity, $student);
+
+        // A teacher's manual override must survive a settings save that does not touch the grade.
+        $gradeitem = \grade_item::fetch(['itemmodule' => 'playergroup', 'iteminstance' => $activity->id, 'itemnumber' => 0]);
+        $gradeitem->update_final_grade($student->id, 3.0, 'test', 'manual override');
+
+        $record = $DB->get_record('playergroup', ['id' => $activity->id], '*', MUST_EXIST);
+        $record->instance = $record->id;
+        $record->name = 'Renamed';
+        playergroup_update_instance($record);
+
+        $this->assertEquals(3.0, (float) $gradeitem->get_grade($student->id, false)->finalgrade);
+    }
 }
