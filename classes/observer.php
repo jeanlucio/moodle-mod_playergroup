@@ -97,6 +97,24 @@ class observer {
     }
 
     /**
+     * Forgets a deleted group: removes its metadata and the invites that pointed at it.
+     *
+     * Groups disappear in ways this plugin does not control: a teacher deleting one on the native
+     * Groups page, or a course reset removing all of them. Without this the metadata kept a groupid
+     * that no longer exists. What students earned by being in the group is kept: it belongs to them.
+     *
+     * @param \core\event\group_deleted $event The core event.
+     * @return void
+     */
+    public static function group_deleted(\core\event\group_deleted $event): void {
+        global $DB;
+
+        $groupid = (int) $event->objectid;
+        $DB->delete_records('playergroup_invites', ['groupid' => $groupid]);
+        $DB->delete_records('playergroup_meta', ['groupid' => $groupid]);
+    }
+
+    /**
      * Makes the oldest remaining member the leader of the group.
      *
      * Does nothing when nobody is left: the group then has no leader to speak of, and is either

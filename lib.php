@@ -196,6 +196,16 @@ function playergroup_delete_instance(int $id): bool {
 }
 
 /**
+ * Course reset callback: clears what the options of the core reset page leave behind in the activities.
+ *
+ * @param \stdClass $data The reset options chosen by the teacher.
+ * @return array[] Status rows for the reset report.
+ */
+function playergroup_reset_userdata(\stdClass $data): array {
+    return \mod_playergroup\local\course_reset::reset($data);
+}
+
+/**
  * Creates or updates the grade item in the gradebook for a playergroup instance.
  *
  * @param \stdClass $playergroup The playergroup instance record.
