@@ -60,28 +60,23 @@ class instance_manager {
     }
 
     /**
-     * Deletes the groups this activity instance created, and the grouping itself if
-     * nothing else is left in it.
+     * Deletes the groups this activity instance created, and the grouping if nothing else is left in it.
      *
-     * The grouping may be one the plugin auto-created ("new" mode) or a pre-existing one
-     * the teacher pointed the activity at ("existing" mode) that other activities or
-     * restrictions may already depend on. Only groups registered in playergroup_meta for
-     * this instance are ever deleted; the grouping record itself is removed only when doing
-     * so leaves it empty, so a grouping still holding groups this instance did not create is
-     * left untouched.
+     * Only groups registered in playergroup_meta for this instance are ever deleted, whatever the
+     * grouping mode: with no grouping at all, or with one the teacher already removed by hand, the
+     * groups the students created through the activity must still go. The grouping may be one the
+     * plugin auto-created ("new" mode) or a pre-existing one the teacher pointed the activity at
+     * ("existing" mode) that other activities or restrictions may depend on, so the grouping record
+     * itself is removed only when it exists and doing so leaves it empty.
      *
-     * @param int $groupingid The grouping ID to delete.
      * @param int $playergroupid The activity instance ID that owns the groups to delete.
+     * @param int $groupingid The activity's grouping ID, or 0 when it has none.
      * @return void
      */
-    public function delete_activity_grouping(int $groupingid, int $playergroupid): void {
+    public function delete_activity_groups(int $playergroupid, int $groupingid = 0): void {
         global $CFG, $DB;
 
         require_once($CFG->dirroot . '/group/lib.php');
-
-        if (!$DB->record_exists('groupings', ['id' => $groupingid])) {
-            return;
-        }
 
         $ownedgroupids = $DB->get_fieldset_select(
             'playergroup_meta',
@@ -93,8 +88,8 @@ class instance_manager {
             groups_delete_group((int) $groupid);
         }
 
-        $remaining = $DB->count_records('groupings_groups', ['groupingid' => $groupingid]);
-        if ($remaining === 0) {
+        $groupingexists = $groupingid > 0 && $DB->record_exists('groupings', ['id' => $groupingid]);
+        if ($groupingexists && $DB->count_records('groupings_groups', ['groupingid' => $groupingid]) === 0) {
             groups_delete_grouping($groupingid);
         }
     }

@@ -278,6 +278,93 @@ final class lib_test extends advanced_testcase {
     }
 
     /**
+     * Creates a group registered to the activity, as a student creating it through the activity would.
+     *
+     * @param \stdClass $cm Activity as returned by the generator.
+     * @return int The native group ID.
+     */
+    private function create_owned_group(\stdClass $cm): int {
+        global $DB;
+
+        $group = $this->getDataGenerator()->create_group(['courseid' => $cm->course]);
+        $DB->insert_record('playergroup_meta', (object) [
+            'playergroupid' => $cm->id,
+            'groupid'       => $group->id,
+            'creatorid'     => 2,
+            'badge'         => '⚔',
+            'privacy'       => 0,
+            'password'      => '',
+            'timecreated'   => time(),
+            'timemodified'  => time(),
+        ]);
+        return (int) $group->id;
+    }
+
+    /**
+     * Test that "delete groups" removes the groups the students created even when the activity has no
+     * grouping, which is the mode where the option used to do nothing.
+     */
+    public function test_delete_instance_removes_groups_when_there_is_no_grouping(): void {
+        global $DB;
+
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course'       => $course->id,
+            'groupingmode' => 'none',
+            'deletegroups' => 1,
+        ]);
+        $owned = $this->create_owned_group($cm);
+        $foreign = $this->getDataGenerator()->create_group(['courseid' => $course->id]);
+
+        playergroup_delete_instance($cm->id);
+
+        $this->assertFalse($DB->record_exists('groups', ['id' => $owned]));
+        $this->assertTrue($DB->record_exists('groups', ['id' => $foreign->id]), 'A group the activity never registered stays.');
+    }
+
+    /**
+     * Test that the groups are still removed when the grouping was deleted by hand beforehand.
+     */
+    public function test_delete_instance_removes_groups_when_the_grouping_is_gone(): void {
+        global $DB, $CFG;
+
+        require_once($CFG->dirroot . '/group/lib.php');
+
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course'       => $course->id,
+            'groupingmode' => 'new',
+            'deletegroups' => 1,
+        ]);
+        $owned = $this->create_owned_group($cm);
+        $groupingid = (int) $DB->get_field('playergroup', 'groupingid', ['id' => $cm->id], MUST_EXIST);
+        groups_delete_grouping($groupingid);
+
+        playergroup_delete_instance($cm->id);
+
+        $this->assertFalse($DB->record_exists('groups', ['id' => $owned]));
+    }
+
+    /**
+     * Test that without the option the groups are kept, whatever the grouping mode.
+     */
+    public function test_delete_instance_keeps_groups_when_the_option_is_off(): void {
+        global $DB;
+
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course'       => $course->id,
+            'groupingmode' => 'none',
+            'deletegroups' => 0,
+        ]);
+        $owned = $this->create_owned_group($cm);
+
+        playergroup_delete_instance($cm->id);
+
+        $this->assertTrue($DB->record_exists('groups', ['id' => $owned]));
+    }
+
+    /**
      * Test that playergroup_supports returns expected values.
      */
     public function test_supports_known_features(): void {
