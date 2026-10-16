@@ -141,4 +141,46 @@ final class custom_completion_test extends advanced_testcase {
 
         $this->assertEquals(COMPLETION_COMPLETE, $completion->get_state('completionjoingroup'));
     }
+
+    /**
+     * The rule describes itself for the activity page and the completion report.
+     */
+    public function test_get_custom_rule_descriptions(): void {
+        $this->resetAfterTest();
+
+        [$course, $cm] = $this->create_fixture();
+        $user = $this->getDataGenerator()->create_user();
+        $cminfo = get_fast_modinfo($course)->get_cm($cm->cmid);
+
+        $descriptions = (new custom_completion($cminfo, (int) $user->id))->get_custom_rule_descriptions();
+
+        $this->assertSame(
+            ['completionjoingroup' => get_string('completionjoingroup_desc', 'mod_playergroup')],
+            $descriptions
+        );
+    }
+
+    /**
+     * The custom rule is listed after the core rules, in the order the activity page shows them.
+     */
+    public function test_get_sort_order_ends_with_the_custom_rule(): void {
+        $this->resetAfterTest();
+
+        [$course, $cm] = $this->create_fixture();
+        $user = $this->getDataGenerator()->create_user();
+        $cminfo = get_fast_modinfo($course)->get_cm($cm->cmid);
+
+        $order = (new custom_completion($cminfo, (int) $user->id))->get_sort_order();
+
+        $this->assertSame('completionjoingroup', end($order));
+        $this->assertContains('completionview', $order);
+        $this->assertContains('completionusegrade', $order);
+    }
+
+    /**
+     * The defined rules are exactly the ones the activity declares.
+     */
+    public function test_get_defined_custom_rules(): void {
+        $this->assertSame(['completionjoingroup'], custom_completion::get_defined_custom_rules());
+    }
 }

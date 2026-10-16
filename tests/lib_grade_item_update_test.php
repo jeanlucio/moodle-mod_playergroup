@@ -78,4 +78,45 @@ final class lib_grade_item_update_test extends \advanced_testcase {
         $gradeitem = $this->fetch_grade_item($instance);
         $this->assertEqualsWithDelta(6.0, (float) $gradeitem->gradepass, 0.001);
     }
+
+    /**
+     * Test that a reset removes the recorded grades and keeps the grade item.
+     *
+     * The core asks for it when a teacher resets the course gradebook; the item and its settings must
+     * stay so the next qualification has somewhere to be recorded.
+     */
+    public function test_reset_clears_the_grades_and_keeps_the_item(): void {
+        $course = $this->getDataGenerator()->create_course();
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $instance = $this->getDataGenerator()->create_module('playergroup', ['course' => $course->id, 'grade' => 10]);
+        playergroup_grade_item_update($instance, [$student->id => (object) ['userid' => $student->id, 'rawgrade' => 10]]);
+        $gradeitem = $this->fetch_grade_item($instance);
+        $this->assertEquals(10.0, (float) $gradeitem->get_grade($student->id, false)->finalgrade);
+
+        $result = playergroup_grade_item_update($instance, 'reset');
+
+        $this->assertSame(GRADE_UPDATE_OK, $result);
+        $gradeitem = $this->fetch_grade_item($instance);
+        $this->assertNotEmpty($gradeitem, 'The item is kept.');
+        $this->assertNull($gradeitem->get_grade($student->id, false)->finalgrade);
+        $this->assertEqualsWithDelta(10.0, (float) $gradeitem->grademax, 0.001);
+    }
+
+    /**
+     * Test that an activity without a grade leaves nothing in the gradebook.
+     */
+    public function test_an_activity_without_a_grade_creates_no_grade_item(): void {
+        $course = $this->getDataGenerator()->create_course();
+        $instance = $this->getDataGenerator()->create_module('playergroup', ['course' => $course->id, 'grade' => 0]);
+
+        $gradeitem = \grade_item::fetch([
+            'itemtype' => 'mod',
+            'itemmodule' => 'playergroup',
+            'iteminstance' => $instance->id,
+            'itemnumber' => 0,
+            'courseid' => $course->id,
+        ]);
+
+        $this->assertFalse($gradeitem);
+    }
 }

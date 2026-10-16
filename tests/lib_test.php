@@ -474,4 +474,63 @@ final class lib_test extends advanced_testcase {
         $this->assertTrue(playergroup_supports(FEATURE_GRADE_HAS_GRADE));
         $this->assertNull(playergroup_supports('unknown_feature'));
     }
+
+    /**
+     * Test that the activity declares its own icon, so the theme does not recolour it.
+     */
+    public function test_the_activity_declares_a_branded_icon(): void {
+        $this->assertTrue(playergroup_is_branded());
+        $this->assertTrue(component_callback('mod_playergroup', 'is_branded', [], false));
+    }
+
+    /**
+     * Test that the completion page describes the rule only when it is active.
+     */
+    public function test_completion_rule_descriptions_follow_the_active_rules(): void {
+        $course = $this->getDataGenerator()->create_course(['enablecompletion' => 1]);
+        $active = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $course->id,
+            'completion' => COMPLETION_TRACKING_AUTOMATIC,
+            'completionjoingroup' => 1,
+        ]);
+        $inactive = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $course->id,
+            'completion' => COMPLETION_TRACKING_AUTOMATIC,
+            'completionjoingroup' => 0,
+        ]);
+        $modinfo = get_fast_modinfo($course);
+
+        $this->assertSame(
+            [get_string('completionjoingroup_desc', 'mod_playergroup')],
+            playergroup_get_completion_active_rule_descriptions($course, $modinfo->get_cm($active->cmid))
+        );
+        $this->assertSame([], playergroup_get_completion_active_rule_descriptions($course, $modinfo->get_cm($inactive->cmid)));
+    }
+
+    /**
+     * Test the hint under the activity link on the course page, for each stage of the window.
+     */
+    public function test_cm_info_view_hints_at_the_availability_window(): void {
+        $course = $this->getDataGenerator()->create_course();
+        $notyet = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $course->id,
+            'timeopen' => time() + DAYSECS,
+        ]);
+        $closed = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $course->id,
+            'timeclose' => time() - HOURSECS,
+        ]);
+        $open = $this->getDataGenerator()->create_module('playergroup', ['course' => $course->id]);
+        $modinfo = get_fast_modinfo($course);
+
+        $this->assertStringContainsString(
+            userdate((int) $modinfo->get_cm($notyet->cmid)->customdata['timeopen']),
+            $modinfo->get_cm($notyet->cmid)->afterlink
+        );
+        $this->assertStringContainsString(
+            get_string('activityclosedmsg', 'mod_playergroup'),
+            $modinfo->get_cm($closed->cmid)->afterlink
+        );
+        $this->assertEmpty($modinfo->get_cm($open->cmid)->afterlink);
+    }
 }

@@ -379,4 +379,124 @@ final class get_activity_data_test extends advanced_testcase {
         $this->assertFalse($result['groups'][0]['caninvite']);
         $this->assertEmpty($result['inviteableusers']);
     }
+
+    /**
+     * Returns the cleaned answer of the service, the way the app receives it.
+     *
+     * @param int $cmid Course module ID.
+     * @return array The answer.
+     */
+    private function answer(int $cmid): array {
+        return external_api::clean_returnvalue(get_activity_data::execute_returns(), get_activity_data::execute($cmid));
+    }
+
+    /**
+     * Test the message the app shows while the activity is not open yet, and that the actions follow.
+     */
+    public function test_execute_tells_when_the_activity_is_not_open_yet(): void {
+        $this->resetAfterTest();
+
+        $opens = time() + DAYSECS;
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module('playergroup', ['course' => $course->id, 'timeopen' => $opens]);
+        $this->setUser($this->getDataGenerator()->create_and_enrol($course, 'student'));
+
+        $result = $this->answer($cm->cmid);
+
+        $this->assertFalse($result['activityopen']);
+        $this->assertSame(get_string('activityopensfrom', 'mod_playergroup', userdate($opens)), $result['availabilitymessage']);
+        $this->assertSame($opens, $result['timeopen']);
+    }
+
+    /**
+     * Test the message once the activity has closed.
+     */
+    public function test_execute_tells_when_the_activity_has_closed(): void {
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $course->id,
+            'timeclose' => time() - HOURSECS,
+        ]);
+        $this->setUser($this->getDataGenerator()->create_and_enrol($course, 'student'));
+
+        $result = $this->answer($cm->cmid);
+
+        $this->assertFalse($result['activityopen']);
+        $this->assertSame(get_string('activityclosedmsg', 'mod_playergroup'), $result['availabilitymessage']);
+    }
+
+    /**
+     * Test that an open activity has no availability message.
+     */
+    public function test_execute_has_no_message_while_the_activity_is_open(): void {
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module('playergroup', ['course' => $course->id]);
+        $this->setUser($this->getDataGenerator()->create_and_enrol($course, 'student'));
+
+        $result = $this->answer($cm->cmid);
+
+        $this->assertTrue($result['activityopen']);
+        $this->assertSame('', $result['availabilitymessage']);
+    }
+
+    /**
+     * Test the invites a student without a group sees in the app: who sent them, to which group.
+     */
+    public function test_execute_lists_the_invites_received_by_a_student_without_a_group(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->redirectMessages();
+
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module('playergroup', ['course' => $course->id]);
+        $other = $this->getDataGenerator()->create_module('playergroup', ['course' => $course->id]);
+        $leader = $this->getDataGenerator()->create_user(['firstname' => 'Leader', 'lastname' => 'Silva']);
+        $invited = $this->getDataGenerator()->create_user(['firstname' => 'Invited', 'lastname' => 'Souza']);
+        foreach ([$leader, $invited] as $user) {
+            $this->getDataGenerator()->enrol_user($user->id, $course->id, 'student');
+        }
+        $this->setUser($leader);
+        create_group::execute($cm->cmid, 'P&D team', '', '⚔', 0, '');
+        send_invite::execute($cm->cmid, $invited->id);
+        $this->setUser($invited);
+
+        $result = $this->answer($cm->cmid);
+
+        $this->assertCount(1, $result['receivedinvites']);
+        $invite = $result['receivedinvites'][0];
+        $this->assertSame('P&D team', $invite['groupname']);
+        $this->assertSame('⚔', $invite['badge']);
+        $this->assertSame(get_string('invitedby', 'mod_playergroup', fullname($leader)), $invite['sentby']);
+        $this->assertGreaterThan(0, $invite['inviteid']);
+
+        $this->assertSame([], $this->answer($other->cmid)['receivedinvites'], 'An invite belongs to one activity.');
+
+        // Once the invite is answered it is no longer listed.
+        $DB->set_field('playergroup_invites', 'status', 2, ['id' => $invite['inviteid']]);
+        $this->assertSame([], $this->answer($cm->cmid)['receivedinvites']);
+    }
+
+    /**
+     * Test that a student who already has a group is not shown invites.
+     */
+    public function test_execute_does_not_list_invites_to_a_student_who_has_a_group(): void {
+        $this->resetAfterTest();
+        $this->redirectMessages();
+
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module('playergroup', ['course' => $course->id]);
+        $leader = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $invited = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $this->setUser($leader);
+        create_group::execute($cm->cmid, 'Team', '', '🛡', 0, '');
+        send_invite::execute($cm->cmid, $invited->id);
+        $this->setUser($invited);
+        create_group::execute($cm->cmid, 'Own', '', '🛡', 0, '');
+
+        $this->assertSame([], $this->answer($cm->cmid)['receivedinvites']);
+    }
 }
