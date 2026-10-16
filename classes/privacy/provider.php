@@ -294,11 +294,7 @@ class provider implements
 
         [$insql, $inparams] = $DB->get_in_or_equal($instanceids, SQL_PARAMS_NAMED, 'pg');
 
-        $DB->delete_records_select(
-            'playergroup_meta',
-            "playergroupid $insql AND creatorid = :creatorid",
-            array_merge($inparams, ['creatorid' => $userid])
-        );
+        self::release_groups_led_by($instanceids, [$userid]);
 
         $DB->delete_records_select(
             'playergroup_invites',
@@ -331,12 +327,7 @@ class provider implements
             return;
         }
 
-        [$insql, $inparams] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED, 'uid');
-        $DB->delete_records_select(
-            'playergroup_meta',
-            "playergroupid = :playergroupid AND creatorid $insql",
-            array_merge(['playergroupid' => $cm->instance], $inparams)
-        );
+        self::release_groups_led_by([(int) $cm->instance], $userids);
 
         [$sendersql, $senderparams] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED, 'snd');
         $DB->delete_records_select(
@@ -351,5 +342,66 @@ class provider implements
             "playergroupid = :pgid2 AND receiverid $receiversql",
             array_merge(['pgid2' => $cm->instance], $receiverparams)
         );
+    }
+
+    /**
+     * Removes the given users as leaders of the groups they created, without destroying the group.
+     *
+     * The playergroup_meta row is what ties a native group to the activity (badge, privacy,
+     * password), so deleting it because its creator asked for erasure would make every other member
+     * lose the group and the completion that depends on it. Leadership passes to the oldest remaining
+     * member, as leave_group does; the row is deleted only when nobody else is left in the group.
+     *
+     * @param int[] $instanceids Activity instance IDs to process.
+     * @param int[] $userids Users whose leadership is being erased.
+     * @return void
+     */
+    private static function release_groups_led_by(array $instanceids, array $userids): void {
+        global $DB;
+
+        [$instancesql, $instanceparams] = $DB->get_in_or_equal($instanceids, SQL_PARAMS_NAMED, 'pg');
+        [$usersql, $userparams] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED, 'uid');
+
+        $groupids = $DB->get_fieldset_select(
+            'playergroup_meta',
+            'groupid',
+            "playergroupid $instancesql AND creatorid $usersql",
+            array_merge($instanceparams, $userparams)
+        );
+        if (empty($groupids)) {
+            return;
+        }
+
+        // Oldest remaining member of each group, ignoring the users being erased.
+        [$groupsql, $groupparams] = $DB->get_in_or_equal($groupids, SQL_PARAMS_NAMED, 'grp');
+        [$othersql, $otherparams] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED, 'oth', false);
+        $members = $DB->get_recordset_select(
+            'groups_members',
+            "groupid $groupsql AND userid $othersql",
+            array_merge($groupparams, $otherparams),
+            'groupid ASC, timeadded ASC, id ASC',
+            'id, groupid, userid'
+        );
+        $successors = [];
+        foreach ($members as $member) {
+            $successors[(int) $member->groupid] ??= (int) $member->userid;
+        }
+        $members->close();
+
+        $orphaned = array_values(array_diff($groupids, array_keys($successors)));
+        if (!empty($orphaned)) {
+            [$orphansql, $orphanparams] = $DB->get_in_or_equal($orphaned, SQL_PARAMS_NAMED, 'orp');
+            $DB->delete_records_select('playergroup_meta', "groupid $orphansql", $orphanparams);
+        }
+
+        // One update per successor: a user who takes over several groups is handled in one statement.
+        $groupsbysuccessor = [];
+        foreach ($successors as $groupid => $successorid) {
+            $groupsbysuccessor[$successorid][] = $groupid;
+        }
+        foreach ($groupsbysuccessor as $successorid => $successorgroups) {
+            [$succsql, $succparams] = $DB->get_in_or_equal($successorgroups, SQL_PARAMS_NAMED, 'suc');
+            $DB->set_field_select('playergroup_meta', 'creatorid', $successorid, "groupid $succsql", $succparams);
+        }
     }
 }

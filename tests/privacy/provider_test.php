@@ -258,4 +258,115 @@ final class provider_test extends provider_testcase {
         $this->assertFalse($DB->record_exists('playergroup_meta', ['playergroupid' => $this->cm->id]));
         $this->assertFalse($DB->record_exists('playergroup_invites', ['playergroupid' => $this->cm->id]));
     }
+
+    /**
+     * Builds a group through the real web services: the leader creates it and the others join it.
+     *
+     * @param \stdClass $activity Activity created by the generator.
+     * @param \stdClass $leader Student who creates the group.
+     * @param \stdClass[] $joiners Students who join it, in order.
+     * @return int Native group ID.
+     */
+    private function build_group(\stdClass $activity, \stdClass $leader, array $joiners): int {
+        $this->getDataGenerator()->enrol_user($leader->id, $activity->course, 'student');
+        $this->setUser($leader);
+        $groupid = \mod_playergroup\external\create_group::execute($activity->cmid, 'Team', '', '⚔', 0, '')['groupid'];
+
+        foreach ($joiners as $joiner) {
+            $this->getDataGenerator()->enrol_user($joiner->id, $activity->course, 'student');
+            $this->setUser($joiner);
+            \mod_playergroup\external\join_group::execute($activity->cmid, $groupid);
+        }
+        return $groupid;
+    }
+
+    /**
+     * Test that erasing the leader hands the group to the oldest remaining member instead of deleting it.
+     *
+     * Deleting the playergroup_meta row would make every other member lose the group in the activity
+     * and the completion that depends on it, although they asked for nothing.
+     */
+    public function test_delete_data_for_user_keeps_group_for_remaining_members(): void {
+        global $DB;
+
+        $course = $this->getDataGenerator()->create_course(['enablecompletion' => 1]);
+        $activity = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $course->id,
+            'completion' => COMPLETION_TRACKING_AUTOMATIC,
+            'completionjoingroup' => 1,
+        ]);
+        $leader = $this->getDataGenerator()->create_user();
+        $second = $this->getDataGenerator()->create_user();
+        $third = $this->getDataGenerator()->create_user();
+        $groupid = $this->build_group($activity, $leader, [$second, $third]);
+
+        $context = \context_module::instance($activity->cmid);
+        provider::delete_data_for_user(new approved_contextlist($leader, 'mod_playergroup', [$context->id]));
+
+        $meta = $DB->get_record('playergroup_meta', ['groupid' => $groupid]);
+        $this->assertNotFalse($meta, 'The group must stay tied to the activity.');
+        $this->assertEquals($second->id, $meta->creatorid);
+        $this->assertSame('⚔', $meta->badge);
+        $this->assertTrue($DB->record_exists('groups', ['id' => $groupid]));
+
+        $cm = get_fast_modinfo($course->id, $third->id)->get_cm($activity->cmid);
+        $completion = new \mod_playergroup\completion\custom_completion($cm, (int) $third->id);
+        $this->assertSame(COMPLETION_COMPLETE, $completion->get_state('completionjoingroup'));
+    }
+
+    /**
+     * Test that the group is deleted from the activity only when the erased leader was its last member.
+     */
+    public function test_delete_data_for_user_removes_group_without_other_members(): void {
+        global $DB;
+
+        $activity = $this->getDataGenerator()->create_module('playergroup', ['course' => $this->course->id]);
+        $leader = $this->getDataGenerator()->create_user();
+        $groupid = $this->build_group($activity, $leader, []);
+
+        $context = \context_module::instance($activity->cmid);
+        provider::delete_data_for_user(new approved_contextlist($leader, 'mod_playergroup', [$context->id]));
+
+        $this->assertFalse($DB->record_exists('playergroup_meta', ['groupid' => $groupid]));
+    }
+
+    /**
+     * Test that bulk erasure never picks an erased user as the successor.
+     */
+    public function test_delete_data_for_users_skips_erased_successors(): void {
+        global $DB;
+
+        $activity = $this->getDataGenerator()->create_module('playergroup', ['course' => $this->course->id]);
+        $leader = $this->getDataGenerator()->create_user();
+        $second = $this->getDataGenerator()->create_user();
+        $third = $this->getDataGenerator()->create_user();
+        $groupid = $this->build_group($activity, $leader, [$second, $third]);
+
+        // Leader and the oldest remaining member are erased together; the third member must take over.
+        $context = \context_module::instance($activity->cmid);
+        provider::delete_data_for_users(new approved_userlist($context, 'mod_playergroup', [$leader->id, $second->id]));
+
+        $this->assertEquals($third->id, $DB->get_field('playergroup_meta', 'creatorid', ['groupid' => $groupid]));
+    }
+
+    /**
+     * Test that erasing every member of a group removes it, and a group in another activity is untouched.
+     */
+    public function test_delete_data_for_users_scopes_to_the_context(): void {
+        global $DB;
+
+        $activity = $this->getDataGenerator()->create_module('playergroup', ['course' => $this->course->id]);
+        $other = $this->getDataGenerator()->create_module('playergroup', ['course' => $this->course->id]);
+        $leader = $this->getDataGenerator()->create_user();
+        $groupid = $this->build_group($activity, $leader, []);
+
+        $otherleader = $this->getDataGenerator()->create_user();
+        $othergroupid = $this->build_group($other, $otherleader, []);
+
+        $context = \context_module::instance($activity->cmid);
+        provider::delete_data_for_users(new approved_userlist($context, 'mod_playergroup', [$leader->id]));
+
+        $this->assertFalse($DB->record_exists('playergroup_meta', ['groupid' => $groupid]));
+        $this->assertTrue($DB->record_exists('playergroup_meta', ['groupid' => $othergroupid]));
+    }
 }
