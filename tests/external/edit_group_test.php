@@ -146,6 +146,62 @@ final class edit_group_test extends advanced_testcase {
     }
 
     /**
+     * Test that making an open group protected without a password is refused and changes nothing.
+     */
+    public function test_execute_rejects_protected_without_password_and_writes_nothing(): void {
+        global $DB;
+
+        try {
+            edit_group::execute($this->cm->cmid, $this->groupid, 'Renamed', '', '⚔', 1, '');
+            $this->fail('Switching to protected without a password must be rejected.');
+        } catch (moodle_exception $e) {
+            $this->assertSame('errpasswordrequired', $e->errorcode);
+        }
+
+        $this->assertSame('Original Name', $DB->get_field('groups', 'name', ['id' => $this->groupid]));
+        $meta = $DB->get_record('playergroup_meta', ['groupid' => $this->groupid], '*', MUST_EXIST);
+        $this->assertSame(0, (int) $meta->privacy);
+        $this->assertNotSame('⚔', $meta->badge);
+    }
+
+    /**
+     * Test that a protected group saved earlier with an empty hash cannot be saved blank again.
+     */
+    public function test_execute_rejects_blank_password_when_stored_hash_is_empty(): void {
+        global $DB;
+
+        $DB->set_field('playergroup_meta', 'privacy', 1, ['groupid' => $this->groupid]);
+        $DB->set_field('playergroup_meta', 'password', '', ['groupid' => $this->groupid]);
+
+        $this->expectException(moodle_exception::class);
+        $this->expectExceptionMessage(get_string('errpasswordrequired', 'mod_playergroup'));
+        edit_group::execute($this->cm->cmid, $this->groupid, 'Renamed', '', '🛡', 1, '');
+    }
+
+    /**
+     * Test that a whitespace-only new password is refused.
+     */
+    public function test_execute_rejects_whitespace_only_password(): void {
+        $this->expectException(moodle_exception::class);
+        $this->expectExceptionMessage(get_string('errpasswordrequired', 'mod_playergroup'));
+        edit_group::execute($this->cm->cmid, $this->groupid, 'Renamed', '', '🛡', 1, '   ');
+    }
+
+    /**
+     * Test that a privacy level outside 0, 1 and 2 is refused.
+     */
+    public function test_execute_rejects_invalid_privacy_level(): void {
+        foreach ([-1, 3] as $privacy) {
+            try {
+                edit_group::execute($this->cm->cmid, $this->groupid, 'Renamed', '', '🛡', $privacy, '');
+                $this->fail("Privacy level $privacy must be rejected.");
+            } catch (moodle_exception $e) {
+                $this->assertSame('errinvalidprivacy', $e->errorcode);
+            }
+        }
+    }
+
+    /**
      * Test that a groupid belonging to a different activity instance is rejected, proving the
      * lookup is scoped by playergroupid rather than trusting the raw groupid alone.
      */

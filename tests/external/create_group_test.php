@@ -108,6 +108,51 @@ final class create_group_test extends advanced_testcase {
     }
 
     /**
+     * Test that a protected group without a password is refused and leaves nothing behind.
+     *
+     * A protected group stored with an empty hash can never be joined, since join_group
+     * rejects every password against an empty hash.
+     */
+    public function test_execute_rejects_protected_group_without_password(): void {
+        global $DB;
+
+        $groupsbefore = $DB->count_records('groups', ['courseid' => $this->course->id]);
+
+        try {
+            create_group::execute($this->cm->cmid, 'Vault', '', '🔒', 1, '');
+            $this->fail('A protected group without a password must be rejected.');
+        } catch (moodle_exception $e) {
+            $this->assertSame('errpasswordrequired', $e->errorcode);
+        }
+
+        $this->assertSame($groupsbefore, $DB->count_records('groups', ['courseid' => $this->course->id]));
+        $this->assertSame(0, $DB->count_records('playergroup_meta'));
+    }
+
+    /**
+     * Test that a whitespace-only password is refused, as the join dialog cannot submit one.
+     */
+    public function test_execute_rejects_protected_group_with_blank_password(): void {
+        $this->expectException(moodle_exception::class);
+        $this->expectExceptionMessage(get_string('errpasswordrequired', 'mod_playergroup'));
+        create_group::execute($this->cm->cmid, 'Vault', '', '🔒', 1, '   ');
+    }
+
+    /**
+     * Test that a privacy level outside 0, 1 and 2 is refused.
+     */
+    public function test_execute_rejects_invalid_privacy_level(): void {
+        foreach ([-1, 3] as $privacy) {
+            try {
+                create_group::execute($this->cm->cmid, 'Odd', '', '🛡', $privacy, '');
+                $this->fail("Privacy level $privacy must be rejected.");
+            } catch (moodle_exception $e) {
+                $this->assertSame('errinvalidprivacy', $e->errorcode);
+            }
+        }
+    }
+
+    /**
      * Test that an open group stores privacy=0.
      */
     public function test_execute_open_group_privacy_zero(): void {

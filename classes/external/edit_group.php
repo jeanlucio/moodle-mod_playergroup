@@ -120,21 +120,32 @@ class edit_group extends external_api {
             throw new \moodle_exception('nopermissions', 'error', '', 'edit group');
         }
 
+        // Resolve the privacy settings before writing anything, so a rejected request leaves the
+        // group untouched. A protected group needs a password: either a new one or the stored hash.
+        $privacylevel = (int) $params['privacy'];
+        if (!in_array($privacylevel, [0, 1, 2], true)) {
+            throw new \moodle_exception('errinvalidprivacy', 'mod_playergroup');
+        }
+        $hashedpassword = '';
+        if ($privacylevel === 1) {
+            if ($params['password'] !== '') {
+                if (trim($params['password']) === '') {
+                    throw new \moodle_exception('errpasswordrequired', 'mod_playergroup');
+                }
+                $hashedpassword = password_hash($params['password'], PASSWORD_DEFAULT);
+            } else if (empty($meta->password)) {
+                throw new \moodle_exception('errpasswordrequired', 'mod_playergroup');
+            } else {
+                $hashedpassword = $meta->password;
+            }
+        }
+
         $group = $DB->get_record('groups', ['id' => $params['groupid']], '*', MUST_EXIST);
         $group->name              = $params['name'];
         $group->description       = clean_text($params['description'], FORMAT_HTML);
         $group->descriptionformat = FORMAT_HTML;
         $group->timemodified      = time();
         groups_update_group($group);
-
-        $privacylevel = (int) $params['privacy'];
-        if ($privacylevel === 1) {
-            $hashedpassword = $params['password'] !== ''
-                ? password_hash($params['password'], PASSWORD_DEFAULT)
-                : $meta->password;
-        } else {
-            $hashedpassword = '';
-        }
 
         $meta->badge        = $params['badge'];
         $meta->privacy      = $privacylevel;

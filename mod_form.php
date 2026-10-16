@@ -155,6 +155,47 @@ class mod_playergroup_mod_form extends moodleform_mod {
     }
 
     /**
+     * Validates the member limits, the availability window and the grade type.
+     *
+     * Without these checks a teacher can save settings that silently disable the activity: a
+     * maximum of 0 marks every group as full, and a closing date before the opening date means
+     * the activity is never open. A scale is rejected because the gradebook item is only
+     * created for points (see playergroup_grade_item_update()).
+     *
+     * @param array $data Submitted form data.
+     * @param array $files Submitted files.
+     * @return array Field name => error message.
+     */
+    public function validation($data, $files): array {
+        $errors = parent::validation($data, $files);
+
+        $minmembers = (int) ($data['minmembers'] ?? 0);
+        $maxmembers = (int) ($data['maxmembers'] ?? 0);
+        if ($minmembers < 1) {
+            $errors['minmembers'] = get_string('errminmembersmin', 'mod_playergroup');
+        }
+        if ($maxmembers < 1) {
+            $errors['maxmembers'] = get_string('errmaxmembersmin', 'mod_playergroup');
+        }
+        if (empty($errors['minmembers']) && empty($errors['maxmembers']) && $minmembers > $maxmembers) {
+            $errors['minmembers'] = get_string('errminovermax', 'mod_playergroup');
+        }
+
+        $timeopen = (int) ($data['timeopen'] ?? 0);
+        $timeclose = (int) ($data['timeclose'] ?? 0);
+        if ($timeopen > 0 && $timeclose > 0 && $timeclose <= $timeopen) {
+            $errors['timeclose'] = get_string('errtimeclosebeforeopen', 'mod_playergroup');
+        }
+
+        // The modgrade element stores a scale as the negative scale ID.
+        if ((int) ($data['grade'] ?? 0) < 0) {
+            $errors['grade'] = get_string('errnogradescale', 'mod_playergroup');
+        }
+
+        return $errors;
+    }
+
+    /**
      * Pre-processes saved data to populate grouping mode fields when editing.
      *
      * @param array $defaultvalues Default values from the database record.

@@ -99,6 +99,16 @@ class create_group extends external_api {
             throw new \moodle_exception('activityclosed', 'mod_playergroup');
         }
 
+        // Reject unusable settings before anything is written: a protected group without a
+        // password can never be joined, since join_group refuses an empty stored hash.
+        $privacylevel = (int) $params['privacy'];
+        if (!in_array($privacylevel, [0, 1, 2], true)) {
+            throw new \moodle_exception('errinvalidprivacy', 'mod_playergroup');
+        }
+        if ($privacylevel === 1 && trim($params['password']) === '') {
+            throw new \moodle_exception('errpasswordrequired', 'mod_playergroup');
+        }
+
         $lock = \mod_playergroup\local\group_lock::acquire($playergroup->id);
         try {
             // Ensure the student does not already belong to a group in this activity.
@@ -135,11 +145,7 @@ class create_group extends external_api {
                 throw new \moodle_exception('joinfailed', 'mod_playergroup');
             }
 
-            $privacylevel = (int) $params['privacy'];
-            $hashedpassword = '';
-            if ($privacylevel === 1 && $params['password'] !== '') {
-                $hashedpassword = password_hash($params['password'], PASSWORD_DEFAULT);
-            }
+            $hashedpassword = $privacylevel === 1 ? password_hash($params['password'], PASSWORD_DEFAULT) : '';
 
             // Store metadata (badge, privacy, creator) in the plugin's table.
             $meta = new \stdClass();
