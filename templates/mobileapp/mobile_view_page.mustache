@@ -62,6 +62,9 @@
 }}
 {{=<% %>=}}
 <div>
+    <!-- Records the visit for the completion rule and the logs, as view.php does on the web. -->
+    <span core-site-plugins-call-ws-on-load name="mod_playergroup_view_playergroup"
+        [params]="{cmid: <% cmid %>}" [preSets]="{getFromCache: 0, saveToCache: 0}"></span>
     <core-loading [hideUntil]="loaded">
 
         <!-- Activity header / description -->

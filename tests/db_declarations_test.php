@@ -111,6 +111,16 @@ final class db_declarations_test extends advanced_testcase {
     }
 
     /**
+     * Test that the app can report that the activity was viewed, which its view rule needs.
+     */
+    public function test_the_app_can_report_a_view(): void {
+        $functions = $this->services();
+
+        $this->assertArrayHasKey('mod_playergroup_view_playergroup', $functions);
+        $this->assertContains(MOODLE_OFFICIAL_MOBILE_SERVICE, $functions['mod_playergroup_view_playergroup']['services']);
+    }
+
+    /**
      * Test that every service is available to the AJAX interface the pages use and to the mobile app.
      */
     public function test_services_are_available_to_ajax_and_the_app(): void {

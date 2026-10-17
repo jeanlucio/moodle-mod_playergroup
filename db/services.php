@@ -34,6 +34,15 @@ $functions = [
         'ajax'        => true,
         'services'    => [MOODLE_OFFICIAL_MOBILE_SERVICE],
     ],
+    'mod_playergroup_view_playergroup' => [
+        'classname'   => 'mod_playergroup\external\view_playergroup',
+        'methodname'  => 'execute',
+        'classpath'   => '',
+        'description' => 'Records that the activity was viewed, for completion and the logs.',
+        'type'        => 'write',
+        'ajax'        => true,
+        'services'    => [MOODLE_OFFICIAL_MOBILE_SERVICE],
+    ],
     'mod_playergroup_create_group' => [
         'classname'   => 'mod_playergroup\external\create_group',
         'methodname'  => 'execute',

@@ -205,4 +205,24 @@ final class mobile_test extends advanced_testcase {
             $result['templates'][0]['html']
         );
     }
+
+    /**
+     * Test that the page the app renders asks for the visit to be recorded, for this activity.
+     *
+     * The app never loads view.php, so this call is the only way its visit reaches the completion rule.
+     */
+    public function test_mobile_course_view_records_the_visit(): void {
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module('playergroup', ['course' => $course->id]);
+        $this->setUser($this->getDataGenerator()->create_and_enrol($course, 'student'));
+
+        $result = mobile::mobile_course_view(['cmid' => $cm->cmid, 'courseid' => $course->id]);
+
+        $html = $result['templates'][0]['html'];
+        $this->assertStringContainsString('core-site-plugins-call-ws-on-load', $html);
+        $this->assertStringContainsString('name="mod_playergroup_view_playergroup"', $html);
+        $this->assertStringContainsString('{cmid: ' . $cm->cmid . '}', $html);
+    }
 }
