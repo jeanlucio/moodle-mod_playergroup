@@ -26,6 +26,7 @@
 namespace mod_playergroup;
 
 use advanced_testcase;
+use mod_playergroup\external\accept_invite;
 use mod_playergroup\external\create_group;
 use mod_playergroup\external\join_group;
 
@@ -33,6 +34,7 @@ use mod_playergroup\external\join_group;
  * Tests for \mod_playergroup\observer.
  *
  * @covers \mod_playergroup\observer
+ * @covers \mod_playergroup\local\leadership
  */
 final class observer_test extends advanced_testcase {
     /** @var \stdClass Course record. */
@@ -279,6 +281,146 @@ final class observer_test extends advanced_testcase {
         groups_remove_member($groupid, $leader->id);
 
         $this->assertEquals($leader->id, $DB->get_field('playergroup_meta', 'creatorid', ['groupid' => $groupid]));
+    }
+
+    /**
+     * Creates a group in an activity that keeps empty groups, and empties it.
+     *
+     * @param int $privacy Privacy of the group: 0 open, 2 closed.
+     * @return array [cmid, groupid, the student who led it and left]
+     */
+    private function create_emptied_kept_group(int $privacy = 0): array {
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course'            => $this->course->id,
+            'canleave'          => 1,
+            'deleteemptygroups' => 0,
+        ]);
+        $leader = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
+        $this->setUser($leader);
+        $groupid = create_group::execute($cm->cmid, 'Kept', '', '🛡', $privacy, '')['groupid'];
+
+        groups_remove_member($groupid, $leader->id);
+
+        return [$cm->cmid, $groupid, $leader];
+    }
+
+    /**
+     * Whoever joins a kept group that lost all its members becomes its leader.
+     *
+     * The leader who left stays recorded otherwise, so nobody could edit the group and the card still
+     * named someone who is no longer in it.
+     */
+    public function test_the_next_student_to_join_an_emptied_group_becomes_its_leader(): void {
+        global $DB;
+
+        [$cmid, $groupid] = $this->create_emptied_kept_group();
+        $joiner = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
+        $this->setUser($joiner);
+
+        join_group::execute($cmid, $groupid, '');
+
+        $this->assertEquals($joiner->id, $DB->get_field('playergroup_meta', 'creatorid', ['groupid' => $groupid]));
+        $this->assertTrue(\mod_playergroup\external\edit_group::execute($cmid, $groupid, 'Mine', '', '⚔', 0, '')['success']);
+    }
+
+    /**
+     * The same holds for someone who gets in through an invitation.
+     */
+    public function test_a_student_who_accepts_an_invite_to_an_emptied_group_becomes_its_leader(): void {
+        global $DB;
+
+        [$cmid, $groupid, $oldleader] = $this->create_emptied_kept_group();
+        $invited = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
+        $playergroupid = $DB->get_field('course_modules', 'instance', ['id' => $cmid]);
+        $inviteid = $DB->insert_record('playergroup_invites', (object) [
+            'playergroupid' => $playergroupid, 'groupid' => $groupid, 'senderid' => $oldleader->id,
+            'receiverid' => $invited->id, 'status' => 0, 'timecreated' => time(), 'timemodified' => time(),
+        ]);
+        $this->setUser($invited);
+
+        accept_invite::execute($inviteid);
+
+        $this->assertEquals($invited->id, $DB->get_field('playergroup_meta', 'creatorid', ['groupid' => $groupid]));
+    }
+
+    /**
+     * A teacher adding someone on the native Groups page also gives the group a leader.
+     */
+    public function test_a_member_added_on_the_groups_page_becomes_the_leader_of_an_emptied_group(): void {
+        global $DB;
+
+        [, $groupid] = $this->create_emptied_kept_group();
+        $added = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
+
+        groups_add_member($groupid, $added->id);
+
+        $this->assertEquals($added->id, $DB->get_field('playergroup_meta', 'creatorid', ['groupid' => $groupid]));
+    }
+
+    /**
+     * A group this plugin does not manage is left alone when someone is added.
+     */
+    public function test_adding_a_member_to_a_group_of_another_kind_changes_nothing(): void {
+        global $DB;
+
+        $group = $this->getDataGenerator()->create_group(['courseid' => $this->course->id]);
+        $student = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
+
+        groups_add_member($group->id, $student->id);
+
+        $this->assertFalse($DB->record_exists('playergroup_meta', ['groupid' => $group->id]));
+    }
+
+    /**
+     * A student joining a group whose leader is still in it does not take the lead.
+     */
+    public function test_joining_does_not_take_the_leadership_from_a_present_leader(): void {
+        global $DB;
+
+        [$cmid, $groupid, $leader] = $this->create_group_of_three();
+        $late = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
+        $this->setUser($late);
+        $DB->set_field('playergroup', 'maxmembers', 9, ['id' => $DB->get_field('course_modules', 'instance', ['id' => $cmid])]);
+
+        join_group::execute($cmid, $groupid, '');
+
+        $this->assertEquals($leader->id, $DB->get_field('playergroup_meta', 'creatorid', ['groupid' => $groupid]));
+    }
+
+    /**
+     * A closed group that loses every member opens again.
+     *
+     * Nobody inside can invite, and the students cannot enter it, so it would stay unusable for good.
+     */
+    public function test_a_closed_group_that_empties_opens_again(): void {
+        global $DB;
+
+        [$cmid, $groupid] = $this->create_emptied_kept_group(2);
+
+        $this->assertEquals(0, $DB->get_field('playergroup_meta', 'privacy', ['groupid' => $groupid]));
+        $joiner = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
+        $this->setUser($joiner);
+        $this->assertTrue(join_group::execute($cmid, $groupid, '')['success']);
+    }
+
+    /**
+     * A closed group that still has members stays closed when one of them leaves.
+     */
+    public function test_a_closed_group_with_members_left_stays_closed(): void {
+        global $DB;
+
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $this->course->id, 'canleave' => 1, 'deleteemptygroups' => 0,
+        ]);
+        $leader = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
+        $other = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
+        $this->setUser($leader);
+        $groupid = create_group::execute($cm->cmid, 'Closed', '', '🛡', 2, '')['groupid'];
+        groups_add_member($groupid, $other->id);
+
+        groups_remove_member($groupid, $leader->id);
+
+        $this->assertEquals(2, $DB->get_field('playergroup_meta', 'privacy', ['groupid' => $groupid]));
     }
 
     /**

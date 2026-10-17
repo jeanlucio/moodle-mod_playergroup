@@ -67,12 +67,22 @@ class observer {
         }
 
         $playergroup = $DB->get_record('playergroup', ['id' => $meta->playergroupid]);
-        if (!$playergroup || empty($playergroup->deleteemptygroups)) {
+        if (!$playergroup) {
             return;
         }
 
         if ($DB->record_exists('groups_members', ['groupid' => $groupid])) {
             // Still has members.
+            return;
+        }
+
+        if (empty($playergroup->deleteemptygroups)) {
+            // The group is kept. Nobody inside can invite and the students cannot enter a closed group, so
+            // it would stay unusable for good; it opens again and its next member can close it.
+            if ((int) $meta->privacy === 2) {
+                $DB->set_field('playergroup_meta', 'privacy', 0, ['groupid' => $groupid]);
+                $DB->set_field('playergroup_meta', 'password', '', ['groupid' => $groupid]);
+            }
             return;
         }
 
@@ -94,6 +104,20 @@ class observer {
             'context'  => \context_module::instance($cm->id),
             'objectid' => $groupid,
         ])->trigger();
+    }
+
+    /**
+     * Makes a new member the leader of a group whose recorded leader is no longer in it.
+     *
+     * It runs for every way a member is added: joining, accepting an invite, and a teacher adding one on
+     * the native Groups page. The event is fired inside groups_add_member(), so for the web services it
+     * stays within the group lock.
+     *
+     * @param \core\event\group_member_added $event The core event.
+     * @return void
+     */
+    public static function group_member_added(\core\event\group_member_added $event): void {
+        \mod_playergroup\local\leadership::claim_if_vacant((int) $event->objectid, (int) $event->relateduserid);
     }
 
     /**
