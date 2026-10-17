@@ -111,20 +111,6 @@ class accept_invite extends external_api {
             $lock->release();
         }
 
-        $now = time();
-        $DB->set_field('playergroup_invites', 'status', 1, ['id' => $invite->id]);
-        $DB->set_field('playergroup_invites', 'timemodified', $now, ['id' => $invite->id]);
-
-        // Decline all other pending invites for this user in this activity.
-        $otherselect = 'receiverid = :receiverid AND playergroupid = :playergroupid AND status = 0 AND id <> :inviteid';
-        $otherparams = [
-            'receiverid'    => (int) $USER->id,
-            'playergroupid' => (int) $playergroup->id,
-            'inviteid'      => (int) $invite->id,
-        ];
-        $DB->set_field_select('playergroup_invites', 'timemodified', $now, $otherselect, $otherparams);
-        $DB->set_field_select('playergroup_invites', 'status', 2, $otherselect, $otherparams);
-
         \mod_playergroup\event\invite_accepted::create([
             'context'  => $context,
             'objectid' => (int) $invite->id,

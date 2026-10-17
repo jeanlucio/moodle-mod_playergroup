@@ -107,7 +107,8 @@ class observer {
     }
 
     /**
-     * Makes a new member the leader of a group whose recorded leader is no longer in it.
+     * Makes a new member the leader of a group whose recorded leader is no longer in it, and settles the
+     * invites the member had received.
      *
      * It runs for every way a member is added: joining, accepting an invite, and a teacher adding one on
      * the native Groups page. The event is fired inside groups_add_member(), so for the web services it
@@ -117,7 +118,17 @@ class observer {
      * @return void
      */
     public static function group_member_added(\core\event\group_member_added $event): void {
-        \mod_playergroup\local\leadership::claim_if_vacant((int) $event->objectid, (int) $event->relateduserid);
+        global $DB;
+
+        $groupid = (int) $event->objectid;
+        $userid = (int) $event->relateduserid;
+
+        \mod_playergroup\local\leadership::claim_if_vacant($groupid, $userid);
+
+        $playergroupid = $DB->get_field('playergroup_meta', 'playergroupid', ['groupid' => $groupid]);
+        if ($playergroupid !== false) {
+            \mod_playergroup\local\invitees::settle_pending($userid, (int) $playergroupid, $groupid);
+        }
     }
 
     /**

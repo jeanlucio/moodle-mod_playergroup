@@ -75,7 +75,6 @@ class join_group extends external_api {
         $cm = get_coursemodule_from_id('playergroup', $params['cmid'], 0, false, MUST_EXIST);
         $playergroup = $DB->get_record('playergroup', ['id' => $cm->instance], '*', MUST_EXIST);
 
-        $now = time();
         \mod_playergroup\local\activity_window::require_open($playergroup);
 
         $lock = \mod_playergroup\local\group_lock::acquire($playergroup->id);
@@ -121,23 +120,6 @@ class join_group extends external_api {
         } finally {
             $lock->release();
         }
-
-        // Resolve pending invites now that the user is in a group, mirroring accept_invite: the invite
-        // for the joined group counts as accepted, any others as declined. This stops a stale pending
-        // invite from reappearing if the user later leaves the group.
-        $inviteparams = [
-            'receiverid'    => $USER->id,
-            'playergroupid' => $playergroup->id,
-            'groupid'       => $params['groupid'],
-        ];
-        $acceptedselect = 'receiverid = :receiverid AND playergroupid = :playergroupid '
-            . 'AND groupid = :groupid AND status = 0';
-        $declinedselect = 'receiverid = :receiverid AND playergroupid = :playergroupid '
-            . 'AND groupid <> :groupid AND status = 0';
-        $DB->set_field_select('playergroup_invites', 'timemodified', $now, $acceptedselect, $inviteparams);
-        $DB->set_field_select('playergroup_invites', 'status', 1, $acceptedselect, $inviteparams);
-        $DB->set_field_select('playergroup_invites', 'timemodified', $now, $declinedselect, $inviteparams);
-        $DB->set_field_select('playergroup_invites', 'status', 2, $declinedselect, $inviteparams);
 
         \mod_playergroup\local\qualification::award($playergroup, $cm, $qualified);
 

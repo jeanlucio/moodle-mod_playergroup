@@ -493,4 +493,33 @@ final class observer_test extends advanced_testcase {
         $this->assertFalse($DB->record_exists('groupings_groups', ['groupingid' => 999999]));
         $this->assertTrue($DB->record_exists('playergroup_meta', ['groupid' => $groupid]));
     }
+
+    /**
+     * A teacher adding a student on the native Groups page settles the invites the student had.
+     *
+     * The invite to the group joined counts as accepted and the others as declined.
+     */
+    public function test_a_student_added_on_the_groups_page_has_the_pending_invites_settled(): void {
+        global $DB;
+        $this->redirectMessages();
+
+        $cm = $this->getDataGenerator()->create_module('playergroup', ['course' => $this->course->id]);
+        $first = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
+        $second = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
+        $target = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
+        $this->setUser($first);
+        $firstgroup = create_group::execute($cm->cmid, 'First', '', '🛡', 0, '')['groupid'];
+        \mod_playergroup\external\send_invite::execute($cm->cmid, $target->id);
+        $this->setUser($second);
+        create_group::execute($cm->cmid, 'Second', '', '🛡', 0, '');
+        \mod_playergroup\external\send_invite::execute($cm->cmid, $target->id);
+
+        groups_add_member($firstgroup, $target->id);
+
+        $this->assertSame(0, $DB->count_records('playergroup_invites', ['receiverid' => $target->id, 'status' => 0]));
+        $this->assertSame(1, $DB->count_records('playergroup_invites', [
+            'receiverid' => $target->id, 'groupid' => $firstgroup, 'status' => 1,
+        ]));
+        $this->assertSame(1, $DB->count_records('playergroup_invites', ['receiverid' => $target->id, 'status' => 2]));
+    }
 }

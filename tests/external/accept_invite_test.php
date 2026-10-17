@@ -361,10 +361,31 @@ final class accept_invite_test extends advanced_testcase {
     }
 
     /**
-     * Test that someone who already has a group cannot accept an invite to another one.
+     * Test that founding a group settles the invite received, so it can no longer be accepted.
+     *
+     * The invite was left pending before and came back when the student left the group.
+     */
+    public function test_founding_a_group_settles_the_invite_received(): void {
+        create_group::execute($this->cm->cmid, 'Own team', '', '🛡', 0, '');
+
+        try {
+            accept_invite::execute($this->inviteid);
+            $this->fail('A settled invite must not be accepted.');
+        } catch (moodle_exception $e) {
+            $this->assertSame('invitealreadyhandled', $e->errorcode);
+        }
+        $this->assertSame(2, $this->invite_status(), 'The invite is declined.');
+        $this->assertFalse(groups_is_member($this->groupid, $this->receiver->id));
+    }
+
+    /**
+     * Test that someone who already has a group cannot accept an invite that reached them afterwards.
      */
     public function test_execute_refuses_when_the_receiver_already_has_a_group(): void {
+        global $DB;
+
         create_group::execute($this->cm->cmid, 'Own team', '', '🛡', 0, '');
+        $DB->set_field('playergroup_invites', 'status', 0, ['id' => $this->inviteid]);
 
         try {
             accept_invite::execute($this->inviteid);

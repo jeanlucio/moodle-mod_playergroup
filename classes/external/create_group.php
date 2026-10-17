@@ -158,6 +158,10 @@ class create_group extends external_api {
             $meta->timemodified  = time();
             $DB->insert_record('playergroup_meta', $meta);
 
+            // The member-added event fired before the group had its metadata, so the invites the founder had
+            // received are settled here.
+            \mod_playergroup\local\invitees::settle_pending((int) $USER->id, (int) $playergroup->id, (int) $groupid);
+
             // With a minimum of one member the founder qualifies at once; otherwise the group
             // still has to grow.
             $qualified = \mod_playergroup\local\qualification::record_group($playergroup, $groupid);

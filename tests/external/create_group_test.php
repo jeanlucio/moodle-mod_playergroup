@@ -567,4 +567,64 @@ final class create_group_test extends advanced_testcase {
 
         $this->assertEquals(2, $DB->get_field('playergroup_meta', 'privacy', ['groupid' => $result['groupid']]));
     }
+
+    /**
+     * Test that founding a group settles the invites the student had received.
+     *
+     * Left pending, they came back as new invites when the student left the group weeks later.
+     */
+    public function test_founding_a_group_declines_the_pending_invites_received(): void {
+        global $DB;
+        $this->redirectMessages();
+
+        $sender = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
+        $this->setUser($sender);
+        create_group::execute($this->cm->cmid, 'Sender Group', '', '🛡', 0, '');
+        send_invite::execute($this->cm->cmid, $this->student->id);
+        $this->assertSame(1, $DB->count_records('playergroup_invites', ['receiverid' => $this->student->id, 'status' => 0]));
+
+        $this->setUser($this->student);
+        create_group::execute($this->cm->cmid, 'Mine', '', '🛡', 0, '');
+
+        $this->assertSame(0, $DB->count_records('playergroup_invites', ['receiverid' => $this->student->id, 'status' => 0]));
+        $this->assertSame(1, $DB->count_records('playergroup_invites', ['receiverid' => $this->student->id, 'status' => 2]));
+    }
+
+    /**
+     * Test that the settled invite does not come back when the student leaves the group.
+     */
+    public function test_a_declined_invite_does_not_return_after_leaving_the_group(): void {
+        $this->redirectMessages();
+
+        $sender = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
+        $this->setUser($sender);
+        create_group::execute($this->cm->cmid, 'Sender Group', '', '🛡', 0, '');
+        send_invite::execute($this->cm->cmid, $this->student->id);
+        $this->setUser($this->student);
+        create_group::execute($this->cm->cmid, 'Mine', '', '🛡', 0, '');
+
+        leave_group::execute($this->cm->cmid);
+
+        $data = get_activity_data::execute($this->cm->cmid);
+        $this->assertSame([], $data['receivedinvites']);
+    }
+
+    /**
+     * Test that invites of other activities are left alone.
+     */
+    public function test_founding_a_group_leaves_the_invites_of_other_activities(): void {
+        global $DB;
+        $this->redirectMessages();
+
+        $other = $this->getDataGenerator()->create_module('playergroup', ['course' => $this->course->id]);
+        $sender = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
+        $this->setUser($sender);
+        create_group::execute($other->cmid, 'Other Group', '', '🛡', 0, '');
+        send_invite::execute($other->cmid, $this->student->id);
+
+        $this->setUser($this->student);
+        create_group::execute($this->cm->cmid, 'Mine', '', '🛡', 0, '');
+
+        $this->assertSame(1, $DB->count_records('playergroup_invites', ['receiverid' => $this->student->id, 'status' => 0]));
+    }
 }

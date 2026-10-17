@@ -81,4 +81,29 @@ final class invitees {
         return is_enrolled($context, $userid, 'mod/playergroup:view', true)
             && \core_availability\info_module::is_user_visible($cm, $userid);
     }
+
+    /**
+     * Settles the pending invites of a user who is now in a group of the activity.
+     *
+     * The invite to the group joined counts as accepted and the others as declined. Left pending, they
+     * stayed hidden while the student was in a group and came back as new invites when they left it.
+     *
+     * @param int $userid The user who joined a group.
+     * @param int $playergroupid The activity.
+     * @param int $groupid The group joined.
+     * @return void
+     */
+    public static function settle_pending(int $userid, int $playergroupid, int $groupid): void {
+        global $DB;
+
+        $now = time();
+        $params = ['receiverid' => $userid, 'playergroupid' => $playergroupid, 'groupid' => $groupid];
+        $accepted = 'receiverid = :receiverid AND playergroupid = :playergroupid AND groupid = :groupid AND status = 0';
+        $declined = 'receiverid = :receiverid AND playergroupid = :playergroupid AND groupid <> :groupid AND status = 0';
+
+        $DB->set_field_select('playergroup_invites', 'timemodified', $now, $accepted, $params);
+        $DB->set_field_select('playergroup_invites', 'status', 1, $accepted, $params);
+        $DB->set_field_select('playergroup_invites', 'timemodified', $now, $declined, $params);
+        $DB->set_field_select('playergroup_invites', 'status', 2, $declined, $params);
+    }
 }
