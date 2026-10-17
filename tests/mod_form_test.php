@@ -278,4 +278,57 @@ final class mod_form_test extends advanced_testcase {
         $this->assertTrue($this->form->completion_rule_enabled(['completionjoingroup' => 1]));
         $this->assertFalse($this->form->completion_rule_enabled([]));
     }
+
+    /**
+     * Test that editing an activity tied to a grouping shows that grouping as the existing one.
+     */
+    public function test_editing_an_activity_with_a_grouping_selects_it(): void {
+        $values = ['id' => 7, 'groupingid' => 42];
+
+        $this->form->data_preprocessing($values);
+
+        $this->assertSame('existing', $values['groupingmode']);
+        $this->assertSame(42, $values['existinggroupingid']);
+    }
+
+    /**
+     * Test that editing an activity without a grouping shows the mode "none".
+     */
+    public function test_editing_an_activity_without_a_grouping_selects_none(): void {
+        $values = ['id' => 7, 'groupingid' => 0];
+
+        $this->form->data_preprocessing($values);
+
+        $this->assertSame('none', $values['groupingmode']);
+        $this->assertArrayNotHasKey('existinggroupingid', $values);
+    }
+
+    /**
+     * Test that a new activity keeps the defaults of the form.
+     */
+    public function test_a_new_activity_keeps_the_grouping_defaults(): void {
+        $values = [];
+
+        $this->form->data_preprocessing($values);
+
+        $this->assertArrayNotHasKey('groupingmode', $values);
+    }
+
+    /**
+     * Test that the groupings of the course are offered, shown as plain text.
+     */
+    public function test_the_groupings_of_the_course_are_offered_as_plain_text(): void {
+        $course = $this->form->get_course();
+        $this->getDataGenerator()->create_grouping(['courseid' => $course->id, 'name' => 'Teams <b>A</b> &amp; B']);
+        $current = $this->form->get_current();
+        $cm = get_coursemodule_from_id('playergroup', $current->id);
+
+        $form = new mod_playergroup_mod_form($current, 0, $cm, $course);
+        $property = new \ReflectionProperty($form, '_form');
+        $options = $property->getValue($form)->getElement('existinggroupingid')->_options;
+
+        $texts = array_column($options, 'text');
+        $this->assertContains('Teams A & B', $texts);
+        $this->assertNotContains('Teams <b>A</b> &amp; B', $texts);
+    }
 }
