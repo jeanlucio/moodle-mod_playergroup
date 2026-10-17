@@ -112,6 +112,15 @@ function playergroup_add_instance(\stdClass $playergroup, ?\mod_playergroup_mod_
 
     playergroup_grade_item_update($playergroup);
 
+    if (!empty($playergroup->completionexpected)) {
+        \core_completion\api::update_completion_date_event(
+            $playergroup->coursemodule,
+            'playergroup',
+            $playergroup->id,
+            $playergroup->completionexpected
+        );
+    }
+
     return $playergroup->id;
 }
 
@@ -134,6 +143,14 @@ function playergroup_update_instance(\stdClass $playergroup, ?\mod_playergroup_m
     $old = $DB->get_record('playergroup', ['id' => $playergroup->id], 'id, minmembers, grade', MUST_EXIST);
 
     $result = $DB->update_record('playergroup', $playergroup);
+
+    // Clearing the date removes the event as well, so it is always passed on.
+    \core_completion\api::update_completion_date_event(
+        $playergroup->coursemodule,
+        'playergroup',
+        $playergroup->id,
+        !empty($playergroup->completionexpected) ? $playergroup->completionexpected : null
+    );
 
     playergroup_grade_item_update($playergroup);
 
@@ -417,4 +434,38 @@ function playergroup_get_completion_active_rule_descriptions(\stdClass $course, 
     }
 
     return $descriptions;
+}
+
+/**
+ * Tells the calendar and the timeline what to offer for an event of the activity.
+ *
+ * The only events are the date the teacher expects the activity to be completed by. Once the student
+ * completed it there is nothing left to do, so no action is offered.
+ *
+ * @param \calendar_event $event The calendar event.
+ * @param \core_calendar\action_factory $factory The factory of actions.
+ * @param int $userid The user the action is for, or 0 for the current user.
+ * @return \core_calendar\local\event\entities\action_interface|null The action, or null for none.
+ */
+function mod_playergroup_core_calendar_provide_event_action(
+    \calendar_event $event,
+    \core_calendar\action_factory $factory,
+    int $userid = 0
+): ?\core_calendar\local\event\entities\action_interface {
+    $cm = get_fast_modinfo($event->courseid, $userid)->instances['playergroup'][$event->instance] ?? null;
+    if (!$cm || !$cm->uservisible) {
+        return null;
+    }
+
+    $completion = new \completion_info($cm->get_course());
+    if ($completion->get_data($cm, false, $userid)->completionstate != COMPLETION_INCOMPLETE) {
+        return null;
+    }
+
+    return $factory->create_instance(
+        get_string('view'),
+        new \moodle_url('/mod/playergroup/view.php', ['id' => $cm->id]),
+        1,
+        true
+    );
 }

@@ -32,6 +32,8 @@ use advanced_testcase;
  *
  * @covers ::playergroup_add_instance
  * @covers ::playergroup_delete_instance
+ * @covers ::playergroup_update_instance
+ * @covers ::mod_playergroup_core_calendar_provide_event_action
  * @covers \mod_playergroup\instance_manager
  */
 final class lib_test extends advanced_testcase {
@@ -532,5 +534,128 @@ final class lib_test extends advanced_testcase {
             $modinfo->get_cm($closed->cmid)->afterlink
         );
         $this->assertEmpty($modinfo->get_cm($open->cmid)->afterlink);
+    }
+
+    /**
+     * Returns the calendar events of the completion date of an activity.
+     *
+     * @param int $instanceid The activity.
+     * @return \stdClass[] The events.
+     */
+    private function expected_completion_events(int $instanceid): array {
+        global $DB;
+
+        return array_values($DB->get_records('event', [
+            'modulename' => 'playergroup',
+            'instance'   => $instanceid,
+            'eventtype'  => \core_completion\api::COMPLETION_EVENT_TYPE_DATE_COMPLETION_EXPECTED,
+        ]));
+    }
+
+    /**
+     * Test that the date the teacher expects the activity to be completed by reaches the calendar.
+     *
+     * The form offers the date, but only the module can turn it into an event of the calendar and of the
+     * timeline of the students.
+     */
+    public function test_the_expected_completion_date_becomes_a_calendar_event(): void {
+        global $CFG;
+        $this->resetAfterTest();
+        $CFG->enablecompletion = true;
+
+        $course = $this->getDataGenerator()->create_course(['enablecompletion' => 1]);
+        $expected = time() + 5 * DAYSECS;
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $course->id,
+            'completion' => COMPLETION_TRACKING_AUTOMATIC,
+            'completionview' => 1,
+            'completionexpected' => $expected,
+        ]);
+
+        $events = $this->expected_completion_events((int) $cm->id);
+        $this->assertCount(1, $events);
+        $this->assertEquals($expected, (int) $events[0]->timestart);
+    }
+
+    /**
+     * Test that changing and then clearing the date updates and removes the event.
+     */
+    public function test_the_expected_completion_event_follows_later_edits(): void {
+        global $CFG;
+        $this->resetAfterTest();
+        $CFG->enablecompletion = true;
+
+        $course = $this->getDataGenerator()->create_course(['enablecompletion' => 1]);
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $course->id,
+            'completion' => COMPLETION_TRACKING_AUTOMATIC,
+            'completionview' => 1,
+            'completionexpected' => time() + DAYSECS,
+        ]);
+        $later = time() + 9 * DAYSECS;
+
+        $update = (object) ['instance' => $cm->id, 'coursemodule' => $cm->cmid, 'course' => $course->id, 'name' => 'Teams',
+            'minmembers' => 2, 'maxmembers' => 5, 'completionexpected' => $later, 'groupingmode' => 'none'];
+        playergroup_update_instance($update);
+        $events = $this->expected_completion_events((int) $cm->id);
+        $this->assertCount(1, $events);
+        $this->assertEquals($later, (int) $events[0]->timestart);
+
+        $update->completionexpected = 0;
+        playergroup_update_instance($update);
+        $this->assertSame([], $this->expected_completion_events((int) $cm->id));
+    }
+
+    /**
+     * Test that the timeline offers the action of opening the activity for the completion event.
+     */
+    public function test_the_calendar_event_offers_the_action_of_opening_the_activity(): void {
+        global $CFG;
+        $this->resetAfterTest();
+        $CFG->enablecompletion = true;
+
+        $course = $this->getDataGenerator()->create_course(['enablecompletion' => 1]);
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $course->id,
+            'completion' => COMPLETION_TRACKING_AUTOMATIC,
+            'completionview' => 1,
+            'completionexpected' => time() + DAYSECS,
+        ]);
+        $this->setUser($student);
+        $eventrecord = $this->expected_completion_events((int) $cm->id)[0];
+        $event = \calendar_event::load($eventrecord->id);
+
+        $factory = new \core_calendar\action_factory();
+        $action = mod_playergroup_core_calendar_provide_event_action($event, $factory, (int) $student->id);
+
+        $this->assertInstanceOf(\core_calendar\local\event\value_objects\action::class, $action);
+        $this->assertEquals($cm->cmid, (int) $action->get_url()->get_param('id'));
+        $this->assertTrue($action->is_actionable());
+    }
+
+    /**
+     * Test that no action is offered once the student completed the activity.
+     */
+    public function test_the_calendar_event_offers_no_action_to_who_completed_the_activity(): void {
+        global $CFG;
+        $this->resetAfterTest();
+        $CFG->enablecompletion = true;
+
+        $course = $this->getDataGenerator()->create_course(['enablecompletion' => 1]);
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $course->id,
+            'completion' => COMPLETION_TRACKING_AUTOMATIC,
+            'completionview' => 1,
+            'completionexpected' => time() + DAYSECS,
+        ]);
+        $this->setUser($student);
+        $cminfo = get_fast_modinfo($course, $student->id)->get_cm($cm->cmid);
+        (new \completion_info($course))->set_module_viewed($cminfo, $student->id);
+        $event = \calendar_event::load($this->expected_completion_events((int) $cm->id)[0]->id);
+
+        $factory = new \core_calendar\action_factory();
+        $this->assertNull(mod_playergroup_core_calendar_provide_event_action($event, $factory, (int) $student->id));
     }
 }

@@ -292,6 +292,7 @@ final class qualification_test extends advanced_testcase {
 
         $record = $DB->get_record('playergroup', ['id' => $activity->id], '*', MUST_EXIST);
         $record->instance = $record->id;
+        $record->coursemodule = $activity->cmid;
         $record->minmembers = 2;
         playergroup_update_instance($record);
 
@@ -315,6 +316,7 @@ final class qualification_test extends advanced_testcase {
 
         $record = $DB->get_record('playergroup', ['id' => $activity->id], '*', MUST_EXIST);
         $record->instance = $record->id;
+        $record->coursemodule = $activity->cmid;
         $record->minmembers = 5;
         playergroup_update_instance($record);
 
@@ -391,6 +393,7 @@ final class qualification_test extends advanced_testcase {
 
         $record = $DB->get_record('playergroup', ['id' => $activity->id], '*', MUST_EXIST);
         $record->instance = $record->id;
+        $record->coursemodule = $activity->cmid;
         $record->grade = 10;
         playergroup_update_instance($record);
 
@@ -426,6 +429,7 @@ final class qualification_test extends advanced_testcase {
 
         $record = $DB->get_record('playergroup', ['id' => $activity->id], '*', MUST_EXIST);
         $record->instance = $record->id;
+        $record->coursemodule = $activity->cmid;
         $record->grade = 20;
         playergroup_update_instance($record);
 
@@ -449,6 +453,7 @@ final class qualification_test extends advanced_testcase {
 
         $record = $DB->get_record('playergroup', ['id' => $activity->id], '*', MUST_EXIST);
         $record->instance = $record->id;
+        $record->coursemodule = $activity->cmid;
         $record->name = 'Renamed';
         playergroup_update_instance($record);
 
