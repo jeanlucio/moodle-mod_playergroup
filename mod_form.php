@@ -30,6 +30,9 @@ require_once($CFG->dirroot . '/course/moodleform_mod.php');
  * Module instance settings form.
  */
 class mod_playergroup_mod_form extends moodleform_mod {
+    /** Longest name the activity and a grouping can have: both columns hold 255 characters. */
+    private const MAXNAME = 255;
+
     /** Largest group size the form accepts; the database columns hold three digits. */
     private const MAXMEMBERS = 999;
 
@@ -65,6 +68,7 @@ class mod_playergroup_mod_form extends moodleform_mod {
 
         $mform->addElement('text', 'groupingname', get_string('groupingname', 'mod_playergroup'), ['size' => '64']);
         $mform->setType('groupingname', PARAM_TEXT);
+        $mform->addRule('groupingname', get_string('maximumchars', '', self::MAXNAME), 'maxlength', self::MAXNAME, 'client');
         $mform->hideIf('groupingname', 'groupingmode', 'neq', 'new');
 
         // Build the list of existing groupings for this course.
@@ -162,7 +166,7 @@ class mod_playergroup_mod_form extends moodleform_mod {
     }
 
     /**
-     * Validates the member limits, the availability window and the grade type.
+     * Validates the names, the member limits, the availability window and the grade type.
      *
      * Without these checks a teacher can save settings that silently disable the activity: a
      * maximum of 0 marks every group as full, and a closing date before the opening date means
@@ -174,7 +178,26 @@ class mod_playergroup_mod_form extends moodleform_mod {
      * @return array Field name => error message.
      */
     public function validation($data, $files): array {
+        global $CFG;
+        require_once($CFG->libdir . '/grouplib.php');
+
         $errors = parent::validation($data, $files);
+
+        // The browser limits the length of the name, but a request does not have to come from it.
+        if (\core_text::strlen(trim($data['name'] ?? '')) > self::MAXNAME) {
+            $errors['name'] = get_string('maximumchars', '', self::MAXNAME);
+        }
+
+        // A grouping typed here is created with that name: it has to fit the column and be free in the course.
+        if (($data['groupingmode'] ?? '') === 'new') {
+            $groupingname = trim($data['groupingname'] ?? '');
+            $courseid = (int) ($data['course'] ?? 0);
+            if (\core_text::strlen($groupingname) > self::MAXNAME) {
+                $errors['groupingname'] = get_string('maximumchars', '', self::MAXNAME);
+            } else if ($groupingname !== '' && groups_get_grouping_by_name($courseid, $groupingname)) {
+                $errors['groupingname'] = get_string('groupingnameexists', 'group', $groupingname);
+            }
+        }
 
         $minmembers = (int) ($data['minmembers'] ?? 0);
         $maxmembers = (int) ($data['maxmembers'] ?? 0);

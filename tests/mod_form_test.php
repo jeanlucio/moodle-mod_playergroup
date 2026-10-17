@@ -366,4 +366,53 @@ final class mod_form_test extends advanced_testcase {
             $this->assertStringNotContainsString('<', $text);
         }
     }
+
+    /**
+     * Test that the name of the activity is limited on the server too, not only by the browser.
+     */
+    public function test_an_activity_name_over_the_column_is_refused(): void {
+        $errors = $this->form->validation($this->data(['name' => str_repeat('a', 256)]), []);
+        $this->assertSame(get_string('maximumchars', '', 255), $errors['name']);
+
+        $this->assertSame([], $this->form->validation($this->data(['name' => str_repeat('é', 255)]), []));
+    }
+
+    /**
+     * Test that the name typed for a new grouping is limited to what the column holds.
+     */
+    public function test_a_grouping_name_over_the_column_is_refused(): void {
+        $course = $this->form->get_course();
+        $data = $this->data(['groupingmode' => 'new', 'course' => $course->id]);
+
+        $errors = $this->form->validation($data + ['groupingname' => str_repeat('a', 256)], []);
+        $this->assertSame(get_string('maximumchars', '', 255), $errors['groupingname']);
+
+        $this->assertSame([], $this->form->validation($data + ['groupingname' => str_repeat('é', 255)], []));
+    }
+
+    /**
+     * Test that a new grouping cannot take the name of one that exists in the course.
+     */
+    public function test_a_grouping_name_already_used_is_refused(): void {
+        $course = $this->form->get_course();
+        $this->getDataGenerator()->create_grouping(['courseid' => $course->id, 'name' => 'Existing']);
+        $data = $this->data(['groupingmode' => 'new', 'course' => $course->id]);
+
+        $errors = $this->form->validation($data + ['groupingname' => 'Existing'], []);
+
+        $this->assertSame(get_string('groupingnameexists', 'group', 'Existing'), $errors['groupingname']);
+    }
+
+    /**
+     * Test that the grouping name is only checked when a new grouping is going to be created.
+     */
+    public function test_the_grouping_name_is_ignored_when_no_grouping_is_created(): void {
+        $course = $this->form->get_course();
+        $this->getDataGenerator()->create_grouping(['courseid' => $course->id, 'name' => 'Existing']);
+
+        foreach (['existing', 'none'] as $mode) {
+            $data = $this->data(['groupingmode' => $mode, 'course' => $course->id, 'groupingname' => 'Existing']);
+            $this->assertSame([], $this->form->validation($data, []), $mode);
+        }
+    }
 }

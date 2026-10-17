@@ -658,4 +658,65 @@ final class lib_test extends advanced_testcase {
         $factory = new \core_calendar\action_factory();
         $this->assertNull(mod_playergroup_core_calendar_provide_event_action($event, $factory, (int) $student->id));
     }
+
+    /**
+     * Creates the grouping an activity would get, by the same code the settings form uses.
+     *
+     * @param int $courseid The course.
+     * @param string $activityname Name of the activity.
+     * @param string $custom Name typed by the teacher, or empty.
+     * @return \stdClass The grouping record.
+     */
+    private function create_activity_grouping(int $courseid, string $activityname, string $custom = ''): \stdClass {
+        global $DB;
+
+        $manager = new \mod_playergroup\instance_manager();
+        $id = $manager->process_activity_grouping((object) ['course' => $courseid, 'name' => $activityname], $custom);
+
+        return $DB->get_record('groupings', ['id' => $id], '*', MUST_EXIST);
+    }
+
+    /**
+     * Test that the name made for the grouping fits the column however long the activity name is.
+     */
+    public function test_the_default_grouping_name_fits_the_column(): void {
+        $course = $this->getDataGenerator()->create_course();
+
+        $grouping = $this->create_activity_grouping($course->id, str_repeat('é', 255));
+
+        $this->assertLessThanOrEqual(255, \core_text::strlen($grouping->name));
+        $this->assertStringStartsWith(get_string('defaultgroupingname', 'mod_playergroup'), $grouping->name);
+    }
+
+    /**
+     * Test that two activities with the same name get two groupings, not two with the same name.
+     *
+     * The restore of the course would otherwise join them into one.
+     */
+    public function test_activities_with_the_same_name_get_different_groupings(): void {
+        $course = $this->getDataGenerator()->create_course();
+
+        $first = $this->create_activity_grouping($course->id, 'Teams');
+        $second = $this->create_activity_grouping($course->id, 'Teams');
+        $third = $this->create_activity_grouping($course->id, 'Teams');
+
+        $this->assertNotSame($first->name, $second->name);
+        $this->assertNotSame($second->name, $third->name);
+        $this->assertNotSame($first->name, $third->name);
+        $this->assertStringStartsWith($first->name, $second->name);
+    }
+
+    /**
+     * Test that a repeated default name stays within the column even when the first already used all of it.
+     */
+    public function test_a_repeated_long_default_name_still_fits(): void {
+        $course = $this->getDataGenerator()->create_course();
+        $name = str_repeat('x', 255);
+
+        $first = $this->create_activity_grouping($course->id, $name);
+        $second = $this->create_activity_grouping($course->id, $name);
+
+        $this->assertLessThanOrEqual(255, \core_text::strlen($second->name));
+        $this->assertNotSame($first->name, $second->name);
+    }
 }

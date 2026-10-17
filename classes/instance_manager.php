@@ -29,6 +29,9 @@ namespace mod_playergroup;
  * Manages the background creation and deletion of Moodle native groupings.
  */
 class instance_manager {
+    /** Longest grouping name the groupings table holds. */
+    public const MAX_GROUPING_NAME = 255;
+
     /**
      * Creates a grouping for the activity instance.
      *
@@ -44,9 +47,7 @@ class instance_manager {
 
         require_once($CFG->dirroot . '/group/lib.php');
 
-        $name = $customname !== ''
-            ? $customname
-            : get_string('defaultgroupingname', 'mod_playergroup') . ' ' . $data->name;
+        $name = $customname !== '' ? $customname : $this->default_grouping_name($data->course, $data->name);
 
         $grouping = new \stdClass();
         $grouping->courseid = $data->course;
@@ -57,6 +58,29 @@ class instance_manager {
         $grouping->timemodified = time();
 
         return groups_create_grouping($grouping);
+    }
+
+    /**
+     * Builds the name of the grouping made for an activity when the teacher typed none.
+     *
+     * The name must fit the column, and be one the course does not use yet: two activities with the same name
+     * would otherwise get groupings with the same name, which the restore of the course joins into one.
+     *
+     * @param int $courseid The course.
+     * @param string $activityname Name of the activity.
+     * @return string A name of at most 255 characters that no grouping of the course has.
+     */
+    private function default_grouping_name(int $courseid, string $activityname): string {
+        $base = get_string('defaultgroupingname', 'mod_playergroup') . ' ' . $activityname;
+        $base = \core_text::substr($base, 0, self::MAX_GROUPING_NAME);
+
+        $name = $base;
+        for ($suffix = 2; groups_get_grouping_by_name($courseid, $name); $suffix++) {
+            $tail = ' (' . $suffix . ')';
+            $name = \core_text::substr($base, 0, self::MAX_GROUPING_NAME - \core_text::strlen($tail)) . $tail;
+        }
+
+        return $name;
     }
 
     /**
