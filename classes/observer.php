@@ -107,8 +107,8 @@ class observer {
     }
 
     /**
-     * Makes a new member the leader of a group whose recorded leader is no longer in it, and settles the
-     * invites the member had received.
+     * Makes a new member the leader of a group whose recorded leader is no longer in it, settles the
+     * invites the member had received, and qualifies the group when it has reached the minimum size.
      *
      * It runs for every way a member is added: joining, accepting an invite, and a teacher adding one on
      * the native Groups page. The event is fired inside groups_add_member(), so for the web services it
@@ -126,9 +126,22 @@ class observer {
         \mod_playergroup\local\leadership::claim_if_vacant($groupid, $userid);
 
         $playergroupid = $DB->get_field('playergroup_meta', 'playergroupid', ['groupid' => $groupid]);
-        if ($playergroupid !== false) {
-            \mod_playergroup\local\invitees::settle_pending($userid, (int) $playergroupid, $groupid);
+        if ($playergroupid === false) {
+            return;
         }
+
+        \mod_playergroup\local\invitees::settle_pending($userid, (int) $playergroupid, $groupid);
+
+        // The group may have reached the minimum with this member, whoever added them. The grade and the
+        // completion were only given by the services of the plugin, so members added on the Groups page of
+        // the course got neither. Recording is idempotent: whoever already qualified is skipped.
+        $playergroup = $DB->get_record('playergroup', ['id' => $playergroupid]);
+        $cm = $playergroup ? get_coursemodule_from_instance('playergroup', $playergroup->id, $playergroup->course) : false;
+        if (!$cm) {
+            return;
+        }
+        $qualified = \mod_playergroup\local\qualification::record_group($playergroup, $groupid);
+        \mod_playergroup\local\qualification::award($playergroup, $cm, $qualified);
     }
 
     /**

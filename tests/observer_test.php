@@ -522,4 +522,113 @@ final class observer_test extends advanced_testcase {
         ]));
         $this->assertSame(1, $DB->count_records('playergroup_invites', ['receiverid' => $target->id, 'status' => 2]));
     }
+
+    /**
+     * Creates an activity with a minimum of two members, a grade and automatic completion.
+     *
+     * @return array [course, cm]
+     */
+    private function create_graded_activity(): array {
+        global $CFG;
+        $CFG->enablecompletion = true;
+
+        $course = $this->getDataGenerator()->create_course(['enablecompletion' => 1]);
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course'              => $course->id,
+            'minmembers'          => 2,
+            'grade'               => 10,
+            'completion'          => COMPLETION_TRACKING_AUTOMATIC,
+            'completionjoingroup' => 1,
+        ]);
+
+        return [$course, $cm];
+    }
+
+    /**
+     * Returns the grade stored for a student in the activity, or null when there is none.
+     *
+     * @param \stdClass $cm The activity.
+     * @param int $userid The student.
+     * @return float|null The stored grade.
+     */
+    private function stored_grade(\stdClass $cm, int $userid): ?float {
+        global $DB;
+
+        $grade = $DB->get_field_sql(
+            "SELECT gg.finalgrade
+               FROM {grade_grades} gg
+               JOIN {grade_items} gi ON gi.id = gg.itemid
+              WHERE gi.itemtype = 'mod' AND gi.itemmodule = 'playergroup'
+                AND gi.iteminstance = :instanceid AND gg.userid = :userid",
+            ['instanceid' => $cm->id, 'userid' => $userid]
+        );
+
+        return $grade === false || $grade === null ? null : (float) $grade;
+    }
+
+    /**
+     * A group that reaches the minimum because a teacher added a member counts for everyone in it.
+     *
+     * The grade and the completion were only given by the plugin's own services, so the members of a group
+     * completed on the Groups page of the course got neither.
+     */
+    public function test_a_member_added_on_the_groups_page_qualifies_a_group_that_reaches_the_minimum(): void {
+        global $DB;
+
+        [$course, $cm] = $this->create_graded_activity();
+        $founder = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $added = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $this->setUser($founder);
+        $groupid = create_group::execute($cm->cmid, 'Pair', '', '🛡', 0, '')['groupid'];
+        $this->assertSame(0, $DB->count_records('playergroup_qualified', ['playergroupid' => $cm->id]));
+
+        groups_add_member($groupid, $added->id);
+
+        $this->assertSame(2, $DB->count_records('playergroup_qualified', ['playergroupid' => $cm->id]));
+        $completion = new \completion_info($course);
+        $cminfo = get_fast_modinfo($course)->get_cm($cm->cmid);
+        foreach ([$founder, $added] as $student) {
+            $this->assertEquals(COMPLETION_COMPLETE, (int) $completion->get_data($cminfo, false, $student->id)->completionstate);
+            $this->assertEquals(10.0, $this->stored_grade($cm, (int) $student->id));
+        }
+    }
+
+    /**
+     * A member added to a group that is still below the minimum qualifies nobody.
+     */
+    public function test_a_member_added_below_the_minimum_qualifies_nobody(): void {
+        global $DB;
+
+        [$course, $cm] = $this->create_graded_activity();
+        $DB->set_field('playergroup', 'minmembers', 3, ['id' => $cm->id]);
+        $founder = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $added = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $this->setUser($founder);
+        $groupid = create_group::execute($cm->cmid, 'Pair', '', '🛡', 0, '')['groupid'];
+
+        groups_add_member($groupid, $added->id);
+
+        $this->assertSame(0, $DB->count_records('playergroup_qualified', ['playergroupid' => $cm->id]));
+        $this->assertNull($this->stored_grade($cm, (int) $added->id));
+    }
+
+    /**
+     * Joining through the plugin still gives the grade and the completion once, without doing it twice.
+     */
+    public function test_joining_through_the_plugin_still_qualifies_the_group_once(): void {
+        global $DB;
+
+        [$course, $cm] = $this->create_graded_activity();
+        $founder = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $joiner = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $this->setUser($founder);
+        $groupid = create_group::execute($cm->cmid, 'Pair', '', '🛡', 0, '')['groupid'];
+        $this->setUser($joiner);
+
+        join_group::execute($cm->cmid, $groupid, '');
+
+        $this->assertSame(2, $DB->count_records('playergroup_qualified', ['playergroupid' => $cm->id]));
+        $this->assertEquals(10.0, $this->stored_grade($cm, (int) $joiner->id));
+        $this->assertEquals(10.0, $this->stored_grade($cm, (int) $founder->id));
+    }
 }

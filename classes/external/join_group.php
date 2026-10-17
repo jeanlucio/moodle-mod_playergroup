@@ -114,14 +114,9 @@ class join_group extends external_api {
             if (!groups_add_member($params['groupid'], $USER->id)) {
                 throw new \moodle_exception('joinfailed', 'mod_playergroup');
             }
-
-            // Reaching the minimum qualifies every member of the group, not only the one joining.
-            $qualified = \mod_playergroup\local\qualification::record_group($playergroup, (int) $params['groupid']);
         } finally {
             $lock->release();
         }
-
-        \mod_playergroup\local\qualification::award($playergroup, $cm, $qualified);
 
         \mod_playergroup\event\member_joined::create([
             'context'  => $context,

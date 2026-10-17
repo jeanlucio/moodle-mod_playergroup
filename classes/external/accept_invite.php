@@ -104,9 +104,6 @@ class accept_invite extends external_api {
             if (!groups_add_member((int) $invite->groupid, $USER->id)) {
                 throw new \moodle_exception('joinfailed', 'mod_playergroup');
             }
-
-            // Reaching the minimum qualifies every member of the group, not only the one joining.
-            $qualified = \mod_playergroup\local\qualification::record_group($playergroup, (int) $invite->groupid);
         } finally {
             $lock->release();
         }
@@ -120,8 +117,6 @@ class accept_invite extends external_api {
             'context'  => $context,
             'objectid' => (int) $invite->groupid,
         ])->trigger();
-
-        \mod_playergroup\local\qualification::award($playergroup, $cm, $qualified);
 
         return [
             'success' => true,
