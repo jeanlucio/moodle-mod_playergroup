@@ -65,13 +65,16 @@ $timeopen  = (int) ($playergroup->timeopen ?? 0);
 $isopen = \mod_playergroup\local\activity_window::is_open($playergroup, $now);
 
 // Load all groups linked to this activity instance.
+// The members are counted in a subquery so that the description, a TEXT column, stays out of any GROUP BY:
+// not every supported database accepts that.
 $sql = "SELECT g.id, g.name, g.description, g.descriptionformat, pm.badge, pm.privacy, pm.creatorid,
-               COUNT(gm.id) AS membercount
+               COALESCE(gc.membercount, 0) AS membercount
           FROM {playergroup_meta} pm
           JOIN {groups} g ON g.id = pm.groupid
-     LEFT JOIN {groups_members} gm ON gm.groupid = g.id
+     LEFT JOIN (SELECT groupid, COUNT(id) AS membercount
+                  FROM {groups_members}
+              GROUP BY groupid) gc ON gc.groupid = g.id
          WHERE pm.playergroupid = :playergroupid
-      GROUP BY g.id, g.name, g.description, g.descriptionformat, pm.badge, pm.privacy, pm.creatorid
       ORDER BY g.name ASC";
 $grouprecords = $DB->get_records_sql($sql, ['playergroupid' => $playergroup->id]);
 

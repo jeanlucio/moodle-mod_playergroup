@@ -97,15 +97,17 @@ class get_activity_data extends external_api {
         $mygroupid = $DB->get_field_sql($mygroupsql, ['playergroupid' => $playergroup->id, 'userid' => $USER->id]);
         $hasgroup = !empty($mygroupid);
 
+        // The members are counted in a subquery so that the description, a TEXT column, stays out of any
+        // GROUP BY: not every supported database accepts that.
         $groupsql = "SELECT g.id, g.name, g.description, g.descriptionformat,
                             pm.badge, pm.privacy, pm.creatorid,
-                            COUNT(gm.id) AS membercount
+                            COALESCE(gc.membercount, 0) AS membercount
                        FROM {playergroup_meta} pm
                        JOIN {groups} g ON g.id = pm.groupid
-                  LEFT JOIN {groups_members} gm ON gm.groupid = g.id
+                  LEFT JOIN (SELECT groupid, COUNT(id) AS membercount
+                               FROM {groups_members}
+                           GROUP BY groupid) gc ON gc.groupid = g.id
                       WHERE pm.playergroupid = :playergroupid
-                   GROUP BY g.id, g.name, g.description, g.descriptionformat,
-                            pm.badge, pm.privacy, pm.creatorid
                    ORDER BY g.name ASC";
         $grouprecords = $DB->get_records_sql($groupsql, ['playergroupid' => $playergroup->id]);
 
