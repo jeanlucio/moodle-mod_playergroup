@@ -183,4 +183,59 @@ final class custom_completion_test extends advanced_testcase {
     public function test_get_defined_custom_rules(): void {
         $this->assertSame(['completionjoingroup'], custom_completion::get_defined_custom_rules());
     }
+
+    /**
+     * Every rule the activity can have is listed in the display order.
+     *
+     * The core compares the order with the conditions that apply and throws a coding exception for a
+     * missing one, which takes down the course page. The activity declares grading, so the rule "receive a
+     * passing grade" can be on together with the rule of this plugin.
+     */
+    public function test_the_course_page_lists_all_rules_in_use(): void {
+        global $CFG;
+        $this->resetAfterTest();
+        $CFG->enablecompletion = true;
+
+        $course = $this->getDataGenerator()->create_course(['enablecompletion' => 1]);
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course'              => $course->id,
+            'grade'               => 10,
+            'gradepass'           => 6,
+            'completion'          => COMPLETION_TRACKING_AUTOMATIC,
+            'completionview'      => 1,
+            'completionusegrade'  => 1,
+            'completionpassgrade' => 1,
+            'completionjoingroup' => 1,
+        ]);
+        $user = $this->getDataGenerator()->create_and_enrol($course, 'student');
+
+        $cminfo = get_fast_modinfo($course, $user->id)->get_cm($cm->cmid);
+        $details = \core_completion\cm_completion_details::get_instance($cminfo, (int) $user->id)->get_details();
+
+        $this->assertEqualsCanonicalizing(
+            ['completionview', 'completionusegrade', 'completionpassgrade', 'completionjoingroup'],
+            array_keys($details)
+        );
+    }
+
+    /**
+     * The display order names every rule the activity defines.
+     */
+    public function test_the_sort_order_covers_the_custom_rules(): void {
+        [$course, $cm] = $this->create_fixture_for_order();
+        $completion = new custom_completion(get_fast_modinfo($course)->get_cm($cm->cmid), 0);
+
+        $this->assertSame([], array_diff($completion->get_defined_custom_rules(), $completion->get_sort_order()));
+        $this->assertContains('completionpassgrade', $completion->get_sort_order());
+    }
+
+    /**
+     * Creates a course with the activity, for the tests of the display order.
+     *
+     * @return array{0: \stdClass, 1: \stdClass} [course, cm]
+     */
+    private function create_fixture_for_order(): array {
+        $this->resetAfterTest();
+        return $this->create_fixture();
+    }
 }
