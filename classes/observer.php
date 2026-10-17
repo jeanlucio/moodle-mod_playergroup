@@ -115,6 +115,22 @@ class observer {
     }
 
     /**
+     * Forgets a deleted grouping: the activities that used it go on without one.
+     *
+     * The core clears the grouping from the course modules, but the activity keeps its own copy of the
+     * ID, and creating a group would then fail on a grouping that no longer exists. This covers both a
+     * teacher deleting it on the Groupings page and the course reset option that deletes all of them.
+     *
+     * @param \core\event\grouping_deleted $event The core event.
+     * @return void
+     */
+    public static function grouping_deleted(\core\event\grouping_deleted $event): void {
+        global $DB;
+
+        $DB->set_field('playergroup', 'groupingid', 0, ['groupingid' => (int) $event->objectid]);
+    }
+
+    /**
      * Makes the oldest remaining member the leader of the group.
      *
      * Does nothing when nobody is left: the group then has no leader to speak of, and is either

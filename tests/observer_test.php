@@ -280,4 +280,75 @@ final class observer_test extends advanced_testcase {
 
         $this->assertEquals($leader->id, $DB->get_field('playergroup_meta', 'creatorid', ['groupid' => $groupid]));
     }
+
+    /**
+     * Creates an activity with its own grouping and a student who may create groups in it.
+     *
+     * @return array [the activity record, the student]
+     */
+    private function create_activity_with_grouping(): array {
+        global $DB;
+
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $this->course->id, 'groupingmode' => 'new', 'groupingname' => 'Teams',
+        ]);
+        $activity = $DB->get_record('playergroup', ['id' => $cm->id], '*', MUST_EXIST);
+        $this->assertGreaterThan(0, (int) $activity->groupingid);
+
+        return [$cm, $this->getDataGenerator()->create_and_enrol($this->course, 'student')];
+    }
+
+    /**
+     * Deleting the grouping of an activity, by hand or by the course reset, clears it from the activity.
+     */
+    public function test_deleting_the_grouping_clears_it_from_the_activity_only(): void {
+        global $DB;
+
+        [$cm] = $this->create_activity_with_grouping();
+        $unrelated = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $this->course->id, 'groupingmode' => 'new', 'groupingname' => 'Other',
+        ]);
+        $groupingid = (int) $DB->get_field('playergroup', 'groupingid', ['id' => $cm->id]);
+
+        groups_delete_grouping($groupingid);
+
+        $this->assertEquals(0, $DB->get_field('playergroup', 'groupingid', ['id' => $cm->id]));
+        $this->assertGreaterThan(0, (int) $DB->get_field('playergroup', 'groupingid', ['id' => $unrelated->id]));
+    }
+
+    /**
+     * Students can still create groups after the course reset removed the groupings.
+     */
+    public function test_groups_can_be_created_after_the_course_reset_removed_the_groupings(): void {
+        global $DB;
+
+        [$cm, $student] = $this->create_activity_with_grouping();
+
+        reset_course_userdata((object) [
+            'id' => $this->course->id, 'reset_groupings_remove' => 1, 'reset_start_date_old' => 0,
+        ]);
+
+        $this->setUser($student);
+        $groupid = create_group::execute($cm->cmid, 'After', '', '🛡', 0, '')['groupid'];
+        $this->assertTrue($DB->record_exists('playergroup_meta', ['groupid' => $groupid]));
+        $this->assertTrue($DB->record_exists('groups_members', ['groupid' => $groupid, 'userid' => $student->id]));
+    }
+
+    /**
+     * A grouping that is gone without the event reaching the plugin leaves no empty group behind.
+     */
+    public function test_a_missing_grouping_does_not_leave_an_orphan_group(): void {
+        global $DB;
+
+        [$cm, $student] = $this->create_activity_with_grouping();
+        $DB->set_field('playergroup', 'groupingid', 999999, ['id' => $cm->id]);
+        $before = $DB->count_records('groups', ['courseid' => $this->course->id]);
+
+        $this->setUser($student);
+        $groupid = create_group::execute($cm->cmid, 'Solo', '', '🛡', 0, '')['groupid'];
+
+        $this->assertSame($before + 1, $DB->count_records('groups', ['courseid' => $this->course->id]));
+        $this->assertFalse($DB->record_exists('groupings_groups', ['groupingid' => 999999]));
+        $this->assertTrue($DB->record_exists('playergroup_meta', ['groupid' => $groupid]));
+    }
 }

@@ -126,8 +126,9 @@ class create_group extends external_api {
             $newgroup->timecreated = time();
             $groupid = groups_create_group($newgroup);
 
-            // Assign the new group to this activity's grouping.
-            if ($playergroup->groupingid > 0) {
+            // Assign the new group to this activity's grouping, unless it is gone: the core fails on a
+            // grouping that does not exist, after it has already written to groupings_groups.
+            if ($playergroup->groupingid > 0 && $DB->record_exists('groupings', ['id' => $playergroup->groupingid])) {
                 groups_assign_grouping($playergroup->groupingid, $groupid);
             }
 

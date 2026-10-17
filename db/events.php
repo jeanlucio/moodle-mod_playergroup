@@ -33,4 +33,8 @@ $observers = [
         'eventname' => \core\event\group_deleted::class,
         'callback'  => [\mod_playergroup\observer::class, 'group_deleted'],
     ],
+    [
+        'eventname' => \core\event\grouping_deleted::class,
+        'callback'  => [\mod_playergroup\observer::class, 'grouping_deleted'],
+    ],
 ];
