@@ -126,9 +126,15 @@ final class qualification {
      * @return void
      */
     public static function award(\stdClass $playergroup, \stdClass $cm, array $userids): void {
+        global $CFG;
+
         if (empty($userids)) {
             return;
         }
+
+        // The grade function lives in lib.php. The web services load it, but this also runs from the observer of
+        // the member-added event, in requests that never loaded it (the Groups page of the course, for one).
+        require_once($CFG->dirroot . '/mod/playergroup/lib.php');
 
         $modinfo = get_fast_modinfo($cm->course);
         $cminfo = $modinfo->get_cm($cm->id);
