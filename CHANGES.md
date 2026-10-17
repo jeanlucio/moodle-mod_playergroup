@@ -2,6 +2,65 @@
 
 All notable changes to PlayerGroup are documented in this file.
 
+## [v1.4.0] — 2026-10-17
+
+### Changed
+
+- The minimum group size now counts. The grade and the completion go to students who are in a
+  group that reached the minimum number of members, at that moment, and are kept even if the
+  group shrinks or the student leaves later. Until then the group card tells the student how many
+  members are still missing. Upgrading keeps what students already had: everyone who is in a
+  group, or already holds a grade, stays qualified.
+- Names of other groups' members and leaders follow the course setting for seeing participants,
+  on the page and in the app: students who may not browse participants still see the members of
+  their own group, but not those of the others.
+- A closed group is offered, and accepted, only to students who can invite people; a group that
+  empties opens again, and the next student to enter it becomes its leader.
+- Invitations are only offered to, and accepted for, people who can open the activity.
+- Group descriptions are kept as the plain text typed, with line breaks.
+- Restoring a course without user data no longer brings back the groups students created, and
+  restoring with it also brings who had qualified. The reset of the course now follows its own
+  options: completion, grades, groups and invites are cleared with them. The opening and closing
+  dates move with the new start date, both when resetting and when restoring into a course with
+  another start date.
+- Deleting the activity deletes the groups students created in it, even with no grouping.
+- The activity log is read through the Moodle log readers, so it works with any log store.
+
+### Added
+
+- The app records that the activity was viewed, so the "view" completion rule can be met from the
+  app alone.
+- The date by which the activity is expected to be completed now appears in the calendar and in
+  the timeline.
+- Passing grade, "join a group" and the other completion rules can be combined on the same
+  activity; the completion rule is also kept when the teacher unticks it and on the default
+  completion page.
+- Failed saves now explain themselves: the settings form checks the name of the activity, the
+  grouping name and the member limits (1 to 999, minimum not above maximum), and the opening and
+  closing dates; a group's name and badge are checked on the server, and a name already used in
+  the course is refused.
+- A protected group can no longer be saved without a password.
+
+### Fixed
+
+- The grade of a student who qualified earlier is sent when the grade is switched on or changed.
+- Group names, descriptions and grouping names are shown as typed instead of escaped twice
+  ("P&amp;D"), and the list of groupings in the settings form is printed safely.
+- A group's leader who is removed from the course, or whose data is erased, hands the group to the
+  oldest member instead of leaving it without anyone able to edit it.
+- Leaving a group, inviting and every other action respect the opening and closing dates; only
+  members of a group can edit it.
+- Pending invitations are settled when the student joins or founds a group or is added by a
+  teacher, so old ones do not come back later.
+- Students added to a group by a teacher on the course Groups page now receive the grade and the
+  completion when the group reaches the minimum.
+- "Create group", "Edit group" and "Invite" are only offered to who the server lets do them, on
+  the page and in the app; the course index says so when the course has no activities.
+- The list of groups no longer fails on databases that cannot group by a text column, and the app
+  allows group names as long as the page does.
+- Log entries of the activity are mapped to the right objects when a course log is restored.
+- The label of the name field in the edit group window is "Group name".
+
 ## [v1.3.8] — 2026-10-02
 
 ### Fixed
