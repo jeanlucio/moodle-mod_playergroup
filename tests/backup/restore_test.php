@@ -41,6 +41,7 @@ use stdClass;
  *
  * @covers \backup_playergroup_activity_structure_step
  * @covers \restore_playergroup_activity_structure_step
+ * @covers \restore_playergroup_activity_task
  */
 final class restore_test extends advanced_testcase {
     /**
@@ -207,6 +208,111 @@ final class restore_test extends advanced_testcase {
     }
 
     /**
+     * Points one XML element of the backed-up activity at an id that is not part of the restore.
+     *
+     * @param string $element Element name, such as creatorid.
+     * @return callable Rewrites the activity XML.
+     */
+    private function orphan(string $element): callable {
+        return function (string $path) use ($element): void {
+            $xml = file_get_contents($path);
+            $pattern = '~<' . $element . '>\d+</' . $element . '>~';
+            $changed = preg_replace($pattern, '<' . $element . '>999999</' . $element . '>', $xml);
+            $this->assertNotSame($xml, $changed, "The backup has no <$element> to rewrite");
+            file_put_contents($path, $changed);
+        };
+    }
+
+    /**
+     * A group whose leader is not in the restore is left out: it would have nobody able to manage it.
+     */
+    public function test_a_group_whose_leader_is_missing_is_not_restored(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        [$course] = $this->create_fixture(withusers: true);
+        $newcourseid = $this->backup_and_restore($course, true, $this->orphan('creatorid'));
+
+        $newactivity = $DB->get_record('playergroup', ['course' => $newcourseid], '*', MUST_EXIST);
+        $this->assertSame(0, $DB->count_records('playergroup_meta', ['playergroupid' => $newactivity->id]));
+    }
+
+    /**
+     * A group row and an invite that point at a group the restore did not create are left out.
+     */
+    public function test_rows_for_a_missing_group_are_not_restored(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        [$course] = $this->create_fixture(withusers: true);
+        $newcourseid = $this->backup_and_restore($course, true, $this->orphan('groupid'));
+
+        $newactivity = $DB->get_record('playergroup', ['course' => $newcourseid], '*', MUST_EXIST);
+        $this->assertSame(0, $DB->count_records('playergroup_meta', ['playergroupid' => $newactivity->id]));
+        $this->assertSame(0, $DB->count_records('playergroup_invites', ['playergroupid' => $newactivity->id]));
+    }
+
+    /**
+     * An invite whose sender or receiver is not in the restore is left out, and the group stays.
+     *
+     * @dataProvider missing_person_provider
+     * @param string $element The element that points at a missing person.
+     */
+    public function test_an_invite_with_a_missing_person_is_not_restored(string $element): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        [$course] = $this->create_fixture(withusers: true);
+        $newcourseid = $this->backup_and_restore($course, true, $this->orphan($element));
+
+        $newactivity = $DB->get_record('playergroup', ['course' => $newcourseid], '*', MUST_EXIST);
+        $this->assertSame(0, $DB->count_records('playergroup_invites', ['playergroupid' => $newactivity->id]));
+        $this->assertSame(1, $DB->count_records('playergroup_meta', ['playergroupid' => $newactivity->id]));
+    }
+
+    /**
+     * People an invite can be missing.
+     *
+     * @return array[] Element names.
+     */
+    public static function missing_person_provider(): array {
+        return ['sender' => ['senderid'], 'receiver' => ['receiverid']];
+    }
+
+    /**
+     * A qualification for a user who is not in the restore credits nobody.
+     */
+    public function test_a_qualification_for_a_missing_user_is_not_restored(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        [$course, $activity, , , $sender] = $this->create_fixture(withusers: true);
+        $DB->insert_record('playergroup_qualified', (object) [
+            'playergroupid' => $activity->id, 'userid' => $sender->id, 'timequalified' => 1700000000,
+        ]);
+        $newcourseid = $this->backup_and_restore($course, true, $this->orphan('userid'));
+
+        $newactivity = $DB->get_record('playergroup', ['course' => $newcourseid], '*', MUST_EXIST);
+        $this->assertSame(0, $DB->count_records('playergroup_qualified', ['playergroupid' => $newactivity->id]));
+    }
+
+    /**
+     * The restore task declares how links in the intro are decoded and no log rules.
+     */
+    public function test_the_restore_task_declares_its_decoding(): void {
+        global $CFG;
+        require_once($CFG->dirroot . '/mod/playergroup/backup/moodle2/restore_playergroup_activity_task.class.php');
+
+        $this->assertCount(1, \restore_playergroup_activity_task::define_decode_contents());
+        $this->assertCount(2, \restore_playergroup_activity_task::define_decode_rules());
+        $this->assertSame([], \restore_playergroup_activity_task::define_restore_log_rules());
+    }
+
+    /**
      * Creates a course with one playergroup activity, one group with meta,
      * and one invite between two enrolled students.
      *
@@ -279,9 +385,11 @@ final class restore_test extends advanced_testcase {
      *
      * @param stdClass $srccourse Source course.
      * @param bool $userinfo Whether to include user data in the backup.
+     * @param callable|null $tamper Receives the path of the activity XML once the backup is written, to
+     *                              rewrite it before the restore reads it.
      * @return int ID of the newly restored course.
      */
-    private function backup_and_restore(stdClass $srccourse, bool $userinfo): int {
+    private function backup_and_restore(stdClass $srccourse, bool $userinfo, ?callable $tamper = null): int {
         global $USER, $CFG;
 
         $CFG->backup_file_logger_level = backup::LOG_NONE;
@@ -301,6 +409,12 @@ final class restore_test extends advanced_testcase {
         $backupid = $bc->get_backupid();
         $bc->execute_plan();
         $bc->destroy();
+
+        if ($tamper !== null) {
+            $files = glob($CFG->backuptempdir . '/' . $backupid . '/activities/playergroup_*/playergroup.xml');
+            $this->assertCount(1, $files);
+            $tamper($files[0]);
+        }
 
         $newcourseid = restore_dbops::create_new_course(
             $srccourse->fullname,
