@@ -136,8 +136,8 @@ class edit_group extends external_api {
 
         $group = $DB->get_record('groups', ['id' => $params['groupid']], '*', MUST_EXIST);
         $group->name              = $params['name'];
-        $group->description       = clean_text($params['description'], FORMAT_HTML);
-        $group->descriptionformat = FORMAT_HTML;
+        $group->description       = \mod_playergroup\local\text::clean_description($params['description']);
+        $group->descriptionformat = FORMAT_PLAIN;
         $group->timemodified      = time();
         groups_update_group($group);
 

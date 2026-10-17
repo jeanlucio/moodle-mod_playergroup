@@ -121,8 +121,8 @@ class create_group extends external_api {
             $newgroup = new \stdClass();
             $newgroup->courseid = $cm->course;
             $newgroup->name = $params['name'];
-            $newgroup->description = clean_text($params['description'], FORMAT_HTML);
-            $newgroup->descriptionformat = FORMAT_HTML;
+            $newgroup->description = \mod_playergroup\local\text::clean_description($params['description']);
+            $newgroup->descriptionformat = FORMAT_PLAIN;
             $newgroup->timecreated = time();
             $groupid = groups_create_group($newgroup);
 

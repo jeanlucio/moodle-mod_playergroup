@@ -25,7 +25,7 @@
 namespace mod_playergroup\local;
 
 /**
- * Turns a stored name into plain text.
+ * Turns stored names and descriptions into plain text.
  */
 final class text {
     /**
@@ -53,5 +53,41 @@ final class text {
         $formatted = format_string($string, true, $options);
 
         return html_entity_decode(strip_tags($formatted), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    }
+
+    /**
+     * Cleans a group description typed in a plain text field.
+     *
+     * The students write it in a plain textarea, so it is kept as typed (FORMAT_PLAIN) and only the
+     * markup is removed. Stored as HTML it would lose its line breaks on the page and come back to the
+     * editing field with "&amp;" for "&".
+     *
+     * @param string $description The submitted text.
+     * @return string The text without markup, with Unix line breaks.
+     */
+    public static function clean_description(string $description): string {
+        $description = str_replace(["\r\n", "\r"], "\n", $description);
+
+        return trim(clean_param($description, PARAM_TEXT));
+    }
+
+    /**
+     * Returns a stored group description as the plain text the editing field must show.
+     *
+     * Descriptions saved by earlier versions are HTML with entities; those saved now are plain text.
+     *
+     * @param string|null $description The stored description.
+     * @param int $format The stored format (FORMAT_*).
+     * @return string Plain text, unescaped.
+     */
+    public static function description_for_editing(?string $description, int $format): string {
+        if ($description === null || $description === '') {
+            return '';
+        }
+        if ($format === (int) FORMAT_PLAIN) {
+            return $description;
+        }
+
+        return trim(html_to_text($description, 0, false));
     }
 }

@@ -208,7 +208,10 @@ foreach ($grouprecords as $g) {
         'namehtml'            => format_string($g->name),
         'rawname'             => $g->name,
         'description'         => format_text($g->description, (int) $g->descriptionformat, ['context' => $context]),
-        'rawdescription'      => $g->description ?? '',
+        'rawdescription'      => \mod_playergroup\local\text::description_for_editing(
+            $g->description,
+            (int) $g->descriptionformat
+        ),
         'badge'               => !empty($g->badge) ? $g->badge : '🛡️',
         'membercount'         => $membercount,
         'maxmembers'          => $maxmembers,

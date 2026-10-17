@@ -188,7 +188,10 @@ class get_activity_data extends external_api {
                     (int) $g->descriptionformat,
                     ['context' => $context]
                 ),
-                'rawdescription'     => $g->description ?? '',
+                'rawdescription'     => \mod_playergroup\local\text::description_for_editing(
+                    $g->description,
+                    (int) $g->descriptionformat
+                ),
                 'badge'              => !empty($g->badge) ? $g->badge : '🛡️',
                 'membercount'        => $membercount,
                 'maxmembers'         => $maxmembers,
@@ -342,7 +345,7 @@ class get_activity_data extends external_api {
             'name'               => new external_value(PARAM_TEXT, 'Group name (formatted)'),
             'rawname'            => new external_value(PARAM_TEXT, 'Group name (escaped)'),
             'description'        => new external_value(PARAM_RAW, 'Group description (HTML)'),
-            'rawdescription'     => new external_value(PARAM_TEXT, 'Group description (escaped)'),
+            'rawdescription'     => new external_value(PARAM_RAW, 'Group description as plain text, for the editing field'),
             'badge'              => new external_value(PARAM_TEXT, 'Group badge (emoji or text)'),
             'membercount'        => new external_value(PARAM_INT, 'Current number of members'),
             'maxmembers'         => new external_value(PARAM_INT, 'Maximum allowed members'),

@@ -302,4 +302,18 @@ final class edit_group_test extends advanced_testcase {
         $this->assertTrue($clean['success']);
         $this->assertNotSame('', $clean['message']);
     }
+
+    /**
+     * Test that an edited description is kept as typed, with its line breaks and symbols.
+     */
+    public function test_the_edited_description_is_kept_as_typed(): void {
+        global $DB;
+
+        $typed = "Q&A > notes\nSecond line";
+        edit_group::execute($this->cm->cmid, $this->groupid, 'Name', $typed, '⚔', 0, '');
+
+        $group = $DB->get_record('groups', ['id' => $this->groupid], '*', MUST_EXIST);
+        $this->assertSame($typed, $group->description);
+        $this->assertEquals(FORMAT_PLAIN, $group->descriptionformat);
+    }
 }

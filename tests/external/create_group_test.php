@@ -421,4 +421,46 @@ final class create_group_test extends advanced_testcase {
         $this->assertGreaterThan(0, $clean['groupid']);
         $this->assertNotSame('', $clean['message']);
     }
+
+    /**
+     * Test that the description is kept as the plain text the student typed.
+     *
+     * The field is a plain textarea. Stored as HTML, the line breaks vanish on the page and the editing
+     * field shows "&amp;" for "&".
+     */
+    public function test_the_description_is_kept_as_typed(): void {
+        global $DB;
+
+        $typed = "P&D > everything\nSecond line";
+        $result = create_group::execute($this->cm->cmid, 'Notes', $typed, '⚔', 0, '');
+
+        $group = $DB->get_record('groups', ['id' => $result['groupid']], '*', MUST_EXIST);
+        $this->assertSame($typed, $group->description);
+        $this->assertEquals(FORMAT_PLAIN, $group->descriptionformat);
+
+        $shown = format_text($group->description, (int) $group->descriptionformat);
+        $this->assertStringContainsString('<br', $shown);
+        $this->assertStringContainsString('P&amp;D &gt; everything', $shown);
+    }
+
+    /**
+     * Test that markup in the description is removed, not stored.
+     */
+    public function test_markup_in_the_description_is_removed(): void {
+        global $DB;
+
+        $result = create_group::execute(
+            $this->cm->cmid,
+            'Markup',
+            '<p>Hello</p><script>alert(1)</script><b>there</b>',
+            '⚔',
+            0,
+            ''
+        );
+
+        $stored = $DB->get_field('groups', 'description', ['id' => $result['groupid']]);
+        $this->assertStringNotContainsString('<', $stored);
+        $this->assertStringContainsString('Hello', $stored);
+        $this->assertStringContainsString('there', $stored);
+    }
 }

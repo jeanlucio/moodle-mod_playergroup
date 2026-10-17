@@ -499,4 +499,35 @@ final class get_activity_data_test extends advanced_testcase {
 
         $this->assertSame([], $this->answer($cm->cmid)['receivedinvites']);
     }
+
+    /**
+     * Test that the editing field gets the text, whatever format the group description was saved in.
+     *
+     * Groups saved by earlier versions hold HTML with entities; a new group holds what was typed.
+     */
+    public function test_the_raw_description_is_plain_text_for_editing(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module('playergroup', ['course' => $course->id]);
+        $creator = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $this->setUser($creator);
+        $typed = create_group::execute($cm->cmid, 'Typed', "A&B > C\nnext", '🛡', 0, '');
+        $other = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $this->setUser($other);
+        $second = create_group::execute($cm->cmid, 'Second', '', '🛡', 0, '');
+        $DB->update_record('groups', (object) [
+            'id' => $second['groupid'],
+            'description' => '<p>R&amp;D &gt; all</p>',
+            'descriptionformat' => FORMAT_HTML,
+        ]);
+
+        $this->setUser($creator);
+        $result = external_api::clean_returnvalue(get_activity_data::execute_returns(), get_activity_data::execute($cm->cmid));
+
+        $byname = array_column($result['groups'], 'rawdescription', 'name');
+        $this->assertSame("A&B > C\nnext", $byname['Typed']);
+        $this->assertSame('R&D > all', $byname['Second']);
+    }
 }
