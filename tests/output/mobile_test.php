@@ -241,4 +241,21 @@ final class mobile_test extends advanced_testcase {
         $this->assertSame(1, $result['otherdata']['canclose']);
         $this->assertStringContainsString('CONTENT_OTHERDATA.canclose', $result['templates'][0]['html']);
     }
+
+    /**
+     * Test that the app lets the name of a group be as long as the server accepts, like the web page.
+     */
+    public function test_mobile_course_view_allows_the_same_name_length_as_the_server(): void {
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module('playergroup', ['course' => $course->id]);
+        $this->setUser($this->getDataGenerator()->create_and_enrol($course, 'student'));
+
+        $html = mobile::mobile_course_view(['cmid' => $cm->cmid, 'courseid' => $course->id])['templates'][0]['html'];
+
+        $limit = \mod_playergroup\local\text::MAX_GROUP_NAME;
+        $this->assertSame(2, substr_count($html, 'Data.name" type="text" maxlength="' . $limit . '"'));
+        $this->assertStringNotContainsString('maxlength="80"', $html);
+    }
 }
