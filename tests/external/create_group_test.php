@@ -463,4 +463,62 @@ final class create_group_test extends advanced_testcase {
         $this->assertStringContainsString('Hello', $stored);
         $this->assertStringContainsString('there', $stored);
     }
+
+    /**
+     * Provides names the group cannot have.
+     *
+     * @return array[] The submitted name.
+     */
+    public static function invalid_names(): array {
+        return [
+            'empty' => [''],
+            'only spaces' => ['    '],
+            'too long' => [str_repeat('a', 255)],
+            'too long in multibyte letters' => [str_repeat('é', 255)],
+        ];
+    }
+
+    /**
+     * Test that an empty name, or one longer than the column, is refused with a message and creates nothing.
+     *
+     * @dataProvider invalid_names
+     * @param string $name The submitted name.
+     */
+    public function test_an_invalid_name_is_refused_and_creates_nothing(string $name): void {
+        global $DB;
+
+        $groups = $DB->count_records('groups', ['courseid' => $this->course->id]);
+        try {
+            create_group::execute($this->cm->cmid, $name, '', '⚔', 0, '');
+            $this->fail('The name should have been refused');
+        } catch (\moodle_exception $e) {
+            $this->assertSame('errinvalidgroupname', $e->errorcode);
+        }
+        $this->assertSame($groups, $DB->count_records('groups', ['courseid' => $this->course->id]));
+        $this->assertSame(0, $DB->count_records('playergroup_meta', ['playergroupid' => $this->cm->id]));
+    }
+
+    /**
+     * Test that the longest name the column holds is accepted, and spaces around it are dropped.
+     */
+    public function test_the_longest_name_is_accepted(): void {
+        global $DB;
+
+        $name = str_repeat('é', 254);
+        $result = create_group::execute($this->cm->cmid, "  $name  ", '', '⚔', 0, '');
+
+        $this->assertSame($name, $DB->get_field('groups', 'name', ['id' => $result['groupid']]));
+    }
+
+    /**
+     * Test that a badge longer than its column is refused.
+     */
+    public function test_a_badge_longer_than_the_column_is_refused(): void {
+        try {
+            create_group::execute($this->cm->cmid, 'Name', '', str_repeat('x', 256), 0, '');
+            $this->fail('The badge should have been refused');
+        } catch (\moodle_exception $e) {
+            $this->assertSame('errinvalidbadge', $e->errorcode);
+        }
+    }
 }

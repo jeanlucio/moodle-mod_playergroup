@@ -95,6 +95,7 @@ class create_group extends external_api {
 
         // Reject unusable settings before anything is written: a protected group without a
         // password can never be joined, since join_group refuses an empty stored hash.
+        $name = \mod_playergroup\local\text::require_valid_group_fields($params['name'], $params['badge']);
         $privacylevel = (int) $params['privacy'];
         if (!in_array($privacylevel, [0, 1, 2], true)) {
             throw new \moodle_exception('errinvalidprivacy', 'mod_playergroup');
@@ -120,7 +121,7 @@ class create_group extends external_api {
             // Create the native Moodle group.
             $newgroup = new \stdClass();
             $newgroup->courseid = $cm->course;
-            $newgroup->name = $params['name'];
+            $newgroup->name = $name;
             $newgroup->description = \mod_playergroup\local\text::clean_description($params['description']);
             $newgroup->descriptionformat = FORMAT_PLAIN;
             $newgroup->timecreated = time();

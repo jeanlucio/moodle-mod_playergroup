@@ -114,6 +114,8 @@ class edit_group extends external_api {
             throw new \moodle_exception('nopermissions', 'error', '', 'edit group');
         }
 
+        $name = \mod_playergroup\local\text::require_valid_group_fields($params['name'], $params['badge']);
+
         // Resolve the privacy settings before writing anything, so a rejected request leaves the
         // group untouched. A protected group needs a password: either a new one or the stored hash.
         $privacylevel = (int) $params['privacy'];
@@ -135,7 +137,7 @@ class edit_group extends external_api {
         }
 
         $group = $DB->get_record('groups', ['id' => $params['groupid']], '*', MUST_EXIST);
-        $group->name              = $params['name'];
+        $group->name              = $name;
         $group->description       = \mod_playergroup\local\text::clean_description($params['description']);
         $group->descriptionformat = FORMAT_PLAIN;
         $group->timemodified      = time();

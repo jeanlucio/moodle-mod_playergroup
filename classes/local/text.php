@@ -90,4 +90,34 @@ final class text {
 
         return trim(html_to_text($description, 0, false));
     }
+
+    /** Longest group name the groups table holds. */
+    public const MAX_GROUP_NAME = 254;
+
+    /** Longest badge the plugin table holds. */
+    public const MAX_BADGE = 255;
+
+    /**
+     * Checks the name and the badge a student submitted for a group, and returns the name to store.
+     *
+     * The core only trims the name: an empty one creates a group nobody can tell apart, and one longer than
+     * the column fails with a database error instead of a message.
+     *
+     * @param string $name The submitted name.
+     * @param string $badge The submitted badge.
+     * @return string The name without the spaces around it.
+     * @throws \moodle_exception When the name is empty or too long, or the badge is too long.
+     */
+    public static function require_valid_group_fields(string $name, string $badge): string {
+        $name = trim($name);
+        $length = \core_text::strlen($name);
+        if ($length === 0 || $length > self::MAX_GROUP_NAME) {
+            throw new \moodle_exception('errinvalidgroupname', 'mod_playergroup', '', self::MAX_GROUP_NAME);
+        }
+        if (\core_text::strlen($badge) > self::MAX_BADGE) {
+            throw new \moodle_exception('errinvalidbadge', 'mod_playergroup', '', self::MAX_BADGE);
+        }
+
+        return $name;
+    }
 }

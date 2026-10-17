@@ -316,4 +316,60 @@ final class edit_group_test extends advanced_testcase {
         $this->assertSame($typed, $group->description);
         $this->assertEquals(FORMAT_PLAIN, $group->descriptionformat);
     }
+
+    /**
+     * Provides names the group cannot have.
+     *
+     * @return array[] The submitted name and a label.
+     */
+    public static function invalid_names(): array {
+        return [
+            'empty' => [''],
+            'only spaces' => ['    '],
+            'too long' => [str_repeat('a', 255)],
+            'too long in multibyte letters' => [str_repeat('é', 255)],
+        ];
+    }
+
+    /**
+     * Test that an empty name, or one longer than the column, is refused with a message and changes nothing.
+     *
+     * @dataProvider invalid_names
+     * @param string $name The submitted name.
+     */
+    public function test_an_invalid_name_is_refused(string $name): void {
+        global $DB;
+
+        try {
+            edit_group::execute($this->cm->cmid, $this->groupid, $name, '', '⚔', 0, '');
+            $this->fail('The name should have been refused');
+        } catch (moodle_exception $e) {
+            $this->assertSame('errinvalidgroupname', $e->errorcode);
+        }
+        $this->assertSame('Original Name', $DB->get_field('groups', 'name', ['id' => $this->groupid]));
+    }
+
+    /**
+     * Test that the longest name the column holds is accepted, and spaces around it are dropped.
+     */
+    public function test_the_longest_name_is_accepted(): void {
+        global $DB;
+
+        $name = str_repeat('é', 254);
+        edit_group::execute($this->cm->cmid, $this->groupid, "  $name  ", '', '⚔', 0, '');
+
+        $this->assertSame($name, $DB->get_field('groups', 'name', ['id' => $this->groupid]));
+    }
+
+    /**
+     * Test that a badge longer than its column is refused.
+     */
+    public function test_a_badge_longer_than_the_column_is_refused(): void {
+        try {
+            edit_group::execute($this->cm->cmid, $this->groupid, 'Name', '', str_repeat('x', 256), 0, '');
+            $this->fail('The badge should have been refused');
+        } catch (moodle_exception $e) {
+            $this->assertSame('errinvalidbadge', $e->errorcode);
+        }
+    }
 }
