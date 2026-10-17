@@ -148,6 +148,12 @@ class edit_group extends external_api {
         }
 
         $group = $DB->get_record('groups', ['id' => $params['groupid']], '*', MUST_EXIST);
+
+        // As the core form does: the name is only checked when it changes, so a group can keep its own.
+        if ($group->name !== $name && groups_get_group_by_name($group->courseid, $name)) {
+            throw new \moodle_exception('groupnameexists', 'group', '', $name);
+        }
+
         $group->name              = $name;
         $group->description       = \mod_playergroup\local\text::clean_description($params['description']);
         $group->descriptionformat = FORMAT_PLAIN;

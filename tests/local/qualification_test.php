@@ -96,7 +96,8 @@ final class qualification_test extends advanced_testcase {
      */
     private function found_group(\stdClass $activity, \stdClass $user): int {
         $this->setUser($user);
-        return create_group::execute($activity->cmid, 'Team', '', '⚔', 0, '')['groupid'];
+        // The name has to be free in the course, as the service now demands, so each group gets its own.
+        return create_group::execute($activity->cmid, 'Team ' . $user->id, '', '⚔', 0, '')['groupid'];
     }
 
     /**

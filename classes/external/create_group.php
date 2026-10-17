@@ -121,6 +121,12 @@ class create_group extends external_api {
                 throw new \moodle_exception('alreadyingroup', 'mod_playergroup');
             }
 
+            // The core form refuses a name the course already uses, and the restore joins groups with the same
+            // name into one. The check sits inside the lock so two students cannot take a name together.
+            if (groups_get_group_by_name($cm->course, $name)) {
+                throw new \moodle_exception('groupnameexists', 'group', '', $name);
+            }
+
             // Create the native Moodle group.
             $newgroup = new \stdClass();
             $newgroup->courseid = $cm->course;

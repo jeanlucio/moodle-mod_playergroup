@@ -270,7 +270,9 @@ final class provider_test extends provider_testcase {
     private function build_group(\stdClass $activity, \stdClass $leader, array $joiners): int {
         $this->getDataGenerator()->enrol_user($leader->id, $activity->course, 'student');
         $this->setUser($leader);
-        $groupid = \mod_playergroup\external\create_group::execute($activity->cmid, 'Team', '', '⚔', 0, '')['groupid'];
+        // The name has to be free in the course, as the service now demands, so each group gets its own.
+        $name = 'Team ' . $leader->id;
+        $groupid = \mod_playergroup\external\create_group::execute($activity->cmid, $name, '', '⚔', 0, '')['groupid'];
 
         foreach ($joiners as $joiner) {
             $this->getDataGenerator()->enrol_user($joiner->id, $activity->course, 'student');

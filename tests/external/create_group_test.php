@@ -627,4 +627,49 @@ final class create_group_test extends advanced_testcase {
 
         $this->assertSame(1, $DB->count_records('playergroup_invites', ['receiverid' => $this->student->id, 'status' => 0]));
     }
+
+    /**
+     * Test that a name already used by another group of the course is refused.
+     *
+     * The core form refuses it, and the restore of the course joins groups that have the same name into one,
+     * leaving two rows of the activity on one group.
+     */
+    public function test_a_name_already_used_in_the_course_is_refused(): void {
+        global $DB;
+
+        $this->getDataGenerator()->create_group(['courseid' => $this->course->id, 'name' => 'Team A']);
+        $groups = $DB->count_records('groups', ['courseid' => $this->course->id]);
+
+        try {
+            create_group::execute($this->cm->cmid, 'Team A', '', '🛡', 0, '');
+            $this->fail('The repeated name should have been refused');
+        } catch (moodle_exception $e) {
+            $this->assertSame('groupnameexists', $e->errorcode);
+        }
+        $this->assertSame($groups, $DB->count_records('groups', ['courseid' => $this->course->id]));
+        $this->assertSame(0, $DB->count_records('playergroup_meta', ['playergroupid' => $this->cm->id]));
+    }
+
+    /**
+     * Test that the second student to choose a name is refused, and that the same name is fine in another course.
+     */
+    public function test_two_students_cannot_both_take_the_same_name(): void {
+        create_group::execute($this->cm->cmid, 'Team B', '', '🛡', 0, '');
+
+        $other = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
+        $this->setUser($other);
+        $this->expectException(moodle_exception::class);
+        $this->expectExceptionMessage(get_string('groupnameexists', 'group', 'Team B'));
+        create_group::execute($this->cm->cmid, 'Team B', '', '🛡', 0, '');
+    }
+
+    /**
+     * Test that the name of a group of another course does not count.
+     */
+    public function test_the_same_name_in_another_course_is_accepted(): void {
+        $othercourse = $this->getDataGenerator()->create_course();
+        $this->getDataGenerator()->create_group(['courseid' => $othercourse->id, 'name' => 'Team C']);
+
+        $this->assertTrue(create_group::execute($this->cm->cmid, 'Team C', '', '🛡', 0, '')['success']);
+    }
 }

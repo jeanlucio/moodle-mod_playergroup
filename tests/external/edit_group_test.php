@@ -436,4 +436,31 @@ final class edit_group_test extends advanced_testcase {
         $this->assertTrue(edit_group::execute($this->cm->cmid, $this->groupid, 'Renamed', '', '⚔', 2, '')['success']);
         $this->assertEquals(2, $DB->get_field('playergroup_meta', 'privacy', ['groupid' => $this->groupid]));
     }
+
+    /**
+     * Test that a group cannot take the name of another group of the course.
+     */
+    public function test_renaming_to_a_name_already_used_is_refused(): void {
+        global $DB;
+
+        $this->getDataGenerator()->create_group(['courseid' => $this->course->id, 'name' => 'Taken']);
+
+        try {
+            edit_group::execute($this->cm->cmid, $this->groupid, 'Taken', '', '⚔', 0, '');
+            $this->fail('The repeated name should have been refused');
+        } catch (moodle_exception $e) {
+            $this->assertSame('groupnameexists', $e->errorcode);
+        }
+        $this->assertSame('Original Name', $DB->get_field('groups', 'name', ['id' => $this->groupid]));
+    }
+
+    /**
+     * Test that saving a group with its own name still works, as the core form allows.
+     */
+    public function test_keeping_the_own_name_is_accepted(): void {
+        global $DB;
+
+        $this->assertTrue(edit_group::execute($this->cm->cmid, $this->groupid, 'Original Name', 'New text', '⚔', 0, '')['success']);
+        $this->assertSame('New text', $DB->get_field('groups', 'description', ['id' => $this->groupid]));
+    }
 }
