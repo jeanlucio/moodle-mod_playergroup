@@ -55,6 +55,7 @@ $string['errinvalidbadge'] = 'O emblema não pode ter mais de {$a} caracteres.';
 $string['errinvalidgroupname'] = 'O nome do grupo deve ter entre 1 e {$a} caracteres.';
 $string['errinvalidprivacy'] = 'Nível de privacidade do grupo inválido.';
 $string['errmaxmembersmin'] = 'O número máximo de membros por grupo deve ser pelo menos 1.';
+$string['errinviteeunavailable'] = 'Esta pessoa não consegue abrir a atividade, então não pode ser convidada.';
 $string['errmembersmax'] = 'O número de membros por grupo não pode ser maior que {$a}.';
 $string['errminmembersmin'] = 'O número mínimo de membros por grupo deve ser pelo menos 1.';
 $string['errminovermax'] = 'O número mínimo de membros não pode ser maior que o máximo.';

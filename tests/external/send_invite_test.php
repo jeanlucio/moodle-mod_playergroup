@@ -377,4 +377,70 @@ final class send_invite_test extends advanced_testcase {
         $this->assertTrue($clean['success']);
         $this->assertNotSame('', $clean['message']);
     }
+
+    /**
+     * Restricts the activity to the members of a new native group, and puts the leader in it.
+     *
+     * @return \stdClass The group that may open the activity.
+     */
+    private function restrict_activity_to_a_group(): \stdClass {
+        global $DB;
+
+        $group = $this->getDataGenerator()->create_group(['courseid' => $this->course->id]);
+        $this->getDataGenerator()->create_group_member(['groupid' => $group->id, 'userid' => $this->leader->id]);
+        $json = json_encode(\core_availability\tree::get_root_json([
+            \availability_group\condition::get_json($group->id),
+        ]));
+        $DB->set_field('course_modules', 'availability', $json, ['id' => $this->cm->cmid]);
+        rebuild_course_cache($this->course->id, true, true);
+
+        return $group;
+    }
+
+    /**
+     * Test that someone who cannot open the activity is not invited.
+     *
+     * The invite would sit pending for good: the person gets the message but cannot accept or decline it.
+     */
+    public function test_execute_refuses_someone_who_cannot_open_the_activity(): void {
+        $this->restrict_activity_to_a_group();
+        $before = $this->invites();
+
+        $this->setUser($this->leader);
+        try {
+            send_invite::execute($this->cm->cmid, $this->receiver->id);
+            $this->fail('The invite should have been refused');
+        } catch (moodle_exception $e) {
+            $this->assertSame('errinviteeunavailable', $e->errorcode);
+        }
+        $this->assertSame($before, $this->invites());
+    }
+
+    /**
+     * Test that someone who may open the activity still gets the invite.
+     */
+    public function test_execute_invites_someone_who_can_open_the_restricted_activity(): void {
+        $group = $this->restrict_activity_to_a_group();
+        $this->getDataGenerator()->create_group_member(['groupid' => $group->id, 'userid' => $this->receiver->id]);
+        rebuild_course_cache($this->course->id, true, true);
+
+        $this->setUser($this->leader);
+        $this->assertTrue(send_invite::execute($this->cm->cmid, $this->receiver->id)['success']);
+    }
+
+    /**
+     * Test that someone without the right to view the activity is not invited.
+     */
+    public function test_execute_refuses_someone_without_the_view_capability(): void {
+        global $DB;
+
+        $role = $this->getDataGenerator()->create_role();
+        assign_capability('mod/playergroup:view', CAP_PROHIBIT, $role, \context_course::instance($this->course->id)->id);
+        role_assign($role, $this->receiver->id, \context_course::instance($this->course->id));
+        rebuild_course_cache($this->course->id, true, true);
+
+        $this->setUser($this->leader);
+        $this->expectExceptionMessage(get_string('errinviteeunavailable', 'mod_playergroup'));
+        send_invite::execute($this->cm->cmid, $this->receiver->id);
+    }
 }

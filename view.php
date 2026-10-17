@@ -83,12 +83,10 @@ $mygroupsql = "SELECT gm.groupid
 $mygroupid = $DB->get_field_sql($mygroupsql, ['playergroupid' => $playergroup->id, 'userid' => $USER->id]);
 $hasgroup = !empty($mygroupid);
 $isteacher = has_capability('mod/playergroup:manage', $context);
-$coursecontext = $context->get_course_context();
 // What the buttons offer must match what the services behind them require: creating and editing need
 // creategroup, inviting needs manageinvites and, to pick people, viewing the participants.
 $cancreate = has_capability('mod/playergroup:creategroup', $context);
-$caninviteusers = has_capability('moodle/course:viewparticipants', $coursecontext)
-    && has_capability('mod/playergroup:manageinvites', $context);
+$caninviteusers = \mod_playergroup\local\invitees::can_pick($context);
 $canviewnames = \mod_playergroup\local\member_list::can_view_names($context);
 $userqualified = \mod_playergroup\local\qualification::is_qualified((int) $playergroup->id, (int) $USER->id);
 
@@ -249,7 +247,7 @@ if ($hasgroup && $isopen && !$usergroupisfull && !empty($mygroupid) && $caninvit
 
     // List all other actively enrolled students, including those already in a group
     // or with a pending invite — marked with status flags for the template.
-    [$enrolledsql, $enrolledparams] = get_enrolled_sql($coursecontext, '', 0, true);
+    [$enrolledsql, $enrolledparams] = \mod_playergroup\local\invitees::enrolled_sql($context);
 
     $inviteablesql = "SELECT u.id, u.firstname, u.lastname, u.firstnamephonetic,
                              u.lastnamephonetic, u.middlename, u.alternatename,
@@ -285,6 +283,10 @@ if ($hasgroup && $isopen && !$usergroupisfull && !empty($mygroupid) && $caninvit
     $inviteablerecords = $DB->get_records_sql($inviteablesql, $inviteableparams);
 
     foreach ($inviteablerecords as $u) {
+    $inviteablerecords = \mod_playergroup\local\invitees::filter_available(
+        get_fast_modinfo($course)->get_cm($cm->id),
+        $inviteablerecords
+    );
         $ingroup       = !empty($u->existinggroupname);
         $invitepending = !$ingroup && !empty($u->pendinginviteid);
         $templatedata->inviteableusers[] = [

@@ -82,6 +82,12 @@ class send_invite extends external_api {
             throw new \moodle_exception('usernotenrolled', 'mod_playergroup');
         }
 
+        // An invite to someone who cannot open the activity could be neither accepted nor declined.
+        $cminfo = get_fast_modinfo($cm->course)->get_cm($cm->id);
+        if (!\mod_playergroup\local\invitees::can_receive($cminfo, $context, (int) $params['receiverid'])) {
+            throw new \moodle_exception('errinviteeunavailable', 'mod_playergroup');
+        }
+
         $hasusergroupsql = "SELECT gm.groupid
                               FROM {groups_members} gm
                               JOIN {playergroup_meta} pm ON pm.groupid = gm.groupid

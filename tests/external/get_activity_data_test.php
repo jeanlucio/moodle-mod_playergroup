@@ -530,4 +530,32 @@ final class get_activity_data_test extends advanced_testcase {
         $this->assertSame("A&B > C\nnext", $byname['Typed']);
         $this->assertSame('R&D > all', $byname['Second']);
     }
+
+    /**
+     * Test that the people offered for an invite are only those who can open the activity.
+     */
+    public function test_the_invite_picker_leaves_out_who_cannot_open_the_activity(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module('playergroup', ['course' => $course->id]);
+        $leader = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $inside = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $outside = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $group = $this->getDataGenerator()->create_group(['courseid' => $course->id]);
+        foreach ([$leader, $inside] as $member) {
+            $this->getDataGenerator()->create_group_member(['groupid' => $group->id, 'userid' => $member->id]);
+        }
+        $json = json_encode(\core_availability\tree::get_root_json([\availability_group\condition::get_json($group->id)]));
+        $DB->set_field('course_modules', 'availability', $json, ['id' => $cm->cmid]);
+        rebuild_course_cache($course->id, true, true);
+
+        $this->setUser($leader);
+        create_group::execute($cm->cmid, 'Mine', '', '🛡', 0, '');
+        $offered = array_column($this->answer($cm->cmid)['inviteableusers'], 'userid');
+
+        $this->assertContains((int) $inside->id, $offered);
+        $this->assertNotContains((int) $outside->id, $offered);
+    }
 }

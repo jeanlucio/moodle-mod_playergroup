@@ -83,12 +83,10 @@ class get_activity_data extends external_api {
         }
 
         $isteacher = has_capability('mod/playergroup:manage', $context);
-        $coursecontext = $context->get_course_context();
-        // What the buttons offer must match what the services behind them require, or the student fills in a
+                // What the buttons offer must match what the services behind them require, or the student fills in a
         // form only to be refused: creating and editing need creategroup, inviting needs manageinvites.
         $cancreate = has_capability('mod/playergroup:creategroup', $context);
-        $caninviteusers = has_capability('moodle/course:viewparticipants', $coursecontext)
-            && has_capability('mod/playergroup:manageinvites', $context);
+        $caninviteusers = \mod_playergroup\local\invitees::can_pick($context);
         $canviewnames = \mod_playergroup\local\member_list::can_view_names($context);
         $userqualified = \mod_playergroup\local\qualification::is_qualified((int) $playergroup->id, (int) $USER->id);
 
@@ -224,7 +222,7 @@ class get_activity_data extends external_api {
         // hides participants from students has already decided students should not browse
         // course-mates by name, and this picker must honour that choice.
         if ($hasgroup && $isopen && !$usergroupisfull && !empty($mygroupid) && $caninviteusers) {
-            [$enrolledsql, $enrolledparams] = get_enrolled_sql($coursecontext, '', 0, true);
+            [$enrolledsql, $enrolledparams] = \mod_playergroup\local\invitees::enrolled_sql($context);
 
             $inviteablesql = "SELECT u.id, u.firstname, u.lastname, u.firstnamephonetic,
                                      u.lastnamephonetic, u.middlename, u.alternatename,
@@ -258,6 +256,10 @@ class get_activity_data extends external_api {
                 'groupid'        => (int) $mygroupid,
             ]);
             $inviteablerecords = $DB->get_records_sql($inviteablesql, $inviteableparams);
+            $inviteablerecords = \mod_playergroup\local\invitees::filter_available(
+                get_fast_modinfo($cm->course)->get_cm($cm->id),
+                $inviteablerecords
+            );
 
             foreach ($inviteablerecords as $u) {
                 $ingroup       = !empty($u->existinggroupname);

@@ -55,6 +55,7 @@ $string['errinvalidbadge'] = 'The badge cannot have more than {$a} characters.';
 $string['errinvalidgroupname'] = 'The group name must have between 1 and {$a} characters.';
 $string['errinvalidprivacy'] = 'Invalid group privacy level.';
 $string['errmaxmembersmin'] = 'The maximum number of members per group must be at least 1.';
+$string['errinviteeunavailable'] = 'This person cannot open the activity, so they cannot be invited.';
 $string['errmembersmax'] = 'The number of members per group cannot be greater than {$a}.';
 $string['errminmembersmin'] = 'The minimum number of members per group must be at least 1.';
 $string['errminovermax'] = 'The minimum number of members cannot be greater than the maximum.';
