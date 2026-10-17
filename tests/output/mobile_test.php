@@ -225,4 +225,20 @@ final class mobile_test extends advanced_testcase {
         $this->assertStringContainsString('name="mod_playergroup_view_playergroup"', $html);
         $this->assertStringContainsString('{cmid: ' . $cm->cmid . '}', $html);
     }
+
+    /**
+     * Test that the app is told whether closing a group is offered.
+     */
+    public function test_mobile_course_view_tells_whether_a_group_can_be_closed(): void {
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module('playergroup', ['course' => $course->id]);
+        $this->setUser($this->getDataGenerator()->create_and_enrol($course, 'student'));
+
+        $result = mobile::mobile_course_view(['cmid' => $cm->cmid, 'courseid' => $course->id]);
+
+        $this->assertSame(1, $result['otherdata']['canclose']);
+        $this->assertStringContainsString('CONTENT_OTHERDATA.canclose', $result['templates'][0]['html']);
+    }
 }

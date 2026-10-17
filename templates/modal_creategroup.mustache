@@ -41,7 +41,9 @@
         <select class="form-select" id="pg-groupprivacy">
             <option value="0">{{#str}} groupopen, mod_playergroup {{/str}}</option>
             <option value="1">{{#str}} groupprotected, mod_playergroup {{/str}}</option>
+            {{#canclose}}
             <option value="2">{{#str}} groupclosed, mod_playergroup {{/str}}</option>
+            {{/canclose}}
         </select>
     </div>
     <div class="mb-3 d-none" id="pg-password-field">

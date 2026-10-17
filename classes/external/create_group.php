@@ -100,6 +100,9 @@ class create_group extends external_api {
         if (!in_array($privacylevel, [0, 1, 2], true)) {
             throw new \moodle_exception('errinvalidprivacy', 'mod_playergroup');
         }
+        if ($privacylevel === 2 && !\mod_playergroup\local\invitees::can_pick($context)) {
+            throw new \moodle_exception('errcannotclose', 'mod_playergroup');
+        }
         if ($privacylevel === 1 && trim($params['password']) === '') {
             throw new \moodle_exception('errpasswordrequired', 'mod_playergroup');
         }

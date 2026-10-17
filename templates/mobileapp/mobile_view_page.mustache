@@ -110,7 +110,9 @@
                         [(ngModel)]="createData.privacy" interface="action-sheet">
                         <ion-select-option [value]="0"><% str_mobile_privacyopen %></ion-select-option>
                         <ion-select-option [value]="1"><% str_mobile_privacyprotected %></ion-select-option>
-                        <ion-select-option [value]="2"><% str_mobile_privacyclosed %></ion-select-option>
+                        <ion-select-option [value]="2" *ngIf="CONTENT_OTHERDATA.canclose">
+                            <% str_mobile_privacyclosed %>
+                        </ion-select-option>
                     </ion-select>
                 </ion-item>
 
@@ -153,7 +155,9 @@
                         [(ngModel)]="editData.privacy" interface="action-sheet">
                         <ion-select-option [value]="0"><% str_mobile_privacyopen %></ion-select-option>
                         <ion-select-option [value]="1"><% str_mobile_privacyprotected %></ion-select-option>
-                        <ion-select-option [value]="2"><% str_mobile_privacyclosed %></ion-select-option>
+                        <ion-select-option [value]="2" *ngIf="CONTENT_OTHERDATA.canclose || editData.privacy === 2">
+                            <% str_mobile_privacyclosed %>
+                        </ion-select-option>
                     </ion-select>
                 </ion-item>
 

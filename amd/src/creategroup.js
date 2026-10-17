@@ -51,7 +51,9 @@ define([
                 e.preventDefault();
 
                 var titlePromise = Str.get_string('creategroup', 'mod_playergroup');
-                var bodyPromise = Templates.render('mod_playergroup/modal_creategroup', {});
+                const bodyPromise = Templates.render('mod_playergroup/modal_creategroup', {
+                    canclose: parseInt($(this).data('canclose'), 10) === 1
+                });
 
                 ModalSaveCancel.create({
                     title: titlePromise,

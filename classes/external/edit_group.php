@@ -128,6 +128,11 @@ class edit_group extends external_api {
         if (!in_array($privacylevel, [0, 1, 2], true)) {
             throw new \moodle_exception('errinvalidprivacy', 'mod_playergroup');
         }
+        // Closing a group is only for someone who can invite, but a group that is already closed stays editable.
+        $closing = $privacylevel === 2 && (int) $meta->privacy !== 2;
+        if ($closing && !\mod_playergroup\local\invitees::can_pick($context)) {
+            throw new \moodle_exception('errcannotclose', 'mod_playergroup');
+        }
         $hashedpassword = '';
         if ($privacylevel === 1) {
             if ($params['password'] !== '') {

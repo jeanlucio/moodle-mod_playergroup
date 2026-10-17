@@ -521,4 +521,50 @@ final class create_group_test extends advanced_testcase {
             $this->assertSame('errinvalidbadge', $e->errorcode);
         }
     }
+
+    /**
+     * Provides the rights without which a closed group could never get a member.
+     *
+     * @return array[] The capability taken from the students.
+     */
+    public static function invite_rights(): array {
+        return [
+            'invite' => ['mod/playergroup:manageinvites'],
+            'see participants' => ['moodle/course:viewparticipants'],
+        ];
+    }
+
+    /**
+     * Test that a closed group is refused to someone who cannot invite.
+     *
+     * A closed group only grows by invitation, so the group would stay with its founder for good.
+     *
+     * @dataProvider invite_rights
+     * @param string $capability The capability taken from the students.
+     */
+    public function test_a_closed_group_is_refused_when_the_user_cannot_invite(string $capability): void {
+        global $DB;
+
+        $this->prohibit_for_students($capability);
+
+        try {
+            create_group::execute($this->cm->cmid, 'Closed', '', '🛡', 2, '');
+            $this->fail('The closed group should have been refused');
+        } catch (\moodle_exception $e) {
+            $this->assertSame('errcannotclose', $e->errorcode);
+        }
+        $this->assertSame(0, $DB->count_records('playergroup_meta', ['playergroupid' => $this->cm->id]));
+        $this->assertTrue(create_group::execute($this->cm->cmid, 'Open', '', '🛡', 0, '')['success']);
+    }
+
+    /**
+     * Test that a closed group is accepted when the user can invite.
+     */
+    public function test_a_closed_group_is_accepted_when_the_user_can_invite(): void {
+        global $DB;
+
+        $result = create_group::execute($this->cm->cmid, 'Closed', '', '🛡', 2, '');
+
+        $this->assertEquals(2, $DB->get_field('playergroup_meta', 'privacy', ['groupid' => $result['groupid']]));
+    }
 }

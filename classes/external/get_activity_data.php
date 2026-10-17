@@ -324,6 +324,7 @@ class get_activity_data extends external_api {
             'mygroupid'           => $hasgroup ? (int) $mygroupid : 0,
             'isteacher'           => $isteacher,
             'cancreate'           => $cancreate,
+            'canclose'            => $caninviteusers,
             'groups'              => $groups,
             'receivedinvites'     => $receivedinvites,
             'inviteableusers'     => $inviteableusers,
@@ -404,6 +405,10 @@ class get_activity_data extends external_api {
             'mygroupid'           => new external_value(PARAM_INT, 'Current user\'s group ID (0 if none)'),
             'isteacher'           => new external_value(PARAM_BOOL, 'True if the current user is a teacher/manager'),
             'cancreate'           => new external_value(PARAM_BOOL, 'True if the current user may create groups'),
+            'canclose'            => new external_value(
+                PARAM_BOOL,
+                'True if the current user may close a group, which only grows by invitation'
+            ),
             'groups'              => new external_multiple_structure($groupstructure, 'List of all groups in this activity'),
             'receivedinvites'     => new external_multiple_structure($invitestructure, 'Pending invitations received by the user'),
             'inviteableusers'     => new external_multiple_structure(

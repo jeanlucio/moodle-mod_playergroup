@@ -90,7 +90,8 @@
     {{#activityopen}}
     {{#cancreate}}
     <div class="mb-4">
-        <button type="button" class="btn btn-primary" data-action="creategroup">
+        <button type="button" class="btn btn-primary" data-action="creategroup"
+                data-canclose="{{#canclose}}1{{/canclose}}{{^canclose}}0{{/canclose}}">
             <i class="fa fa-plus me-1" aria-hidden="true"></i>
             {{#str}} creategroup, mod_playergroup {{/str}}
         </button>

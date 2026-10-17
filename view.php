@@ -95,6 +95,7 @@ $templatedata->cmid               = $cm->id;
 $templatedata->hasgroup           = $hasgroup;
 $templatedata->activityopen       = $isopen;
 $templatedata->cancreate          = $cancreate;
+$templatedata->canclose           = $caninviteusers;
 $templatedata->caninvite          = false;
 $templatedata->hasinviteableusers = false;
 $templatedata->inviteableusers    = [];
@@ -230,6 +231,7 @@ foreach ($grouprecords as $g) {
         'canjoin'             => $isopen && !$hasgroup && $privacy !== 2 && !$isfull,
         'caninvite'           => $ismygroup && $isopen && !$isfull && $caninviteusers,
         'canedit'             => $ismygroup && $isopen && $iscreator && $cancreate,
+        'canclose'            => $caninviteusers,
         'canleave'            => $ismygroup && $canleaveany,
     ];
 
@@ -281,12 +283,12 @@ if ($hasgroup && $isopen && !$usergroupisfull && !empty($mygroupid) && $caninvit
         'groupid'        => (int) $mygroupid,
     ]);
     $inviteablerecords = $DB->get_records_sql($inviteablesql, $inviteableparams);
-
-    foreach ($inviteablerecords as $u) {
     $inviteablerecords = \mod_playergroup\local\invitees::filter_available(
         get_fast_modinfo($course)->get_cm($cm->id),
         $inviteablerecords
     );
+
+    foreach ($inviteablerecords as $u) {
         $ingroup       = !empty($u->existinggroupname);
         $invitepending = !$ingroup && !empty($u->pendinginviteid);
         $templatedata->inviteableusers[] = [

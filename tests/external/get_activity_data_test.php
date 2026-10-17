@@ -558,4 +558,21 @@ final class get_activity_data_test extends advanced_testcase {
         $this->assertContains((int) $inside->id, $offered);
         $this->assertNotContains((int) $outside->id, $offered);
     }
+
+    /**
+     * Test that the app is told whether the user can close a group, which needs the right to invite.
+     */
+    public function test_execute_tells_whether_the_user_can_close_a_group(): void {
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module('playergroup', ['course' => $course->id]);
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $this->setUser($student);
+        $this->assertTrue($this->answer($cm->cmid)['canclose']);
+
+        $this->prohibit_for_students($course, 'mod/playergroup:manageinvites');
+        rebuild_course_cache($course->id, true, true);
+        $this->assertFalse($this->answer($cm->cmid)['canclose']);
+    }
 }

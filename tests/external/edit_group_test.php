@@ -406,4 +406,34 @@ final class edit_group_test extends advanced_testcase {
             $this->assertSame('errinvalidbadge', $e->errorcode);
         }
     }
+
+    /**
+     * Test that a group cannot be closed by someone who can no longer invite.
+     */
+    public function test_a_group_cannot_be_closed_without_the_right_to_invite(): void {
+        global $DB;
+
+        $this->prohibit_for_students('mod/playergroup:manageinvites');
+
+        try {
+            edit_group::execute($this->cm->cmid, $this->groupid, 'Original Name', '', '⚔', 2, '');
+            $this->fail('The group should not have been closed');
+        } catch (moodle_exception $e) {
+            $this->assertSame('errcannotclose', $e->errorcode);
+        }
+        $this->assertEquals(0, $DB->get_field('playergroup_meta', 'privacy', ['groupid' => $this->groupid]));
+    }
+
+    /**
+     * Test that a group that is already closed can still be renamed after the right to invite is gone.
+     */
+    public function test_a_closed_group_can_still_be_edited_without_the_right_to_invite(): void {
+        global $DB;
+
+        edit_group::execute($this->cm->cmid, $this->groupid, 'Original Name', '', '⚔', 2, '');
+        $this->prohibit_for_students('mod/playergroup:manageinvites');
+
+        $this->assertTrue(edit_group::execute($this->cm->cmid, $this->groupid, 'Renamed', '', '⚔', 2, '')['success']);
+        $this->assertEquals(2, $DB->get_field('playergroup_meta', 'privacy', ['groupid' => $this->groupid]));
+    }
 }

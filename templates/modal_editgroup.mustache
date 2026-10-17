@@ -64,9 +64,11 @@
             <option value="1"{{#isprivacyprotected}} selected{{/isprivacyprotected}}>
                 {{#str}} groupprotected, mod_playergroup {{/str}}
             </option>
+            {{#canclose}}
             <option value="2"{{#isprivacyclosed}} selected{{/isprivacyclosed}}>
                 {{#str}} groupclosed, mod_playergroup {{/str}}
             </option>
+            {{/canclose}}
         </select>
     </div>
 

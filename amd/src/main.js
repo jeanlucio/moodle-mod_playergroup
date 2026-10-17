@@ -74,13 +74,15 @@ define([
      * @param {string} description
      * @param {string} badge
      * @param {number} privacy
+     * @param {boolean} canclose Whether the closed option is offered; a closed group keeps it.
      */
-    var editGroup = function(cmid, groupid, name, description, badge, privacy) {
+    const editGroup = function(cmid, groupid, name, description, badge, privacy, canclose) {
         var titlePromise = Str.get_string('editgroup', 'mod_playergroup');
         var bodyPromise = Templates.render('mod_playergroup/modal_editgroup', {
             name: name,
             description: description,
             badge: badge,
+            canclose: canclose || privacy === 2,
             isprivacyopen: privacy === 0,
             isprivacyprotected: privacy === 1,
             isprivacyclosed: privacy === 2
@@ -239,7 +241,8 @@ define([
                     btn.data('name'),
                     btn.data('description'),
                     btn.data('badge'),
-                    parseInt(btn.data('privacy'), 10)
+                    parseInt(btn.data('privacy'), 10),
+                    parseInt(btn.data('canclose'), 10) === 1
                 );
             });
 
