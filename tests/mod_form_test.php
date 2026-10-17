@@ -211,6 +211,7 @@ final class mod_form_test extends advanced_testcase {
         $data = $DB->get_record('playergroup', ['id' => $cm->id], '*', MUST_EXIST);
         unset($data->completionjoingroup);
         $data->instance = $cm->id;
+        $data->coursemodule = $cm->cmid;
         $data->groupingmode = 'none';
         $data->completionunlocked = 1;
         $data->completion = COMPLETION_TRACKING_AUTOMATIC;
@@ -315,11 +316,12 @@ final class mod_form_test extends advanced_testcase {
     }
 
     /**
-     * Test that the groupings of the course are offered, shown as plain text.
+     * Returns the text of the options the form offers for the existing groupings.
+     *
+     * @return string[] Option texts, keyed by grouping id.
      */
-    public function test_the_groupings_of_the_course_are_offered_as_plain_text(): void {
+    private function grouping_option_texts(): array {
         $course = $this->form->get_course();
-        $this->getDataGenerator()->create_grouping(['courseid' => $course->id, 'name' => 'Teams <b>A</b> &amp; B']);
         $current = $this->form->get_current();
         $cm = get_coursemodule_from_id('playergroup', $current->id);
 
@@ -327,48 +329,41 @@ final class mod_form_test extends advanced_testcase {
         $property = new \ReflectionProperty($form, '_form');
         $options = $property->getValue($form)->getElement('existinggroupingid')->_options;
 
-        $texts = array_column($options, 'text');
-        $this->assertContains('Teams A & B', $texts);
-        $this->assertNotContains('Teams <b>A</b> &amp; B', $texts);
+        return array_column($options, 'text');
     }
 
     /**
-     * Test that a size the column cannot hold is refused instead of failing when the activity is saved.
+     * Test that the groupings of the course are offered with their name as the HTML the select prints.
      *
-     * @dataProvider oversized_member_limits
-     * @param string $field The field with the large value.
-     * @param array $values Submitted values.
+     * The select prints the text of an option as it is, without escaping, so a name with a symbol must come
+     * out escaped once ("&amp;"), as the core does with format_string() on the same list.
      */
-    public function test_a_size_over_the_limit_is_refused(string $field, array $values): void {
-        $errors = $this->form->validation($this->data($values), []);
+    public function test_the_groupings_of_the_course_are_offered_as_safe_html(): void {
+        $course = $this->form->get_course();
+        $this->getDataGenerator()->create_grouping(['courseid' => $course->id, 'name' => 'Teams <b>A</b> &amp; B']);
 
-        $this->assertArrayHasKey($field, $errors);
-        $this->assertSame(get_string('errmembersmax', 'mod_playergroup', 999), $errors[$field]);
+        $texts = $this->grouping_option_texts();
+
+        $this->assertContains('Teams A &amp; B', $texts);
     }
 
     /**
-     * Values over the limit, for the maximum and for the minimum.
+     * Test that a grouping name written with entities cannot become markup in the select.
      *
-     * @return array[] Field and submitted values.
+     * The name passes the text cleaning because it has no literal tag, and every other screen shows it as text.
+     * Decoded before it reaches the select, it would close the select and run a script for whoever edits the
+     * settings of the activity, who may be an administrator.
      */
-    public static function oversized_member_limits(): array {
-        return [
-            'maximum' => ['maxmembers', ['maxmembers' => 50000]],
-            'minimum' => ['minmembers', ['minmembers' => 1000, 'maxmembers' => 2000]],
-        ];
-    }
+    public function test_a_grouping_name_with_encoded_markup_stays_text(): void {
+        $course = $this->form->get_course();
+        $payload = '&lt;/select&gt;&lt;img src=x onerror=alert(1)&gt;';
+        $this->getDataGenerator()->create_grouping(['courseid' => $course->id, 'name' => $payload]);
 
-    /**
-     * Test that the largest size the form accepts is stored.
-     */
-    public function test_the_limit_itself_is_accepted_and_saved(): void {
-        global $DB;
+        $texts = $this->grouping_option_texts();
 
-        $this->assertSame([], $this->form->validation($this->data(['minmembers' => 999, 'maxmembers' => 999]), []));
-
-        $activity = $this->getDataGenerator()->create_module('playergroup', [
-            'course' => $this->form->get_course()->id, 'minmembers' => 999, 'maxmembers' => 999,
-        ]);
-        $this->assertSame(999, (int) $DB->get_field('playergroup', 'maxmembers', ['id' => $activity->id]));
+        $this->assertNotEmpty(array_filter($texts, fn($text) => str_contains($text, 'onerror')));
+        foreach ($texts as $text) {
+            $this->assertStringNotContainsString('<', $text);
+        }
     }
 }

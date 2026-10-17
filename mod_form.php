@@ -71,9 +71,13 @@ class mod_playergroup_mod_form extends moodleform_mod {
         $existinggroupings = [0 => get_string('choosedots')];
         $courseid = $this->current->course ?? 0;
         if ($courseid) {
+            $coursecontext = \context_course::instance($courseid);
             $groupings = $DB->get_records('groupings', ['courseid' => $courseid], 'name ASC', 'id, name');
             foreach ($groupings as $g) {
-                $existinggroupings[$g->id] = \mod_playergroup\local\text::plain($g->name);
+                // The select prints the text of an option as it is, so it must be HTML that is already safe, as the
+                // core does with this very list. text::plain() decodes entities and is only for destinations that
+                // escape on their own.
+                $existinggroupings[$g->id] = format_string($g->name, true, ['context' => $coursecontext]);
             }
         }
         $mform->addElement(

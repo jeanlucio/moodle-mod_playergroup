@@ -36,6 +36,10 @@ final class text {
      * plain-text message or the app's text interpolation need: they escape the text themselves, so
      * handing them the result of format_string() shows "P&amp;D" for "P&D".
      *
+     * The result is NOT safe to print as HTML: entities are decoded, so a name written as "&lt;b&gt;" comes back as
+     * a real tag. Never hand it to a destination that prints markup as it is (the option text of a moodleform
+     * select, "{{{ }}}", html_writer, a modal title); use format_string() there.
+     *
      * format_string() alone cannot do this: its result is HTML, and with the site setting
      * "formatstringstriptags" off it goes through the HTML cleaner and carries "&amp;" even when
      * asked not to escape.
