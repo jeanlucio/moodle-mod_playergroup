@@ -331,4 +331,44 @@ final class mod_form_test extends advanced_testcase {
         $this->assertContains('Teams A & B', $texts);
         $this->assertNotContains('Teams <b>A</b> &amp; B', $texts);
     }
+
+    /**
+     * Test that a size the column cannot hold is refused instead of failing when the activity is saved.
+     *
+     * @dataProvider oversized_member_limits
+     * @param string $field The field with the large value.
+     * @param array $values Submitted values.
+     */
+    public function test_a_size_over_the_limit_is_refused(string $field, array $values): void {
+        $errors = $this->form->validation($this->data($values), []);
+
+        $this->assertArrayHasKey($field, $errors);
+        $this->assertSame(get_string('errmembersmax', 'mod_playergroup', 999), $errors[$field]);
+    }
+
+    /**
+     * Values over the limit, for the maximum and for the minimum.
+     *
+     * @return array[] Field and submitted values.
+     */
+    public static function oversized_member_limits(): array {
+        return [
+            'maximum' => ['maxmembers', ['maxmembers' => 50000]],
+            'minimum' => ['minmembers', ['minmembers' => 1000, 'maxmembers' => 2000]],
+        ];
+    }
+
+    /**
+     * Test that the largest size the form accepts is stored.
+     */
+    public function test_the_limit_itself_is_accepted_and_saved(): void {
+        global $DB;
+
+        $this->assertSame([], $this->form->validation($this->data(['minmembers' => 999, 'maxmembers' => 999]), []));
+
+        $activity = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $this->form->get_course()->id, 'minmembers' => 999, 'maxmembers' => 999,
+        ]);
+        $this->assertSame(999, (int) $DB->get_field('playergroup', 'maxmembers', ['id' => $activity->id]));
+    }
 }

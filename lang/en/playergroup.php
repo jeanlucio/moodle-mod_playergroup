@@ -53,6 +53,7 @@ $string['editgroup'] = 'Edit Group';
 $string['editgroup_named'] = 'Edit group {$a}';
 $string['errinvalidprivacy'] = 'Invalid group privacy level.';
 $string['errmaxmembersmin'] = 'The maximum number of members per group must be at least 1.';
+$string['errmembersmax'] = 'The number of members per group cannot be greater than {$a}.';
 $string['errminmembersmin'] = 'The minimum number of members per group must be at least 1.';
 $string['errminovermax'] = 'The minimum number of members cannot be greater than the maximum.';
 $string['errnogradescale'] = 'Scales are not supported by this activity. Choose points or no grade.';

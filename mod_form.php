@@ -30,6 +30,9 @@ require_once($CFG->dirroot . '/course/moodleform_mod.php');
  * Module instance settings form.
  */
 class mod_playergroup_mod_form extends moodleform_mod {
+    /** Largest group size the form accepts; the database columns hold three digits. */
+    private const MAXMEMBERS = 999;
+
     /**
      * Defines the form elements.
      *
@@ -176,6 +179,14 @@ class mod_playergroup_mod_form extends moodleform_mod {
         }
         if ($maxmembers < 1) {
             $errors['maxmembers'] = get_string('errmaxmembersmin', 'mod_playergroup');
+        }
+        // The columns hold three digits; a larger number would only fail when the activity is saved.
+        $limit = self::MAXMEMBERS;
+        if ($minmembers > $limit) {
+            $errors['minmembers'] = get_string('errmembersmax', 'mod_playergroup', $limit);
+        }
+        if ($maxmembers > $limit) {
+            $errors['maxmembers'] = get_string('errmembersmax', 'mod_playergroup', $limit);
         }
         if (empty($errors['minmembers']) && empty($errors['maxmembers']) && $minmembers > $maxmembers) {
             $errors['minmembers'] = get_string('errminovermax', 'mod_playergroup');
