@@ -387,9 +387,15 @@ final class restore_test extends advanced_testcase {
      * @param bool $userinfo Whether to include user data in the backup.
      * @param callable|null $tamper Receives the path of the activity XML once the backup is written, to
      *                              rewrite it before the restore reads it.
+     * @param int $newstartdate Start date of the course restored into, or 0 to keep the default.
      * @return int ID of the newly restored course.
      */
-    private function backup_and_restore(stdClass $srccourse, bool $userinfo, ?callable $tamper = null): int {
+    private function backup_and_restore(
+        stdClass $srccourse,
+        bool $userinfo,
+        ?callable $tamper = null,
+        int $newstartdate = 0
+    ): int {
         global $USER, $CFG;
 
         $CFG->backup_file_logger_level = backup::LOG_NONE;
@@ -431,6 +437,10 @@ final class restore_test extends advanced_testcase {
             backup::TARGET_NEW_COURSE
         );
 
+        if ($newstartdate) {
+            $rc->get_plan()->get_setting('course_startdate')->set_value($newstartdate);
+        }
+
         $rc->get_plan()->get_setting('users')->set_status(backup_setting::NOT_LOCKED);
         $rc->get_plan()->get_setting('users')->set_value($userinfo);
 
@@ -439,5 +449,47 @@ final class restore_test extends advanced_testcase {
         $rc->destroy();
 
         return $newcourseid;
+    }
+
+    /**
+     * Test that the opening and closing dates follow the start date of the course restored into.
+     *
+     * Restored as they were, a closing date of the previous term closes the activity the day it arrives.
+     */
+    public function test_the_opening_and_closing_dates_follow_the_new_course_start(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $start = strtotime('2026-02-01 00:00:00 UTC');
+        $course = $this->getDataGenerator()->create_course(['startdate' => $start]);
+        $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $course->id, 'timeopen' => $start + DAYSECS, 'timeclose' => $start + 150 * DAYSECS,
+        ]);
+        $newstart = strtotime('2026-08-01 00:00:00 UTC');
+
+        $newcourseid = $this->backup_and_restore($course, false, null, $newstart);
+
+        $restored = $DB->get_record('playergroup', ['course' => $newcourseid], '*', MUST_EXIST);
+        $this->assertEquals($newstart + DAYSECS, (int) $restored->timeopen);
+        $this->assertEquals($newstart + 150 * DAYSECS, (int) $restored->timeclose);
+    }
+
+    /**
+     * Test that a date left empty stays empty when the dates are shifted.
+     */
+    public function test_an_empty_window_stays_empty_in_the_restore(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $course = $this->getDataGenerator()->create_course(['startdate' => strtotime('2026-02-01 00:00:00 UTC')]);
+        $this->getDataGenerator()->create_module('playergroup', ['course' => $course->id]);
+
+        $newcourseid = $this->backup_and_restore($course, false, null, strtotime('2026-08-01 00:00:00 UTC'));
+
+        $restored = $DB->get_record('playergroup', ['course' => $newcourseid], '*', MUST_EXIST);
+        $this->assertEquals(0, (int) $restored->timeopen);
+        $this->assertEquals(0, (int) $restored->timeclose);
     }
 }

@@ -75,6 +75,13 @@ final class course_reset {
             $status[] = ['component' => $component, 'item' => get_string('resetinvites', 'mod_playergroup'), 'error' => false];
         }
 
+        // The window of the activity moves with the start date of the course, like the dates of the core activities.
+        // Shifted dates may be earlier too, so the shift can be negative.
+        if (!empty($data->timeshift)) {
+            shift_course_mod_dates('playergroup', ['timeopen', 'timeclose'], (int) $data->timeshift, $courseid);
+            $status[] = ['component' => $component, 'item' => get_string('date'), 'error' => false];
+        }
+
         return $status;
     }
 }

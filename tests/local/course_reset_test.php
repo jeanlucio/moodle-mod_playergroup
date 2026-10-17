@@ -247,4 +247,49 @@ final class course_reset_test extends advanced_testcase {
         $this->assertFalse($DB->record_exists('playergroup_meta', ['groupid' => $groupid]));
         $this->assertSame(1, $DB->count_records('playergroup_qualified', ['playergroupid' => $activity->id]));
     }
+
+    /**
+     * Test that changing the start date of the course moves the opening and closing dates with it.
+     *
+     * The reset of the course shifts the dates of its activities; one left behind closes the activity at once.
+     */
+    public function test_the_opening_and_closing_dates_move_with_the_course_start(): void {
+        global $DB;
+
+        $start = strtotime('2026-02-01 00:00:00 UTC');
+        $course = $this->getDataGenerator()->create_course(['startdate' => $start, 'enablecompletion' => 1]);
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $course->id, 'timeopen' => $start + DAYSECS, 'timeclose' => $start + 150 * DAYSECS,
+        ]);
+        $bare = $this->getDataGenerator()->create_module('playergroup', ['course' => $course->id]);
+        $newstart = strtotime('2026-08-01 00:00:00 UTC');
+
+        $status = $this->run_reset($course, [
+            'reset_start_date' => $newstart, 'reset_start_date_old' => $start, 'reset_end_date_old' => 0,
+        ]);
+
+        $record = $DB->get_record('playergroup', ['id' => $cm->id], '*', MUST_EXIST);
+        $this->assertEquals($newstart + DAYSECS, (int) $record->timeopen);
+        $this->assertEquals($newstart + 150 * DAYSECS, (int) $record->timeclose);
+        $this->assertEquals(0, (int) $DB->get_field('playergroup', 'timeopen', ['id' => $bare->id]));
+        $components = array_column($status, 'component');
+        $this->assertContains(get_string('modulenameplural', 'mod_playergroup'), $components);
+    }
+
+    /**
+     * Test that the dates stay as they are when the start date is not changed.
+     */
+    public function test_the_dates_stay_when_the_start_date_is_not_changed(): void {
+        global $DB;
+
+        $start = strtotime('2026-02-01 00:00:00 UTC');
+        $course = $this->getDataGenerator()->create_course(['startdate' => $start]);
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $course->id, 'timeopen' => $start + DAYSECS, 'timeclose' => $start + 150 * DAYSECS,
+        ]);
+
+        $this->run_reset($course, ['reset_completion' => 1]);
+
+        $this->assertEquals($start + 150 * DAYSECS, (int) $DB->get_field('playergroup', 'timeclose', ['id' => $cm->id]));
+    }
 }

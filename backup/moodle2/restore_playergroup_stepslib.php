@@ -74,6 +74,10 @@ class restore_playergroup_activity_structure_step extends restore_activity_struc
         $data = (object) $data;
         $data->course = $this->get_courseid();
         $data->groupingid = (int) $this->get_mappingid('grouping', $data->groupingid);
+        // The window of the activity moves with the start date of the course restored into, as the dates of the
+        // core activities do; an empty date stays empty.
+        $data->timeopen = $this->apply_date_offset($data->timeopen);
+        $data->timeclose = $this->apply_date_offset($data->timeclose);
         $data->timemodified = time();
 
         $newitemid = $DB->insert_record('playergroup', $data);
