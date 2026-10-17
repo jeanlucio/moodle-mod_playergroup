@@ -26,6 +26,7 @@
 namespace mod_playergroup;
 
 use advanced_testcase;
+use xmldb_field;
 use xmldb_table;
 
 /**
@@ -322,5 +323,83 @@ final class upgrade_test extends advanced_testcase {
 
         $this->assertTrue($DB->get_manager()->table_exists('playergroup_qualified'));
         $this->assertSame(0, $DB->count_records('playergroup_qualified'));
+    }
+
+    /**
+     * Test that a site older than the "delete empty groups" setting gets the column, on by default.
+     */
+    public function test_the_delete_empty_groups_column_is_added_with_its_default(): void {
+        global $DB;
+
+        $dbman = $DB->get_manager();
+        $table = new xmldb_table('playergroup');
+        $field = new xmldb_field('deleteemptygroups');
+        $activity = $this->create_activity($this->getDataGenerator()->create_course());
+        $dbman->drop_field($table, $field);
+        $this->assertFalse($dbman->field_exists($table, $field));
+        set_config('version', 2026050100, 'mod_playergroup');
+
+        $this->assertTrue(xmldb_playergroup_upgrade(2026050100));
+
+        $this->assertTrue($dbman->field_exists($table, $field));
+        $this->assertSame(1, (int) $DB->get_field('playergroup', 'deleteemptygroups', ['id' => $activity->id]));
+    }
+
+    /**
+     * Test that a site that already has the column keeps what its teachers chose.
+     */
+    public function test_an_existing_delete_empty_groups_column_is_left_alone(): void {
+        global $DB;
+
+        $activity = $this->create_activity($this->getDataGenerator()->create_course());
+        $DB->set_field('playergroup', 'deleteemptygroups', 0, ['id' => $activity->id]);
+        set_config('version', 2026050100, 'mod_playergroup');
+
+        $this->assertTrue(xmldb_playergroup_upgrade(2026050100));
+
+        $this->assertSame(0, (int) $DB->get_field('playergroup', 'deleteemptygroups', ['id' => $activity->id]));
+    }
+
+    /**
+     * Test that a narrow password column is widened to hold a hash, keeping the stored hashes.
+     */
+    public function test_the_password_column_is_widened_to_hold_a_hash(): void {
+        global $DB;
+
+        $dbman = $DB->get_manager();
+        $table = new xmldb_table('playergroup_meta');
+        $narrow = new xmldb_field('password', XMLDB_TYPE_CHAR, '60', null, null, null, '', 'privacy');
+        $dbman->change_field_precision($table, $narrow);
+        $this->assertSame(60, (int) $DB->get_columns('playergroup_meta')['password']->max_length);
+
+        $course = $this->getDataGenerator()->create_course();
+        $activity = $this->create_activity($course);
+        $group = $this->getDataGenerator()->create_group(['courseid' => $course->id]);
+        $hash = password_hash('secret', PASSWORD_DEFAULT);
+        $DB->insert_record('playergroup_meta', (object) [
+            'playergroupid' => $activity->id, 'groupid' => $group->id, 'creatorid' => 2, 'badge' => 'x',
+            'privacy' => 1, 'password' => $hash, 'timecreated' => 1, 'timemodified' => 1,
+        ]);
+        set_config('version', 2026061600, 'mod_playergroup');
+
+        $this->assertTrue(xmldb_playergroup_upgrade(2026061600));
+
+        $this->assertSame(255, (int) $DB->get_columns('playergroup_meta')['password']->max_length);
+        $this->assertSame($hash, $DB->get_field('playergroup_meta', 'password', ['groupid' => $group->id]));
+    }
+
+    /**
+     * Test that a site already on the latest version is left untouched.
+     */
+    public function test_a_current_site_runs_no_step(): void {
+        global $DB;
+
+        $this->assertTrue(xmldb_playergroup_upgrade(2026101600));
+
+        $dbman = $DB->get_manager();
+        $this->assertFalse($dbman->table_exists('playergroup_qualified'));
+
+        // The table setUp() dropped goes back, so the test framework can reset the database afterwards.
+        $dbman->install_one_table_from_xmldb_file(__DIR__ . '/../db/install.xml', 'playergroup_qualified');
     }
 }
