@@ -318,6 +318,40 @@ final class edit_group_test extends advanced_testcase {
     }
 
     /**
+     * Test that a former leader who is no longer in the group cannot change it.
+     *
+     * With empty groups kept, the leader recorded for the group stays when the last member leaves.
+     */
+    public function test_a_former_leader_outside_the_group_cannot_edit_it(): void {
+        global $DB;
+
+        $DB->set_field('playergroup', 'deleteemptygroups', 0, ['id' => $this->cm->id]);
+        groups_remove_member($this->groupid, $this->creator->id);
+        $this->assertEquals($this->creator->id, $DB->get_field('playergroup_meta', 'creatorid', ['groupid' => $this->groupid]));
+
+        $this->expectException(moodle_exception::class);
+        edit_group::execute($this->cm->cmid, $this->groupid, 'Taken', '', '⚔', 2, '');
+    }
+
+    /**
+     * Test that the refused edit changes nothing.
+     */
+    public function test_a_refused_edit_by_a_former_leader_leaves_the_group_untouched(): void {
+        global $DB;
+
+        $DB->set_field('playergroup', 'deleteemptygroups', 0, ['id' => $this->cm->id]);
+        groups_remove_member($this->groupid, $this->creator->id);
+
+        try {
+            edit_group::execute($this->cm->cmid, $this->groupid, 'Taken', '', '⚔', 2, '');
+            $this->fail('The edit should have been refused');
+        } catch (moodle_exception $e) {
+            $this->assertSame('Original Name', $DB->get_field('groups', 'name', ['id' => $this->groupid]));
+            $this->assertEquals(0, $DB->get_field('playergroup_meta', 'privacy', ['groupid' => $this->groupid]));
+        }
+    }
+
+    /**
      * Provides names the group cannot have.
      *
      * @return array[] The submitted name and a label.
