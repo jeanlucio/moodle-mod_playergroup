@@ -36,4 +36,13 @@ class course_module_viewed extends \core\event\course_module_viewed {
         $this->data['edulevel']    = self::LEVEL_PARTICIPATING;
         $this->data['objecttable'] = 'playergroup';
     }
+
+    /**
+     * Tells the course restore which object the id of this event refers to.
+     *
+     * @return array The table of the object and the name of its restore mapping.
+     */
+    public static function get_objectid_mapping(): array {
+        return ['db' => 'playergroup', 'restore' => 'playergroup'];
+    }
 }

@@ -114,4 +114,39 @@ final class events_test extends advanced_testcase {
         $this->assertSame('playergroup', $event->objecttable);
         $this->assertEquals($cm->id, $event->objectid);
     }
+
+    /**
+     * Provides each event with the table and the restore element its object id belongs to.
+     *
+     * @return array[] Event class, table and restore element.
+     */
+    public static function mapped_events(): array {
+        return [
+            'group created' => [group_created::class, 'groups', 'group'],
+            'group deleted' => [group_deleted::class, 'groups', 'group'],
+            'member joined' => [member_joined::class, 'groups', 'group'],
+            'member left' => [member_left::class, 'groups', 'group'],
+            'invite accepted' => [invite_accepted::class, 'playergroup_invites', 'playergroup_invite'],
+            'activity viewed' => [course_module_viewed::class, 'playergroup', 'playergroup'],
+        ];
+    }
+
+    /**
+     * Test that a restored course log points at the new object instead of the one of the source course.
+     *
+     * Without the mapping the core keeps the old id and raises a developer warning for each event.
+     *
+     * @dataProvider mapped_events
+     * @param string $class Event class.
+     * @param string $table Table of the object.
+     * @param string $restore Name of the restore mapping.
+     */
+    public function test_the_object_id_is_remapped_when_the_log_is_restored(
+        string $class,
+        string $table,
+        string $restore
+    ): void {
+        $this->assertSame(['db' => $table, 'restore' => $restore], $class::get_objectid_mapping());
+        $this->assertDebuggingNotCalled();
+    }
 }

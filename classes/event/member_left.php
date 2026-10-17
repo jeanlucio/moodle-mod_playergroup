@@ -60,4 +60,13 @@ class member_left extends \core\event\base {
     public function get_url(): \moodle_url {
         return new \moodle_url('/mod/playergroup/view.php', ['id' => $this->contextinstanceid]);
     }
+
+    /**
+     * Tells the course restore which object the id of this event refers to.
+     *
+     * @return array The table of the object and the name of its restore mapping.
+     */
+    public static function get_objectid_mapping(): array {
+        return ['db' => 'groups', 'restore' => 'group'];
+    }
 }
