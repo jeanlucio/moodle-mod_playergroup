@@ -527,4 +527,19 @@ final class renderer_test extends advanced_testcase {
 
         $this->assertStringNotContainsString('data-action="creategroup"', $html);
     }
+
+    /**
+     * Test that the edit modal labels the name field as the name of the group, not of the activity.
+     */
+    public function test_the_edit_modal_labels_the_field_with_the_group_name(): void {
+        global $PAGE;
+
+        $html = $PAGE->get_renderer('core')->render_from_template('mod_playergroup/modal_editgroup', [
+            'name' => 'Dragons', 'description' => '', 'badge' => '', 'canclose' => true, 'isprivacyopen' => true,
+        ]);
+
+        $label = preg_quote(get_string('groupname', 'mod_playergroup'), '~');
+        $this->assertMatchesRegularExpression('~<label for="pg-edit-groupname"[^>]*>\s*' . $label . '\s*</label>~', $html);
+        $this->assertStringNotContainsString(get_string('name', 'mod_playergroup'), $html);
+    }
 }
