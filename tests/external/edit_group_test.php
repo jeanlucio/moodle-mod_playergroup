@@ -100,6 +100,7 @@ final class edit_group_test extends advanced_testcase {
         $this->setUser($other);
 
         $this->expectException(moodle_exception::class);
+        $this->expectExceptionMessage(get_string('errnotgroupleader', 'mod_playergroup'));
         edit_group::execute($this->cm->cmid, $this->groupid, 'Hijacked', '', '👾', 0, '');
     }
 
@@ -330,6 +331,7 @@ final class edit_group_test extends advanced_testcase {
         $this->assertEquals($this->creator->id, $DB->get_field('playergroup_meta', 'creatorid', ['groupid' => $this->groupid]));
 
         $this->expectException(moodle_exception::class);
+        $this->expectExceptionMessage(get_string('errnotgroupleader', 'mod_playergroup'));
         edit_group::execute($this->cm->cmid, $this->groupid, 'Taken', '', '⚔', 2, '');
     }
 

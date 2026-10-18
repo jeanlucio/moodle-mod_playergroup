@@ -60,7 +60,7 @@ class reject_invite extends external_api {
         $invite = $DB->get_record('playergroup_invites', ['id' => $params['inviteid']], '*', MUST_EXIST);
 
         if ((int) $invite->receiverid !== (int) $USER->id) {
-            throw new \moodle_exception('nopermissions', 'error', '', 'reject invite');
+            throw new \moodle_exception('errnotinvitee', 'mod_playergroup');
         }
         if ((int) $invite->status !== 0) {
             throw new \moodle_exception('invitealreadyhandled', 'mod_playergroup');

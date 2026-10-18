@@ -113,6 +113,7 @@ final class reject_invite_test extends advanced_testcase {
         $this->setUser($other);
 
         $this->expectException(moodle_exception::class);
+        $this->expectExceptionMessage(get_string('errnotinvitee', 'mod_playergroup'));
         reject_invite::execute($this->inviteid);
     }
 

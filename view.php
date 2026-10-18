@@ -365,32 +365,14 @@ if ($tab === 'report' && $isteacher) {
 // bulk-loaded above for the cards, rather than querying it again.
 if ($tab === 'groupsreport' && $isteacher) {
     $groupsreportrows = [];
-    foreach ($grouprecords as $g) {
-        $groupid = (int) $g->id;
-        $privacy = (int) ($g->privacy ?? 0);
-
-        if ($privacy === 1) {
-            $privacylabel = get_string('groupprotected', 'mod_playergroup');
-        } else if ($privacy === 2) {
-            $privacylabel = get_string('groupclosed', 'mod_playergroup');
-        } else {
-            $privacylabel = get_string('groupopen', 'mod_playergroup');
-        }
-
-        foreach ($membersbygroup[$groupid] ?? [] as $member) {
-            if ((int) $member->userid === (int) $g->creatorid) {
-                $role = get_string('leader', 'mod_playergroup');
-            } else {
-                $role = get_string('member', 'mod_playergroup');
-            }
-
-            $groupsreportrows[] = [
-                'groupname'  => \mod_playergroup\local\text::plain($g->name, $context),
-                'privacy'    => $privacylabel,
-                'role'       => $role,
-                'membername' => fullname($member),
-            ];
-        }
+    foreach (\mod_playergroup\local\groups_report::rows($grouprecords, $membersbygroup, $context) as $row) {
+        [$groupname, $privacylabel, $role, $membername] = $row;
+        $groupsreportrows[] = [
+            'groupname'  => $groupname,
+            'privacy'    => $privacylabel,
+            'role'       => $role,
+            'membername' => $membername,
+        ];
     }
 
     $groupsreportdata = new \stdClass();

@@ -111,13 +111,13 @@ class edit_group extends external_api {
         ], '*', MUST_EXIST);
 
         if ((int) $meta->creatorid !== (int) $USER->id) {
-            throw new \moodle_exception('nopermissions', 'error', '', 'edit group');
+            throw new \moodle_exception('errnotgroupleader', 'mod_playergroup');
         }
 
         // The leader recorded for a group kept after its last member left stays on record. Only someone who is
         // still in the group may change it, as the page itself offers editing only inside one's own group.
         if (!$DB->record_exists('groups_members', ['groupid' => $params['groupid'], 'userid' => $USER->id])) {
-            throw new \moodle_exception('nopermissions', 'error', '', 'edit group');
+            throw new \moodle_exception('errnotgroupleader', 'mod_playergroup');
         }
 
         $name = \mod_playergroup\local\text::require_valid_group_fields($params['name'], $params['badge']);

@@ -39,6 +39,7 @@ use advanced_testcase;
  * @covers \mod_playergroup\event\member_joined
  * @covers \mod_playergroup\event\member_left
  * @covers \mod_playergroup\event\course_module_viewed
+ * @covers \mod_playergroup\event\course_module_instance_list_viewed
  */
 final class events_test extends advanced_testcase {
     /**
@@ -113,6 +114,34 @@ final class events_test extends advanced_testcase {
         $this->assertSame('r', $event->crud);
         $this->assertSame('playergroup', $event->objecttable);
         $this->assertEquals($cm->id, $event->objectid);
+    }
+
+    /**
+     * Test the event fired when someone opens the list of the activities of a course.
+     */
+    public function test_course_module_instance_list_viewed_is_read_only_and_points_at_the_index(): void {
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $user = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $this->setUser($user);
+        $context = \context_course::instance($course->id);
+        $sink = $this->redirectEvents();
+
+        $event = course_module_instance_list_viewed::create(['context' => $context]);
+        $event->add_record_snapshot('course', $course);
+        $event->trigger();
+
+        $this->assertCount(1, $sink->get_events());
+        $this->assertSame('r', $event->crud);
+        $this->assertSame($context->id, $event->contextid);
+        $this->assertEquals($course->id, $event->courseid);
+        $this->assertSame(get_string('eventcoursemoduleinstancelistviewed', 'core'), $event::get_name());
+        $this->assertStringContainsString("'playergroup'", $event->get_description());
+
+        $url = $event->get_url();
+        $this->assertStringEndsWith('/mod/playergroup/index.php', $url->get_path());
+        $this->assertEquals($course->id, $url->get_param('id'));
     }
 
     /**

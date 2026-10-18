@@ -60,35 +60,7 @@ class export_groups {
         }
 
         // 3. Stream one row per member via a generator to avoid loading it all into memory.
-        $exportdata = (function () use ($groups, $membersbygroup): \Generator {
-            foreach ($groups as $g) {
-                $groupid = (int) $g->id;
-                $privacy = (int) ($g->privacy ?? 0);
-
-                if ($privacy === 1) {
-                    $privacylabel = get_string('groupprotected', 'mod_playergroup');
-                } else if ($privacy === 2) {
-                    $privacylabel = get_string('groupclosed', 'mod_playergroup');
-                } else {
-                    $privacylabel = get_string('groupopen', 'mod_playergroup');
-                }
-
-                foreach ($membersbygroup[$groupid] ?? [] as $member) {
-                    if ((int) $member->userid === (int) $g->creatorid) {
-                        $role = get_string('leader', 'mod_playergroup');
-                    } else {
-                        $role = get_string('member', 'mod_playergroup');
-                    }
-
-                    yield [
-                        \mod_playergroup\local\text::plain($g->name),
-                        $privacylabel,
-                        $role,
-                        fullname($member),
-                    ];
-                }
-            }
-        })();
+        $exportdata = \mod_playergroup\local\groups_report::rows($groups, $membersbygroup);
 
         // 4. Define localized headers.
         $columns = [

@@ -130,4 +130,35 @@ final class export_groups_test extends advanced_testcase {
             $this->assertStringNotContainsString('&amp;', $csv, "striptags=$striptags");
         }
     }
+
+    /**
+     * Test that a group kept with no member still has its row in the export.
+     *
+     * The activity keeps empty groups when it does not delete them, and the students still see them.
+     */
+    public function test_execute_lists_a_group_kept_without_members(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module(
+            'playergroup',
+            ['course' => $course->id, 'canleave' => 1, 'deleteemptygroups' => 0]
+        );
+        $creator = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($creator->id, $course->id, 'student');
+        $this->setUser($creator);
+        $created = create_group::execute($cm->cmid, 'Empty Team', '', '🛡', 0, '');
+        groups_remove_member($created['groupid'], $creator->id);
+        $this->assertTrue($DB->record_exists('playergroup_meta', ['groupid' => $created['groupid']]));
+
+        ob_start();
+        (new export_groups())->execute($cm->id, 'csv', $course->shortname);
+        $csv = ob_get_clean();
+
+        $this->assertStringContainsString('Empty Team', $csv);
+        $this->assertStringContainsString(get_string('groupnomembers', 'mod_playergroup'), $csv);
+        $this->assertStringNotContainsString(fullname($creator), $csv);
+    }
 }
