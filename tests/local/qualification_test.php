@@ -460,4 +460,76 @@ final class qualification_test extends advanced_testcase {
 
         $this->assertEquals(3.0, (float) $gradeitem->get_grade($student->id, false)->finalgrade);
     }
+
+    /**
+     * Builds an activity with a grade and no completion tracking, and records students as qualified.
+     *
+     * @param int $students How many students qualify.
+     * @return array [activity record, course module record, student ids]
+     */
+    private function create_graded_activity_with_qualified(int $students): array {
+        global $DB;
+
+        // A course of its own: the cost of the gradebook grows with the students already in the course, which
+        // would make a second measurement dearer than the first for no reason that matters here.
+        $course = $this->getDataGenerator()->create_course();
+        $generated = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $course->id,
+            'grade'  => 10,
+        ]);
+        $playergroup = $DB->get_record('playergroup', ['id' => $generated->id], '*', MUST_EXIST);
+        $cm = get_coursemodule_from_instance('playergroup', $playergroup->id, $course->id, false, MUST_EXIST);
+
+        $userids = [];
+        for ($i = 0; $i < $students; $i++) {
+            $user = $this->getDataGenerator()->create_and_enrol($course, 'student');
+            $DB->insert_record('playergroup_qualified', (object) [
+                'playergroupid' => $playergroup->id,
+                'userid'        => $user->id,
+                'timequalified' => 1700000000 + $i,
+            ]);
+            $userids[] = (int) $user->id;
+        }
+
+        return [$playergroup, $cm, $userids];
+    }
+
+    /**
+     * Test that awarding many students costs fewer queries than awarding them one by one.
+     *
+     * Lowering the minimum can qualify a whole class at once. Reading each grade and calling the gradebook once
+     * per student is an N+1 that grows with the class and is invisible to the other tests, which only look at the
+     * result. The comparison is relative on purpose: the cost of the gradebook changes between Moodle versions,
+     * but one call for everyone must always beat one call per student by at least a query for each of them.
+     */
+    public function test_award_costs_fewer_queries_than_awarding_one_by_one(): void {
+        global $CFG, $DB;
+
+        require_once($CFG->dirroot . '/mod/playergroup/lib.php');
+        $students = 8;
+
+        // Both ways run once on a single student first, so caches and one-time work do not count for either.
+        [$playergroup, $cm, $userids] = $this->create_graded_activity_with_qualified(1);
+        qualification::award($playergroup, $cm, $userids);
+        [$playergroup, , $userids] = $this->create_graded_activity_with_qualified(1);
+        playergroup_update_grades($playergroup, $userids[0]);
+
+        [$playergroup, $cm, $userids] = $this->create_graded_activity_with_qualified($students);
+        $before = $DB->perf_get_queries();
+        qualification::award($playergroup, $cm, $userids);
+        $together = $DB->perf_get_queries() - $before;
+
+        [$playergroup, , $userids] = $this->create_graded_activity_with_qualified($students);
+        $before = $DB->perf_get_queries();
+        foreach ($userids as $userid) {
+            playergroup_update_grades($playergroup, $userid);
+        }
+        $separately = $DB->perf_get_queries() - $before;
+
+        $this->assertLessThanOrEqual(
+            $separately - $students,
+            $together,
+            "Awarding $students students took $together queries, one by one took $separately."
+        );
+    }
 }
