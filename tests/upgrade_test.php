@@ -392,15 +392,21 @@ final class upgrade_test extends advanced_testcase {
      * Test that a site already on the latest version is left untouched.
      */
     public function test_a_current_site_runs_no_step(): void {
-        global $DB;
+        global $CFG, $DB;
 
-        $this->assertTrue(xmldb_playergroup_upgrade(2026101600));
+        // The latest version is the one in version.php, so the test keeps its meaning when a step is added.
+        $plugin = new \stdClass();
+        require($CFG->dirroot . '/mod/playergroup/version.php');
+        $this->assertTrue(xmldb_playergroup_upgrade((int) $plugin->version));
 
         $dbman = $DB->get_manager();
         $this->assertFalse($dbman->table_exists('playergroup_qualified'));
 
         // The table setUp() dropped goes back, so the test framework can reset the database afterwards.
-        $dbman->install_one_table_from_xmldb_file(__DIR__ . '/../db/install.xml', 'playergroup_qualified');
+        $dbman->install_one_table_from_xmldb_file(
+            $CFG->dirroot . '/mod/playergroup/db/install.xml',
+            'playergroup_qualified'
+        );
     }
 
     /**
