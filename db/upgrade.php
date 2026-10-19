@@ -152,5 +152,14 @@ function xmldb_playergroup_upgrade(int $oldversion): bool {
         upgrade_mod_savepoint(true, 2026101600, 'playergroup');
     }
 
+    if ($oldversion < 2026101900) {
+        // The opening and closing dates now have calendar events. Activities saved before this version have the
+        // dates and no event, and the events are only made when an activity is saved. The refresh finds the
+        // event of each activity by type before it makes one, so running the step again changes nothing.
+        \mod_playergroup\local\calendar::refresh_events();
+
+        upgrade_mod_savepoint(true, 2026101900, 'playergroup');
+    }
+
     return true;
 }

@@ -402,4 +402,42 @@ final class upgrade_test extends advanced_testcase {
         // The table setUp() dropped goes back, so the test framework can reset the database afterwards.
         $dbman->install_one_table_from_xmldb_file(__DIR__ . '/../db/install.xml', 'playergroup_qualified');
     }
+
+    /**
+     * Test that the step that makes the calendar events gives them to the activities that already existed.
+     *
+     * The activities of a site before this version have their dates and no event, and the rest of the plugin
+     * only makes events when an activity is saved.
+     */
+    public function test_existing_activities_get_their_calendar_events_and_the_step_can_run_again(): void {
+        global $DB;
+
+        $one = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $this->getDataGenerator()->create_course()->id, 'timeopen' => 1900000000, 'timeclose' => 1900500000,
+        ]);
+        $two = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $this->getDataGenerator()->create_course()->id, 'timeclose' => 1900500000,
+        ]);
+        $none = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $this->getDataGenerator()->create_course()->id,
+        ]);
+        // The site as it was before this version: dates in the table and no event for them.
+        $DB->delete_records_select('event', "modulename = 'playergroup' AND eventtype IN ('open', 'close')");
+
+        // The whole upgrade runs, which also brings back the table the setUp() of this class dropped.
+        $this->assertTrue(xmldb_playergroup_upgrade(self::OLDVERSION));
+        $count = fn(int $id): int => $DB->count_records_select(
+            'event',
+            "modulename = 'playergroup' AND instance = :id AND eventtype IN ('open', 'close')",
+            ['id' => $id]
+        );
+        $this->assertSame(2, $count((int) $one->id));
+        $this->assertSame(1, $count((int) $two->id));
+        $this->assertSame(0, $count((int) $none->id));
+
+        set_config('version', self::OLDVERSION, 'mod_playergroup');
+        xmldb_playergroup_upgrade(self::OLDVERSION);
+        $this->assertSame(2, $count((int) $one->id));
+        $this->assertSame(1, $count((int) $two->id));
+    }
 }

@@ -292,4 +292,30 @@ final class course_reset_test extends advanced_testcase {
 
         $this->assertEquals($start + 150 * DAYSECS, (int) $DB->get_field('playergroup', 'timeclose', ['id' => $cm->id]));
     }
+
+    /**
+     * Test that the calendar events of the window move with the dates, which the core does not do by itself.
+     *
+     * The core shifts the dates of the activities and leaves their events behind, so the calendar would keep
+     * showing the dates of the previous term.
+     */
+    public function test_the_calendar_events_move_with_the_course_start(): void {
+        global $DB;
+
+        $start = strtotime('2026-02-01 00:00:00 UTC');
+        $course = $this->getDataGenerator()->create_course(['startdate' => $start, 'enablecompletion' => 1]);
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $course->id, 'timeopen' => $start + DAYSECS, 'timeclose' => $start + 150 * DAYSECS,
+        ]);
+        $newstart = strtotime('2026-08-01 00:00:00 UTC');
+
+        $this->run_reset($course, [
+            'reset_start_date' => $newstart, 'reset_start_date_old' => $start, 'reset_end_date_old' => 0,
+        ]);
+
+        $events = $DB->get_records('event', ['modulename' => 'playergroup', 'instance' => $cm->id], '', 'eventtype, timestart');
+        $this->assertCount(2, $events);
+        $this->assertEquals($newstart + DAYSECS, (int) $events['open']->timestart);
+        $this->assertEquals($newstart + 150 * DAYSECS, (int) $events['close']->timestart);
+    }
 }

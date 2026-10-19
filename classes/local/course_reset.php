@@ -79,6 +79,8 @@ final class course_reset {
         // Shifted dates may be earlier too, so the shift can be negative.
         if (!empty($data->timeshift)) {
             shift_course_mod_dates('playergroup', ['timeopen', 'timeclose'], (int) $data->timeshift, $courseid);
+            // The events follow on their own: right after this callback the core asks the module to refresh the
+            // events of the course (playergroup_refresh_events), because shifting only changes the column.
             $status[] = ['component' => $component, 'item' => get_string('date'), 'error' => false];
         }
 

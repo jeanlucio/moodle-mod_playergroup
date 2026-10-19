@@ -112,6 +112,13 @@ function playergroup_add_instance(\stdClass $playergroup, ?\mod_playergroup_mod_
 
     playergroup_grade_item_update($playergroup);
 
+    // The core always gives the course module; the events hang from it, so a call without one has none to make.
+    if (!empty($playergroup->coursemodule)) {
+        $record = $DB->get_record('playergroup', ['id' => $playergroup->id], '*', MUST_EXIST);
+        $visible = (bool) $DB->get_field('course_modules', 'visible', ['id' => $playergroup->coursemodule], MUST_EXIST);
+        \mod_playergroup\local\calendar::set_events($record, (int) $playergroup->coursemodule, $visible);
+    }
+
     if (!empty($playergroup->completionexpected)) {
         \core_completion\api::update_completion_date_event(
             $playergroup->coursemodule,
@@ -155,6 +162,10 @@ function playergroup_update_instance(\stdClass $playergroup, ?\mod_playergroup_m
     playergroup_grade_item_update($playergroup);
 
     $record = $DB->get_record('playergroup', ['id' => $playergroup->id], '*', MUST_EXIST);
+
+    // The dates may have changed, or been cleared.
+    $visible = (bool) $DB->get_field('course_modules', 'visible', ['id' => $playergroup->coursemodule], MUST_EXIST);
+    \mod_playergroup\local\calendar::set_events($record, (int) $playergroup->coursemodule, $visible);
 
     // Lowering the minimum can make existing groups count. Raising it never takes anything away,
     // since a student who already qualified keeps the grade and the completion.
@@ -401,6 +412,34 @@ function playergroup_get_completion_active_rule_descriptions(\stdClass $course, 
 }
 
 /**
+ * Brings the calendar events of the opening and closing dates in step with the activities.
+ *
+ * Called by the core when it duplicates an activity or refreshes the events of a course, and by this plugin
+ * after a reset of the course and from the upgrade.
+ *
+ * @param int $courseid The course, or 0 for every course.
+ * @param int|\stdClass|null $instance One activity, as a record or an id, to refresh only it.
+ * @param object|null $cm The course module of that activity, when the caller has it.
+ * @return bool Always true.
+ */
+function playergroup_refresh_events(int $courseid = 0, int|\stdClass|null $instance = null, ?object $cm = null): bool {
+    global $DB;
+
+    if ($instance === null) {
+        \mod_playergroup\local\calendar::refresh_events($courseid);
+        return true;
+    }
+
+    if (!is_object($instance)) {
+        $instance = $DB->get_record('playergroup', ['id' => $instance], '*', MUST_EXIST);
+    }
+    $cm ??= get_coursemodule_from_instance('playergroup', $instance->id, $instance->course, false, MUST_EXIST);
+    \mod_playergroup\local\calendar::set_events($instance, (int) $cm->id, !empty($cm->visible));
+
+    return true;
+}
+
+/**
  * Tells the calendar and the timeline what to offer for an event of the activity.
  *
  * The only events are the date the teacher expects the activity to be completed by. Once the student
@@ -416,9 +455,16 @@ function mod_playergroup_core_calendar_provide_event_action(
     \core_calendar\action_factory $factory,
     int $userid = 0
 ): ?\core_calendar\local\event\entities\action_interface {
+    global $USER;
+
     $cm = get_fast_modinfo($event->courseid, $userid)->instances['playergroup'][$event->instance] ?? null;
     if (!$cm || !$cm->uservisible) {
         return null;
+    }
+
+    $windowevents = [\mod_playergroup\local\calendar::EVENT_OPEN, \mod_playergroup\local\calendar::EVENT_CLOSE];
+    if (in_array($event->eventtype, $windowevents, true)) {
+        return \mod_playergroup\local\calendar::window_action($cm, $factory, $userid ?: (int) $USER->id);
     }
 
     $completion = new \completion_info($cm->get_course());

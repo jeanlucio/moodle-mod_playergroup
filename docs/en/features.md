@@ -9,6 +9,7 @@
 * 🔒 **Concurrency-Safe:** Creating, joining, or accepting an invite into a group is serialised per activity instance, so two near-simultaneous requests (a double-click, or two devices) can never place the same student in two groups at once or push a group past its member limit.
 * 🏆 **Gradebook Integration:** Grade awarded automatically when a student joins or creates a group; permanent even if the student later leaves.
 * ✅ **Activity Completion:** Custom rule — student must join or create a group.
+* 📅 **Calendar Events:** The opening and closing dates of the activity appear in the course calendar, the personal calendar and the **Timeline** block, with the usual action to open the activity — shown until the window closes or the student is already in a group. They follow the activity when it is edited, duplicated, restored or when the course start date is reset.
 * 📊 **Teacher Reports:**
   * **Activity Log:** Audit view of the last 200 events (group created, joined, left, invite accepted), with CSV and Excel export.
   * **Groups and Members:** One row per member — group, privacy, role (leader/member), and name — for a full class roster at a glance, also exportable to CSV and Excel.

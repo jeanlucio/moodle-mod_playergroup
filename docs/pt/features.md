@@ -9,6 +9,7 @@
 * 🔒 **Seguro contra Concorrência:** Criar um grupo, entrar nele ou aceitar um convite é serializado por instância da atividade, então duas requisições quase simultâneas (um duplo clique, ou dois dispositivos) nunca colocam o mesmo estudante em dois grupos ao mesmo tempo nem ultrapassam o limite de integrantes.
 * 🏆 **Integração com Notas:** Nota atribuída automaticamente quando o estudante entra ou cria um grupo; permanente mesmo que ele saia depois.
 * ✅ **Conclusão de Atividade:** Regra personalizada — o estudante deve entrar ou criar um grupo.
+* 📅 **Eventos no Calendário:** As datas de abertura e de encerramento da atividade aparecem no calendário do curso, no calendário pessoal e no bloco **Linha do tempo**, com a ação usual de abrir a atividade — exibida até a janela encerrar ou o estudante já estar em um grupo. Elas acompanham a atividade quando é editada, duplicada, restaurada ou quando a data de início do curso é redefinida.
 * 📊 **Relatórios do Professor:**
   * **Log de Atividade:** Visão de auditoria dos últimos 200 eventos (grupo criado, entrou, saiu, convite aceito), com exportação em CSV e Excel.
   * **Grupos e Integrantes:** Uma linha por integrante — grupo, privacidade, papel (líder/integrante) e nome — para ver a composição de toda a turma de uma vez, também exportável em CSV e Excel.

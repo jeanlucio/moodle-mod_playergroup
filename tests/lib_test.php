@@ -719,4 +719,156 @@ final class lib_test extends advanced_testcase {
         $this->assertLessThanOrEqual(255, \core_text::strlen($second->name));
         $this->assertNotSame($first->name, $second->name);
     }
+
+    /**
+     * Loads the calendar event of the opening or the closing of an activity.
+     *
+     * @param int $instanceid The activity.
+     * @param string $eventtype open or close.
+     * @return \calendar_event The event.
+     */
+    private function window_event(int $instanceid, string $eventtype): \calendar_event {
+        global $DB;
+
+        $record = $DB->get_record('event', [
+            'modulename' => 'playergroup', 'instance' => $instanceid, 'eventtype' => $eventtype,
+        ], '*', MUST_EXIST);
+        return \calendar_event::load($record->id);
+    }
+
+    /**
+     * Asks for the action the timeline offers a student for an event of the window.
+     *
+     * @param \calendar_event $event The event.
+     * @param \stdClass $student The student.
+     * @return \core_calendar\local\event\entities\action_interface|null The action.
+     */
+    private function window_action(
+        \calendar_event $event,
+        \stdClass $student
+    ): ?\core_calendar\local\event\entities\action_interface {
+        return mod_playergroup_core_calendar_provide_event_action(
+            $event,
+            new \core_calendar\action_factory(),
+            (int) $student->id
+        );
+    }
+
+    /**
+     * Test that, inside the window, the timeline offers to open the activity for both events of the window.
+     */
+    public function test_the_window_events_offer_the_action_of_opening_the_activity_inside_the_window(): void {
+        $course = $this->getDataGenerator()->create_course();
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $course->id, 'timeopen' => time() - HOURSECS, 'timeclose' => time() + DAYSECS,
+        ]);
+
+        foreach (['open', 'close'] as $type) {
+            $action = $this->window_action($this->window_event((int) $cm->id, $type), $student);
+
+            $this->assertInstanceOf(\core_calendar\local\event\value_objects\action::class, $action, $type);
+            $this->assertEquals($cm->cmid, (int) $action->get_url()->get_param('id'), $type);
+            $this->assertTrue($action->is_actionable(), $type);
+        }
+    }
+
+    /**
+     * Test that, before the window opens, the action is shown but cannot be used yet.
+     */
+    public function test_the_window_events_offer_an_action_that_waits_for_the_opening(): void {
+        $course = $this->getDataGenerator()->create_course();
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $course->id, 'timeopen' => time() + DAYSECS, 'timeclose' => time() + 9 * DAYSECS,
+        ]);
+
+        $action = $this->window_action($this->window_event((int) $cm->id, 'open'), $student);
+
+        $this->assertNotNull($action);
+        $this->assertFalse($action->is_actionable());
+    }
+
+    /**
+     * Test that no action is left once the window has closed.
+     */
+    public function test_the_window_events_offer_no_action_after_the_closing(): void {
+        $course = $this->getDataGenerator()->create_course();
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $course->id, 'timeopen' => time() - 9 * DAYSECS, 'timeclose' => time() - DAYSECS,
+        ]);
+
+        foreach (['open', 'close'] as $type) {
+            $this->assertNull($this->window_action($this->window_event((int) $cm->id, $type), $student), $type);
+        }
+    }
+
+    /**
+     * Test that a student who is already in a group of the activity is not asked to open it again.
+     */
+    public function test_the_window_events_offer_no_action_to_a_student_who_is_in_a_group(): void {
+        $course = $this->getDataGenerator()->create_course();
+        $inagroup = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $without = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $course->id, 'timeopen' => time() - HOURSECS, 'timeclose' => time() + DAYSECS,
+        ]);
+        $this->setUser($inagroup);
+        \mod_playergroup\external\create_group::execute($cm->cmid, 'Early Birds', '', '🛡', 0, '');
+        $event = $this->window_event((int) $cm->id, 'close');
+
+        $this->assertNull($this->window_action($event, $inagroup));
+        $this->assertNotNull($this->window_action($event, $without));
+    }
+
+    /**
+     * Test that a hidden activity offers no action to a student.
+     */
+    public function test_the_window_events_offer_no_action_for_a_hidden_activity(): void {
+        $course = $this->getDataGenerator()->create_course();
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $course->id, 'timeopen' => time() - HOURSECS, 'timeclose' => time() + DAYSECS, 'visible' => 0,
+        ]);
+
+        $this->assertNull($this->window_action($this->window_event((int) $cm->id, 'close'), $student));
+    }
+
+    /**
+     * Test that a copy of the activity, made the way the course page does it, has its own events with the dates.
+     *
+     * The core asks the module to refresh its events when it duplicates one; without that function the copy
+     * would be born without them.
+     */
+    public function test_a_duplicated_activity_has_its_own_window_events(): void {
+        global $DB;
+
+        $this->setAdminUser();
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $course->id, 'timeopen' => 1900000000, 'timeclose' => 1900500000,
+        ]);
+        $coursemodule = get_coursemodule_from_instance('playergroup', $cm->id, $course->id, false, MUST_EXIST);
+
+        // The core replaced duplicate_module() by cmactions::duplicate() in 5.2, which does not exist before.
+        if (method_exists(\core_courseformat\local\cmactions::class, 'duplicate')) {
+            $copy = (new \core_courseformat\local\cmactions($course))->duplicate($coursemodule->id);
+        } else {
+            $copy = duplicate_module($course, $coursemodule);
+        }
+
+        $this->assertNotEquals($cm->cmid, $copy->id);
+        $copyinstance = (int) $DB->get_field('course_modules', 'instance', ['id' => $copy->id], MUST_EXIST);
+        $this->assertNotEquals($cm->id, $copyinstance);
+        $events = $DB->get_records(
+            'event',
+            ['modulename' => 'playergroup', 'instance' => $copyinstance],
+            '',
+            'eventtype, timestart'
+        );
+        $this->assertEquals(1900000000, (int) $events['open']->timestart);
+        $this->assertEquals(1900500000, (int) $events['close']->timestart);
+        $this->assertSame(2, $DB->count_records('event', ['modulename' => 'playergroup', 'instance' => $cm->id]));
+    }
 }

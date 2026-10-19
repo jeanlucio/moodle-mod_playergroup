@@ -492,4 +492,81 @@ final class restore_test extends advanced_testcase {
         $this->assertEquals(0, (int) $restored->timeopen);
         $this->assertEquals(0, (int) $restored->timeclose);
     }
+
+    /**
+     * Fetches the events of the window of the restored activity, by type, after the queued tasks have run.
+     *
+     * The core restores the ordinary events itself and leaves the ones with an action to a task that asks every
+     * module to refresh its events, so the task has to run before the events are all there.
+     *
+     * @param int $courseid The restored course.
+     * @return int[] Start times keyed by event type.
+     */
+    private function restored_window_events(int $courseid): array {
+        global $DB;
+
+        // The task reports each module it refreshes; the output is not what the test looks at.
+        ob_start();
+        $this->runAdhocTasks();
+        ob_end_clean();
+        $restored = $DB->get_record('playergroup', ['course' => $courseid], '*', MUST_EXIST);
+        $events = $DB->get_records(
+            'event',
+            ['modulename' => 'playergroup', 'instance' => $restored->id],
+            '',
+            'id, eventtype, timestart'
+        );
+        $this->assertCount(count(array_unique(array_column($events, 'eventtype'))), $events, 'No event may be repeated.');
+
+        return array_column($events, 'timestart', 'eventtype');
+    }
+
+    /**
+     * Test that the restore leaves exactly one event of each kind, with the shifted dates.
+     *
+     * The ordinary event comes from the restore of the core and the one with an action from the task that follows
+     * it. The plugin must not make events of its own in the restore, or the ordinary one would be doubled.
+     */
+    public function test_the_restore_brings_one_event_of_each_kind(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $start = strtotime('2026-02-01 00:00:00 UTC');
+        $course = $this->getDataGenerator()->create_course(['startdate' => $start]);
+        $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $course->id, 'timeopen' => $start + DAYSECS, 'timeclose' => $start + 150 * DAYSECS,
+        ]);
+        $newstart = strtotime('2026-08-01 00:00:00 UTC');
+
+        $newcourseid = $this->backup_and_restore($course, false, null, $newstart);
+
+        $bytype = $this->restored_window_events($newcourseid);
+        $this->assertEquals($newstart + DAYSECS, (int) $bytype['open']);
+        $this->assertEquals($newstart + 150 * DAYSECS, (int) $bytype['close']);
+        $this->assertCount(2, $bytype);
+    }
+
+    /**
+     * Test that a backup made before the events existed brings them back all the same.
+     *
+     * Such a backup has the dates and no event; the task that follows the restore asks the plugin to make them.
+     */
+    public function test_a_backup_without_events_gets_them_after_the_restore(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $start = strtotime('2026-02-01 00:00:00 UTC');
+        $course = $this->getDataGenerator()->create_course(['startdate' => $start]);
+        $this->getDataGenerator()->create_module('playergroup', [
+            'course' => $course->id, 'timeopen' => $start + DAYSECS, 'timeclose' => $start + 150 * DAYSECS,
+        ]);
+        $DB->delete_records_select('event', "modulename = 'playergroup' AND eventtype IN ('open', 'close')");
+
+        $newcourseid = $this->backup_and_restore($course, false);
+
+        $bytype = $this->restored_window_events($newcourseid);
+        $this->assertEquals($start + DAYSECS, (int) $bytype['open']);
+        $this->assertEquals($start + 150 * DAYSECS, (int) $bytype['close']);
+    }
 }
