@@ -650,4 +650,28 @@ final class get_activity_data_test extends advanced_testcase {
         rebuild_course_cache($course->id, true, true);
         $this->assertFalse($this->answer($cm->cmid)['canclose']);
     }
+
+    /**
+     * Test that the app is not offered the join, found and badge actions by someone who is not enrolled.
+     *
+     * The same user, enrolled, is offered them: the flags follow what the services let the user do.
+     */
+    public function test_execute_offers_no_action_to_a_user_who_is_not_enrolled(): void {
+        $this->resetAfterTest();
+        [$cmid, $fullid, $roomyid, , $viewer] = $this->build_full_and_roomy_groups();
+
+        $this->setUser($viewer);
+        $enrolled = external_api::clean_returnvalue(get_activity_data::execute_returns(), get_activity_data::execute($cmid));
+        $groups = array_column($enrolled['groups'], null, 'groupid');
+        $this->assertTrue($enrolled['cancreate']);
+        $this->assertTrue($groups[$roomyid]['canjoin']);
+        $this->assertTrue($groups[$fullid]['showfullbadge']);
+
+        $this->setAdminUser();
+        $outsider = external_api::clean_returnvalue(get_activity_data::execute_returns(), get_activity_data::execute($cmid));
+        $groups = array_column($outsider['groups'], null, 'groupid');
+        $this->assertFalse($outsider['cancreate']);
+        $this->assertFalse($groups[$roomyid]['canjoin']);
+        $this->assertFalse($groups[$fullid]['showfullbadge']);
+    }
 }

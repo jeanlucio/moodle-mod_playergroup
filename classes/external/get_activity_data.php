@@ -85,7 +85,8 @@ class get_activity_data extends external_api {
         $isteacher = has_capability('mod/playergroup:manage', $context);
                 // What the buttons offer must match what the services behind them require, or the student fills in a
         // form only to be refused: creating and editing need creategroup, inviting needs manageinvites.
-        $cancreate = has_capability('mod/playergroup:creategroup', $context);
+        $canparticipate = \mod_playergroup\local\participation::can_take_part($context, (int) $USER->id);
+        $cancreate = $canparticipate && has_capability('mod/playergroup:creategroup', $context);
         $caninviteusers = \mod_playergroup\local\invitees::can_pick($context);
         $canviewnames = \mod_playergroup\local\member_list::can_view_names($context);
         $userqualified = \mod_playergroup\local\qualification::is_qualified((int) $playergroup->id, (int) $USER->id);
@@ -206,8 +207,8 @@ class get_activity_data extends external_api {
                 'isfull'             => $isfull,
                 'ismygroup'          => $ismygroup,
                 'leaderbadge'        => $leaderbadge,
-                'canjoin'            => $isopen && !$hasgroup && $privacy !== 2 && !$isfull,
-                'showfullbadge'      => $isopen && !$hasgroup && $privacy !== 2 && $isfull,
+                'canjoin'            => $canparticipate && $isopen && !$hasgroup && $privacy !== 2 && !$isfull,
+                'showfullbadge'      => $canparticipate && $isopen && !$hasgroup && $privacy !== 2 && $isfull,
                 'caninvite'          => $ismygroup && $isopen && !$isfull && $caninviteusers,
                 'canedit'            => $ismygroup && $isopen && $iscreator && $cancreate,
                 'canleave'           => $ismygroup && $canleaveany,

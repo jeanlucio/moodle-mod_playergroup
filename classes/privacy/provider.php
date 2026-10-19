@@ -57,12 +57,14 @@ class provider implements
     public static function get_metadata(collection $collection): collection {
         $collection->add_database_table('playergroup_meta', [
             'creatorid'   => 'privacy:metadata:creatorid',
+            'badge'       => 'privacy:metadata:badge',
             'timecreated' => 'privacy:metadata:timecreated',
         ], 'privacy:metadata:playergroup_meta');
 
         $collection->add_database_table('playergroup_invites', [
             'senderid'    => 'privacy:metadata:senderid',
             'receiverid'  => 'privacy:metadata:receiverid',
+            'status'      => 'privacy:metadata:status',
             'timecreated' => 'privacy:metadata:timecreated',
         ], 'privacy:metadata:playergroup_invites');
 

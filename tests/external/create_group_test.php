@@ -294,7 +294,7 @@ final class create_group_test extends advanced_testcase {
             create_group::execute($this->cm->cmid, 'Ghost Group', '', '👻', 0, '');
             $this->fail('Expected a moodle_exception because the admin is not enrolled.');
         } catch (moodle_exception $e) {
-            $this->assertEquals('joinfailed', $e->errorcode);
+            $this->assertEquals('errnotenrolled', $e->errorcode);
         }
 
         $this->assertEquals($groupsbefore, $DB->count_records('groups', ['courseid' => $this->course->id]));

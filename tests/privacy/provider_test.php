@@ -463,4 +463,43 @@ final class provider_test extends provider_testcase {
         provider::delete_data_for_all_users_in_context($context);
         $this->assertSame(0, $DB->count_records('playergroup_qualified'));
     }
+
+    /**
+     * Provides the tables with the columns left out of the declaration on purpose, and why.
+     *
+     * A new column must either be declared or listed here with the reason it holds no personal data, so a
+     * column cannot reach the exports and the data registry without anyone deciding about it.
+     *
+     * @return array[] Table, columns that are not personal data.
+     */
+    public static function tables_with_columns_left_out(): array {
+        return [
+            // The ids tie the row to the activity and the group; the privacy level and the hashed group password
+            // are settings of the group, and the modified time says only that the row changed.
+            'playergroup_meta' => ['playergroup_meta', ['groupid', 'playergroupid', 'privacy', 'password', 'timemodified']],
+            'playergroup_invites' => ['playergroup_invites', ['groupid', 'playergroupid', 'timemodified']],
+        ];
+    }
+
+    /**
+     * Test that every column of the tables is either declared or listed as holding no personal data.
+     *
+     * @dataProvider tables_with_columns_left_out
+     * @param string $table The table.
+     * @param string[] $leftout Columns that hold no personal data.
+     */
+    public function test_every_column_is_declared_or_left_out_on_purpose(string $table, array $leftout): void {
+        global $DB;
+
+        $declared = null;
+        foreach (provider::get_metadata(new collection('mod_playergroup'))->get_collection() as $item) {
+            if ($item->get_name() === $table) {
+                $declared = array_keys($item->get_privacy_fields());
+            }
+        }
+
+        $this->assertNotNull($declared);
+        $columns = array_diff(array_keys($DB->get_columns($table)), ['id']);
+        $this->assertEqualsCanonicalizing($columns, array_merge($declared, $leftout));
+    }
 }

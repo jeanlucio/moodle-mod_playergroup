@@ -76,6 +76,7 @@ class join_group extends external_api {
         $playergroup = $DB->get_record('playergroup', ['id' => $cm->instance], '*', MUST_EXIST);
 
         \mod_playergroup\local\activity_window::require_open($playergroup);
+        \mod_playergroup\local\participation::require_can_take_part($context, (int) $USER->id);
 
         $lock = \mod_playergroup\local\group_lock::acquire($playergroup->id);
         try {

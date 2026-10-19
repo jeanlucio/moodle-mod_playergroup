@@ -92,6 +92,7 @@ class create_group extends external_api {
         $playergroup = $DB->get_record('playergroup', ['id' => $cm->instance], '*', MUST_EXIST);
 
         \mod_playergroup\local\activity_window::require_open($playergroup);
+        \mod_playergroup\local\participation::require_can_take_part($context, (int) $USER->id);
 
         // Reject unusable settings before anything is written: a protected group without a
         // password can never be joined, since join_group refuses an empty stored hash.

@@ -283,7 +283,7 @@ final class join_group_test extends advanced_testcase {
             join_group::execute($cm->cmid, $created['groupid'], '');
             $this->fail('Expected a moodle_exception because the admin is not enrolled.');
         } catch (moodle_exception $e) {
-            $this->assertEquals('joinfailed', $e->errorcode);
+            $this->assertEquals('errnotenrolled', $e->errorcode);
         }
 
         $this->assertFalse(groups_is_member($created['groupid'], $USER->id));
