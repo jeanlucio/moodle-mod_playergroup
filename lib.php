@@ -301,47 +301,11 @@ function playergroup_grade_item_update(\stdClass $playergroup, mixed $grades = n
  * @return void
  */
 function playergroup_update_grades(\stdClass $playergroup, int $userid = 0): void {
-    global $DB;
+    $grades = \mod_playergroup\local\grades::for_students($playergroup, $userid > 0 ? [$userid] : []);
 
-    if (empty($playergroup->grade) || $playergroup->grade <= 0) {
-        return;
+    if (!empty($grades)) {
+        playergroup_grade_item_update($playergroup, $grades);
     }
-
-    // The grade is earned once, the first time the student is in a group that reached the minimum
-    // size, and that moment is the submission date reported to the gradebook. A grade already
-    // recorded keeps its own date: after leaving and joining another group, the student would
-    // otherwise look like a new, possibly late, submission.
-    $params = ['playergroupid' => $playergroup->id];
-    $userfilter = '';
-    if ($userid > 0) {
-        $userfilter = 'AND q.userid = :userid';
-        $params['userid'] = $userid;
-    }
-    $sql = "SELECT q.userid, q.timequalified, MIN(gg.timecreated) AS timegranted
-              FROM {playergroup_qualified} q
-         LEFT JOIN {grade_items} gi ON gi.itemtype = 'mod'
-                   AND gi.itemmodule = 'playergroup'
-                   AND gi.iteminstance = q.playergroupid
-                   AND gi.itemnumber = 0
-         LEFT JOIN {grade_grades} gg ON gg.itemid = gi.id AND gg.userid = q.userid
-             WHERE q.playergroupid = :playergroupid
-                   $userfilter
-          GROUP BY q.userid, q.timequalified";
-    $members = $DB->get_records_sql($sql, $params);
-
-    if (empty($members)) {
-        return;
-    }
-
-    $grades = [];
-    foreach ($members as $member) {
-        $grade                = new \stdClass();
-        $grade->userid        = $member->userid;
-        $grade->rawgrade      = (float) $playergroup->grade;
-        $grade->datesubmitted = (int) ($member->timegranted ?: $member->timequalified);
-        $grades[$member->userid] = $grade;
-    }
-    playergroup_grade_item_update($playergroup, $grades);
 }
 
 /**

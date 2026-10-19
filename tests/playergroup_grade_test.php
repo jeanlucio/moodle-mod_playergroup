@@ -49,15 +49,16 @@ final class playergroup_grade_test extends advanced_testcase {
      *
      * @param \stdClass $course
      * @param float $grade Maximum grade (0 = disabled).
+     * @param int $minmembers Minimum group size.
      * @return \stdClass The playergroup instance record.
      */
-    private function create_graded_activity(\stdClass $course, float $grade = 10.0): \stdClass {
+    private function create_graded_activity(\stdClass $course, float $grade = 10.0, int $minmembers = 1): \stdClass {
         global $DB;
 
         $cm = $this->getDataGenerator()->create_module('playergroup', [
             'course'     => $course->id,
             'grade'      => $grade,
-            'minmembers' => 1,
+            'minmembers' => $minmembers,
         ]);
         return $DB->get_record('playergroup', ['id' => $cm->id], '*', MUST_EXIST);
     }
@@ -253,5 +254,64 @@ final class playergroup_grade_test extends advanced_testcase {
 
         playergroup_update_grades($playergroup);
         $this->assertEquals($firstjoin, $this->get_grade($playergroup, $user->id)->get_datesubmitted());
+    }
+
+    /**
+     * Lowering the minimum grades every student of the groups that start to count, each with the date they qualified.
+     *
+     * The groups were formed under a minimum of 3, so none counted. Dropping it to 2 makes all of them count
+     * at once, and the gradebook must end up with the same grade and the same submission date for each student.
+     */
+    public function test_lowering_the_minimum_grades_every_group_already_formed(): void {
+        global $DB;
+
+        $course = $this->getDataGenerator()->create_course();
+        $playergroup = $this->create_graded_activity($course, 10.0, 3);
+        $cm = get_coursemodule_from_instance('playergroup', $playergroup->id, $course->id, false, MUST_EXIST);
+
+        $students = [];
+        for ($i = 0; $i < 8; $i++) {
+            $group = $this->getDataGenerator()->create_group(['courseid' => $course->id]);
+            $leader = $this->getDataGenerator()->create_and_enrol($course, 'student');
+            $other = $this->getDataGenerator()->create_and_enrol($course, 'student');
+            foreach ([$leader, $other] as $user) {
+                $this->getDataGenerator()->create_group_member(['groupid' => $group->id, 'userid' => $user->id]);
+                $students[] = $user;
+            }
+            $DB->insert_record('playergroup_meta', (object) [
+                'playergroupid' => $playergroup->id,
+                'groupid'       => $group->id,
+                'creatorid'     => $leader->id,
+                'badge'         => '⚔',
+                'privacy'       => 0,
+                'password'      => '',
+                'timecreated'   => time(),
+                'timemodified'  => time(),
+            ]);
+        }
+        $this->assertSame(0, $DB->count_records('playergroup_qualified', ['playergroupid' => $playergroup->id]));
+
+        playergroup_update_instance((object) [
+            'instance'     => $playergroup->id,
+            'coursemodule' => $cm->id,
+            'course'       => $course->id,
+            'name'         => $playergroup->name,
+            'grade'        => 10,
+            'minmembers'   => 2,
+            'maxmembers'   => 5,
+            'groupingmode' => 'none',
+        ]);
+
+        $this->assertCount(16, $students);
+        foreach ($students as $student) {
+            $timequalified = $DB->get_field(
+                'playergroup_qualified',
+                'timequalified',
+                ['playergroupid' => $playergroup->id, 'userid' => $student->id],
+                MUST_EXIST
+            );
+            $this->assertEquals(10.0, $this->get_rawgrade($playergroup, (int) $student->id));
+            $this->assertEquals($timequalified, $this->get_grade($playergroup, (int) $student->id)->get_datesubmitted());
+        }
     }
 }

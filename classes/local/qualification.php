@@ -141,11 +141,16 @@ final class qualification {
         $completion = new \completion_info($modinfo->get_course());
         $automatic = $completion->is_enabled($cminfo) == COMPLETION_TRACKING_AUTOMATIC;
 
-        foreach ($userids as $userid) {
-            if ($automatic) {
+        if ($automatic) {
+            foreach ($userids as $userid) {
                 $completion->update_state($cminfo, COMPLETION_COMPLETE, $userid);
             }
-            playergroup_update_grades($playergroup, $userid);
+        }
+
+        // One query and one gradebook call for everyone: lowering the minimum can qualify a whole class at once.
+        $grades = grades::for_students($playergroup, $userids);
+        if (!empty($grades)) {
+            playergroup_grade_item_update($playergroup, $grades);
         }
     }
 
