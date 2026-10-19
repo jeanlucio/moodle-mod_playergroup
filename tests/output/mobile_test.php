@@ -128,6 +128,30 @@ final class mobile_test extends advanced_testcase {
     }
 
     /**
+     * Test that the mobile page shows the full badge, with its text already translated.
+     *
+     * The app does not resolve add-on strings for every language, so the text must come from the server.
+     */
+    public function test_mobile_course_view_has_the_full_badge_with_its_text(): void {
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module('playergroup', ['course' => $course->id]);
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $this->setUser($student);
+
+        $result = mobile::mobile_course_view([
+            'cmid'            => $cm->cmid,
+            'courseid'        => $course->id,
+            'appversioncode'  => 40100,
+        ]);
+
+        $html = $result['templates'][0]['html'];
+        $this->assertStringContainsString('*ngIf="group.showfullbadge"', $html);
+        $this->assertStringContainsString(get_string('groupfull', 'mod_playergroup'), $html);
+    }
+
+    /**
      * Test that a user without mod/playergroup:view cannot fetch the mobile page data.
      *
      * Prohibiting the activity's own view capability makes the module inaccessible to

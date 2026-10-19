@@ -218,6 +218,81 @@ final class get_activity_data_test extends advanced_testcase {
     }
 
     /**
+     * Builds an activity of groups of up to two members, with a full group, a group with room, and a student outside.
+     *
+     * @param int $privacy Privacy level of the full group. A closed one is closed after it fills up, as it
+     *                     cannot be joined without an invite.
+     * @return array [cmid, fullgroupid, roomgroupid, creator, viewer]
+     */
+    private function build_full_and_roomy_groups(int $privacy = 0): array {
+        global $DB;
+
+        $course = $this->getDataGenerator()->create_course();
+        $cm = $this->getDataGenerator()->create_module(
+            'playergroup',
+            ['course' => $course->id, 'maxmembers' => 2, 'minmembers' => 1]
+        );
+        $users = [];
+        foreach (['creator', 'joiner', 'solo', 'viewer'] as $name) {
+            $users[$name] = $this->getDataGenerator()->create_user(['firstname' => $name, 'lastname' => 'Full']);
+            $this->getDataGenerator()->enrol_user($users[$name]->id, $course->id, 'student');
+        }
+
+        $this->setUser($users['creator']);
+        $full = create_group::execute($cm->cmid, 'Full Group', '', '🛡', 0, '');
+        $this->setUser($users['joiner']);
+        join_group::execute($cm->cmid, $full['groupid'], '');
+        if ($privacy !== 0) {
+            $DB->set_field('playergroup_meta', 'privacy', $privacy, ['groupid' => $full['groupid']]);
+        }
+        $this->setUser($users['solo']);
+        $roomy = create_group::execute($cm->cmid, 'Roomy Group', '', '🛡', 0, '');
+
+        return [$cm->cmid, $full['groupid'], $roomy['groupid'], $users['creator'], $users['viewer']];
+    }
+
+    /**
+     * Test that a student without a group sees the full badge on a full group, and the join button on the other.
+     */
+    public function test_execute_shows_the_full_badge_instead_of_the_join_button(): void {
+        $this->resetAfterTest();
+        [$cmid, $fullid, $roomyid, , $viewer] = $this->build_full_and_roomy_groups();
+
+        $this->setUser($viewer);
+        $result = get_activity_data::execute($cmid);
+        $result = external_api::clean_returnvalue(get_activity_data::execute_returns(), $result);
+        $groups = array_column($result['groups'], null, 'groupid');
+
+        $this->assertTrue($groups[$fullid]['showfullbadge']);
+        $this->assertFalse($groups[$fullid]['canjoin']);
+        $this->assertFalse($groups[$roomyid]['showfullbadge']);
+        $this->assertTrue($groups[$roomyid]['canjoin']);
+    }
+
+    /**
+     * Test that the full badge is not offered where the student could not join anyway.
+     */
+    public function test_execute_hides_the_full_badge_for_members_and_closed_groups(): void {
+        $this->resetAfterTest();
+        [$cmid, $fullid, , $creator] = $this->build_full_and_roomy_groups();
+
+        // Someone who is already in a group is not choosing a group to join.
+        $this->setUser($creator);
+        $result = get_activity_data::execute($cmid);
+        $result = external_api::clean_returnvalue(get_activity_data::execute_returns(), $result);
+        $groups = array_column($result['groups'], null, 'groupid');
+        $this->assertFalse($groups[$fullid]['showfullbadge']);
+
+        // A group closed to invitations is not one to join either, full or not.
+        [$closedcmid, $closedid, , , $viewer] = $this->build_full_and_roomy_groups(2);
+        $this->setUser($viewer);
+        $result = get_activity_data::execute($closedcmid);
+        $result = external_api::clean_returnvalue(get_activity_data::execute_returns(), $result);
+        $groups = array_column($result['groups'], null, 'groupid');
+        $this->assertFalse($groups[$closedid]['showfullbadge']);
+    }
+
+    /**
      * Test that the app is told why the student's own group does not count yet, and only for that group.
      */
     public function test_execute_reports_missing_members_for_the_own_group_only(): void {

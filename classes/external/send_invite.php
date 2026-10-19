@@ -147,6 +147,7 @@ class send_invite extends external_api {
         $messagedatahtml = (object) ['sender' => s(fullname($USER)), 'group' => s($groupname)];
 
         $msg = new \core\message\message();
+        $msg->courseid          = $cm->course;
         $msg->component         = 'mod_playergroup';
         $msg->name              = 'invite';
         $msg->userfrom          = $USER;

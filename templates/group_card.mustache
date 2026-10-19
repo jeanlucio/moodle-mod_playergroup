@@ -45,6 +45,7 @@
         "canviewmembers": true,
         "missingmessage": "",
         "canjoin": true,
+        "showfullbadge": false,
         "canedit": false,
         "canleave": false
     }
@@ -145,17 +146,15 @@
                     {{/canleave}}
 
                     {{#canjoin}}
-                        {{^isfull}}
-                            <button type="button" class="btn btn-outline-success btn-sm pg-btn-join"
-                                    data-groupid="{{groupid}}" data-privacy="{{privacy}}"
-                                    aria-label="{{joinarialabel}}">
-                                {{#str}} joingroup, mod_playergroup {{/str}}
-                            </button>
-                        {{/isfull}}
-                        {{#isfull}}
-                            <span class="badge bg-secondary">{{#str}} groupfull, mod_playergroup {{/str}}</span>
-                        {{/isfull}}
+                        <button type="button" class="btn btn-outline-success btn-sm pg-btn-join"
+                                data-groupid="{{groupid}}" data-privacy="{{privacy}}"
+                                aria-label="{{joinarialabel}}">
+                            {{#str}} joingroup, mod_playergroup {{/str}}
+                        </button>
                     {{/canjoin}}
+                    {{#showfullbadge}}
+                        <span class="badge bg-secondary">{{#str}} groupfull, mod_playergroup {{/str}}</span>
+                    {{/showfullbadge}}
                 </div>
             </div>
         </div>

@@ -91,6 +91,30 @@ final class send_invite_test extends advanced_testcase {
     }
 
     /**
+     * Test that the notification of the invite belongs to the course of the activity, not to the site.
+     *
+     * Without the course the core logs the notification in the site course, and the invite never shows in the
+     * logs of the course where it was sent.
+     */
+    public function test_execute_sends_the_notification_in_the_course_of_the_activity(): void {
+        // The event only exists when the message is really sent: the redirection of setUp() is lifted and the
+        // open test transaction, which would hold the message back, is committed.
+        $this->preventResetByRollback();
+        $this->redirectMessages()->close();
+        $events = $this->redirectEvents();
+
+        $this->setUser($this->leader);
+        send_invite::execute($this->cm->cmid, $this->receiver->id);
+
+        $sent = array_values(array_filter(
+            $events->get_events(),
+            fn($event): bool => $event instanceof \core\event\notification_sent
+        ));
+        $this->assertCount(1, $sent);
+        $this->assertEquals($this->course->id, $sent[0]->other['courseid']);
+    }
+
+    /**
      * Test that a group which already invited a student can invite again after the student leaves.
      *
      * The first invite is resolved when the student joins (accepted), so once the student leaves

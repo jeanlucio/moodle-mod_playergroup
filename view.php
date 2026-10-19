@@ -232,6 +232,7 @@ foreach ($grouprecords as $g) {
         'leavearialabel'      => get_string('leavegroup_named', 'mod_playergroup', $groupname),
         'viewmembersarialabel' => get_string('viewmembers_named', 'mod_playergroup', $groupname),
         'canjoin'             => $isopen && !$hasgroup && $privacy !== 2 && !$isfull,
+        'showfullbadge'       => $isopen && !$hasgroup && $privacy !== 2 && $isfull,
         'caninvite'           => $ismygroup && $isopen && !$isfull && $caninviteusers,
         'canedit'             => $ismygroup && $isopen && $iscreator && $cancreate,
         'canclose'            => $caninviteusers,

@@ -207,6 +207,7 @@ class get_activity_data extends external_api {
                 'ismygroup'          => $ismygroup,
                 'leaderbadge'        => $leaderbadge,
                 'canjoin'            => $isopen && !$hasgroup && $privacy !== 2 && !$isfull,
+                'showfullbadge'      => $isopen && !$hasgroup && $privacy !== 2 && $isfull,
                 'caninvite'          => $ismygroup && $isopen && !$isfull && $caninviteusers,
                 'canedit'            => $ismygroup && $isopen && $iscreator && $cancreate,
                 'canleave'           => $ismygroup && $canleaveany,
@@ -372,6 +373,10 @@ class get_activity_data extends external_api {
             'ismygroup'          => new external_value(PARAM_BOOL, 'True if this is the user\'s group'),
             'leaderbadge'        => new external_value(PARAM_TEXT, 'Leader display label'),
             'canjoin'            => new external_value(PARAM_BOOL, 'True if current user can join this group'),
+            'showfullbadge'      => new external_value(
+                PARAM_BOOL,
+                'True if the user could join this group but it is at capacity, so the full badge is shown instead'
+            ),
             'caninvite'          => new external_value(PARAM_BOOL, 'True if current user can send invites from this group'),
             'canedit'            => new external_value(PARAM_BOOL, 'True if current user can edit this group'),
             'canleave'           => new external_value(PARAM_BOOL, 'True if current user can leave this group'),

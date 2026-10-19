@@ -327,6 +327,9 @@
                         expand="block" fill="outline" (click)="joinGroup(group)">
                         <% str_mobile_joinprotected %>
                     </ion-button>
+                    <ion-badge color="medium" class="pg-full-badge" *ngIf="group.showfullbadge">
+                        <% str_groupfull %>
+                    </ion-badge>
                 </ion-card-content>
             </ion-card>
 

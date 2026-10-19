@@ -124,6 +124,33 @@ final class renderer_test extends advanced_testcase {
     }
 
     /**
+     * Test that a full group shows the full badge in place of the join button.
+     */
+    public function test_render_student_view_group_card_shows_full_badge_instead_of_join(): void {
+        $card = [
+            'groupid' => 42, 'name' => 'Lotado', 'rawname' => 'Lotado', 'description' => '', 'rawdescription' => '',
+            'badge' => '🐉', 'membercount' => 5, 'maxmembers' => 5, 'membersjson' => '[]', 'canviewmembers' => true,
+            'privacy' => 0, 'isprivacyopen' => true, 'isprivacyprotected' => false, 'isprivacyclosed' => false,
+            'isfull' => true, 'ismygroup' => false, 'leaderbadge' => '', 'joinarialabel' => '', 'editarialabel' => '',
+            'leavearialabel' => '', 'viewmembersarialabel' => '', 'canjoin' => false, 'showfullbadge' => true,
+            'caninvite' => false, 'canedit' => false, 'canleave' => false,
+        ];
+        $templatedata = $this->empty_view_data(['groups' => [$card]]);
+
+        $html = $this->renderer->render_student_view($templatedata);
+        $this->assertStringContainsString(get_string('groupfull', 'mod_playergroup'), $html);
+        $this->assertStringNotContainsString('pg-btn-join', $html);
+
+        $card['isfull'] = false;
+        $card['canjoin'] = true;
+        $card['showfullbadge'] = false;
+        $templatedata = $this->empty_view_data(['groups' => [$card]]);
+        $html = $this->renderer->render_student_view($templatedata);
+        $this->assertStringNotContainsString(get_string('groupfull', 'mod_playergroup'), $html);
+        $this->assertStringContainsString('pg-btn-join', $html);
+    }
+
+    /**
      * Test that the group card's "view members" button carries the HTML-formatted name, not the
      * raw one, in its data-groupname attribute.
      *
