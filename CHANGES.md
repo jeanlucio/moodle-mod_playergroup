@@ -2,6 +2,43 @@
 
 All notable changes to PlayerGroup are documented in this file.
 
+## [v1.5.0] — 2026-10-19
+
+### Added
+
+- The opening and closing dates of the activity now appear in the course calendar, in the personal
+  calendar and in the timeline of the students, with the action to open the activity while they are
+  not yet in a group. The events follow the activity when it is edited, duplicated or restored, and
+  when the start date of the course is reset; upgrading creates them for the activities that
+  already exist.
+- A group that is full shows a "Full" badge to the students who could join it, on the page and in
+  the app.
+
+### Changed
+
+- "Join group" and "Create group" are only offered to students enrolled in the course, on the page
+  and in the app. Guests and administrators or managers who are not enrolled are told that they
+  must be enrolled, instead of getting a generic failure.
+- Giving the grade to many students at once, as when the minimum group size of an activity with many
+  groups is lowered, takes one query and one gradebook call for the whole class instead of one per
+  student.
+- The groups and members report and its exports now list a group kept with no member, and no longer
+  say that there are no groups when all of them are empty.
+- The notification of an invitation belongs to the course of the activity, so it shows in the logs
+  of that course.
+- The privacy declaration now lists the badge of the groups students create and the status of the
+  invitations, which were already exported.
+
+### Fixed
+
+- The "Full" badge of the group card, which was never shown.
+- The reason of a refused permission when editing a group or answering an invitation is translated,
+  instead of leaving English words in the message.
+- Inviting someone who already belongs to another group now says that it is the invited person who
+  has a group, not the person who invites.
+- The list of activities of a course is logged as viewed, and the web service that reports it works
+  for this activity.
+
 ## [v1.4.0] — 2026-10-17
 
 ### Changed
