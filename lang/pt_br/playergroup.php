@@ -107,6 +107,7 @@ $string['invitealreadyhandled'] = 'Este convite já foi respondido.';
 $string['invitealreadysent'] = 'Já existe um convite pendente para este estudante.';
 $string['invitecolleagues'] = 'Convidar Colegas';
 $string['invitedby'] = 'Por: {$a}';
+$string['inviteealreadyingroup'] = 'Esta pessoa já pertence a um grupo nesta atividade.';
 $string['invitemessage'] = 'Você foi convidado(a) para entrar no grupo \'{$a->group}\' por {$a->sender}.';
 $string['invitepending'] = 'Convite para grupo';
 $string['inviterejected'] = 'Convite recusado.';

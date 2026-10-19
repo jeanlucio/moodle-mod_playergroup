@@ -107,6 +107,7 @@ $string['invitealreadyhandled'] = 'This invitation has already been responded to
 $string['invitealreadysent'] = 'A pending invite for this student already exists.';
 $string['invitecolleagues'] = 'Invite Colleagues';
 $string['invitedby'] = 'From: {$a}';
+$string['inviteealreadyingroup'] = 'That person already belongs to a group in this activity.';
 $string['invitemessage'] = 'You have been invited to join the group \'{$a->group}\' by {$a->sender}.';
 $string['invitepending'] = 'Group invitation';
 $string['inviterejected'] = 'Invitation declined.';

@@ -106,7 +106,7 @@ class send_invite extends external_api {
             'userid'        => $params['receiverid'],
         ]);
         if ($receiverhasgroup) {
-            throw new \moodle_exception('alreadyingroup', 'mod_playergroup');
+            throw new \moodle_exception('inviteealreadyingroup', 'mod_playergroup');
         }
 
         $membercount = $DB->count_records('groups_members', ['groupid' => (int) $sendergroupid]);

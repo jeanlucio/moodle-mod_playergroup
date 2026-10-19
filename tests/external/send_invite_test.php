@@ -301,7 +301,10 @@ final class send_invite_test extends advanced_testcase {
     }
 
     /**
-     * Test that someone who already has a group cannot be invited to another one.
+     * Test that someone who already has a group cannot be invited to another one, and that the sender is told so.
+     *
+     * The sender is always in a group, so the message that speaks of "you" would explain nothing: it has to name
+     * the person invited.
      */
     public function test_execute_refuses_a_receiver_who_already_has_a_group(): void {
         $this->setUser($this->receiver);
@@ -312,7 +315,9 @@ final class send_invite_test extends advanced_testcase {
             send_invite::execute($this->cm->cmid, $this->receiver->id);
             $this->fail('A student already in a group must not be invited.');
         } catch (moodle_exception $e) {
-            $this->assertSame('alreadyingroup', $e->errorcode);
+            $this->assertSame('inviteealreadyingroup', $e->errorcode);
+            $this->assertSame(get_string('inviteealreadyingroup', 'mod_playergroup'), $e->getMessage());
+            $this->assertNotSame(get_string('alreadyingroup', 'mod_playergroup'), $e->getMessage());
         }
         $this->assertSame(0, $this->invites());
     }
