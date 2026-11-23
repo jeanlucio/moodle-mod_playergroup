@@ -24,8 +24,6 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-// phpcs:disable moodle.Files.LineLength
-
 $string['acceptinvite'] = 'Aceitar';
 $string['activityclosed'] = 'Esta atividade não está mais aceitando formação de grupos.';
 $string['activityclosedmsg'] = 'Esta atividade foi encerrada. A formação de grupos não é mais permitida.';
